@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.BillRefundMapper">
+
+
+  <!--分页查询应收账单退款列表-->
+    <select id="queryReceivableRefundPage"
+            resultType="com.wishare.finance.domains.bill.dto.ReceivableBillRefundDto">
+        SELECT
+            br.id,
+            br.refund_no,
+            br.out_refund_no,
+            br.refund_amount,
+            br.refund_time,
+            b.id AS bill_id,
+            b.bill_no,
+            b.source,
+            b.payer_id,
+            b.payer_name,
+            b.room_id,
+            b.room_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.start_time,
+            b.end_time,
+            b.payer_type,
+            br.remark,
+            br.creator_name,
+            br.file_info
+        FROM
+            bill_refund br
+                INNER JOIN receivable_bill b ON b.id = br.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+
+    <!--查询账应收账单退款列表-->
+    <select id="queryReceivableRefundList"
+            resultType="com.wishare.finance.domains.bill.dto.ReceivableBillRefundDto">
+        SELECT
+            br.id,
+            br.refund_no,
+            br.out_refund_no,
+            br.refund_amount,
+            br.refund_time,
+            b.id AS bill_id,
+            b.bill_no,
+            b.source,
+            b.payer_id,
+            b.payer_name,
+            b.room_id,
+            b.room_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.start_time,
+            b.end_time,
+            b.payer_type,
+            br.remark,
+            br.creator_name
+        FROM
+            bill_refund br
+                INNER JOIN receivable_bill b ON b.id = br.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+    <!--分页查询账临时账单退款列表-->
+    <select id="queryTempChargeRefundPage"
+            resultType="com.wishare.finance.domains.bill.dto.TempChargeBillRefundDto">
+        SELECT
+            br.id,
+            br.refund_no,
+            br.refund_amount,
+            br.refund_time,
+            br.out_refund_no,
+            br.gmt_create,
+            b.source,
+            b.payer_id,
+            b.payer_name,
+            b.bill_no,
+            b.id AS bill_id,
+            b.community_id,
+            b.community_name,
+            b.room_id,
+            b.room_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.charge_item_type,
+            b.pay_time,
+            b.start_time,
+            b.end_time,
+            b.payer_type,
+            br.remark,
+            br.creator_name,
+            br.file_info
+        FROM
+            bill_refund br
+                INNER JOIN receivable_bill b ON b.id = br.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+    <!--查询临时账单退款列表-->
+    <select id="queryTempChargeRefundList"
+            resultType="com.wishare.finance.domains.bill.dto.TempChargeBillRefundDto">
+        SELECT
+            br.id,
+            br.refund_no,
+            br.refund_amount,
+            br.refund_time,
+            br.out_refund_no,
+            br.gmt_create,
+            b.source,
+            b.payer_id,
+            b.payer_name,
+            b.bill_no,
+            b.id AS bill_id,
+            b.community_id,
+            b.community_name,
+            b.room_id,
+            b.room_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.charge_item_type,
+            b.start_time,
+            b.end_time,
+            b.payer_type,
+            b.pay_time,
+            br.remark,
+            br.creator_name
+        FROM
+            bill_refund br
+                INNER JOIN receivable_bill b ON b.id = br.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+    <!--分页查询预收账单退款列表-->
+    <select id="queryAdvanceRefundPage"
+            resultType="com.wishare.finance.domains.bill.dto.AdvanceBillRefundDto">
+        SELECT
+            br.id,
+            br.refund_no,
+            br.out_refund_no,
+            br.refund_amount,
+            br.refund_time,
+            b.source,
+            b.payer_id,
+            b.payer_name,
+            b.bill_no,
+            b.id AS bill_id,
+            b.room_id,
+            b.room_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.start_time,
+            b.end_time,
+            b.payer_type,
+            br.remark,
+            br.creator_name,
+            br.file_info
+        FROM
+            bill_refund br
+                INNER JOIN advance_bill b ON b.id = br.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+
+    <update id="batchUpdateRefundInferenceState" parameterType="java.util.List">
+        update bill_refund set inference_state = 1 where id in
+        <foreach collection="list" open="(" separator="," close=")" item="item">
+            #{item}
+        </foreach>
+    </update>
+
+
+</mapper>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.invoicereceipt.repository.mapper.InvoiceReceiveMapper">
+
+    <resultMap type="com.wishare.finance.domains.invoicereceipt.entity.invoicebook.InvoiceReceiveE"
+               id="InvoiceBookReceiveRecordMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="receiveInvoiceBookId" column="receive_invoice_book_id" jdbcType="INTEGER"/>
+        <result property="receiveOrgId" column="receive_org_id" jdbcType="INTEGER"/>
+        <result property="receiveOrgName" column="receive_org_name" jdbcType="VARCHAR"/>
+        <result property="receiveTime" column="receive_time" jdbcType="TIMESTAMP"/>
+        <result property="invoiceStartNumber" column="invoice_start_number" jdbcType="INTEGER"/>
+        <result property="receiveNumber" column="receive_number" jdbcType="INTEGER"/>
+        <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+        <result property="community" column="community" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="field">
+        id, receive_invoice_book_id, receive_org_id, receive_org_name, receive_time, invoice_start_number, receive_number, deleted, tenant_id, creator_name, creator, gmt_create, operator_name, operator, gmt_modify, community
+    </sql>
+
+    <select id="getReceiveNumberTotal" resultType="java.lang.Long">
+        SELECT
+        COALESCE(SUM(receive_number),0)
+        FROM
+        invoice_receive
+        <where>
+            <if test="receiveInvoiceBookId != null ">
+                and receive_invoice_book_id = #{receiveInvoiceBookId}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryPage"
+            resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceReceiveDto">
+        SELECT
+            ir.id,
+            ir.receive_invoice_book_id,
+            ir.receive_org_id,
+            ir.receive_org_name,
+            ir.receive_time,
+            ir.invoice_start_number,
+            ir.invoice_end_number,
+            ir.receive_number,
+            ir.deleted,
+            ir.tenant_id,
+            ir.creator_name,
+            ir.creator,
+            ir.gmt_create,
+            ir.operator_name,
+            ir.operator,
+            ir.gmt_modify,
+            ir.community,
+            ib.invoice_code,
+            ib.invoice_book_number,
+            ib.type,
+            ib.buy_quantity,
+            sum(CASE ird.state WHEN '2' THEN 1 ELSE 0 END)   AS usedNumber
+        FROM
+            invoice_receive ir
+                LEFT JOIN invoice_book ib ON ib.id = ir.receive_invoice_book_id
+                LEFT JOIN invoice_receive_detailed ird ON ird.invoice_receive_id = ir.id
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="getIdByCommunity"
+            resultType="com.wishare.finance.domains.invoicereceipt.entity.invoicebook.InvoiceReceiveE">
+        SELECT
+            ir.*
+        FROM
+            invoice_receive ir
+            LEFT JOIN invoice_book ib ON ir.receive_invoice_book_id = ib.id
+        <where>
+            1 = 1
+            <if test="type != null">
+                and ib.type =#{type}
+            </if>
+            <if test="communityId != null and communityId != ''">
+                and JSON_CONTAINS(ir.community,
+                JSON_OBJECT('communityId', #{communityId} ))
+            </if>
+        </where>
+
+    </select>
+
+
+</mapper>
+

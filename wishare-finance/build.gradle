@@ -1,0 +1,121 @@
+plugins {
+    id 'org.springframework.boot' version '2.6.7'
+    id 'java-library'
+}
+
+group = 'com.wishare'
+version = '1.0.0'
+sourceCompatibility = '11'
+
+bootJar {
+    archiveBaseName.set('wishare-finance')
+    archiveVersion.set('')
+    archiveClassifier.set('')
+}
+
+repositories {
+    maven {
+        allowInsecureProtocol = true
+        url 'http://maven.uama.cc:7610/nexus/content/repositories/release'
+    }
+    maven {
+        allowInsecureProtocol = true
+        url 'http://maven.uama.cc:7610/nexus/content/groups/public'
+    }
+    maven {
+        allowInsecureProtocol = true
+        url 'http://maven.uama.cc:7610/nexus/content/repositories/pre-release'
+        mavenContent {
+            snapshotsOnly()
+        }
+    }
+
+    mavenCentral()
+    mavenLocal()
+}
+
+ext {
+    set('springCloudVersion', "2021.0.2")
+}
+
+dependencies {
+    api platform("com.wishare:wishare-bom:1.0-SNAPSHOT")
+    annotationProcessor platform("com.wishare:wishare-bom:1.0-SNAPSHOT")
+    implementation 'com.deepoove:poi-tl:1.12.2'
+
+    //内部封装基础包
+    api('com.wishare:wishare-spring-boot-starter:2.1.3')
+    api 'com.wishare:wishare-tools-spring-boot-starter'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    implementation('mysql:mysql-connector-java')
+    implementation 'com.baomidou:mybatis-plus-boot-starter:3.5.1'
+    implementation 'redis.clients:jedis:4.2.3'
+//    implementation 'org.liquibase:liquibase-core:4.13.0'
+    implementation 'cn.hutool:hutool-all:5.8.7'
+    implementation ('com.xuxueli:xxl-job-core:2.3.0'){
+        exclude group: 'org.codehaus.groovy', module: 'groovy'
+    }
+    implementation 'com.wishare:owl-spring-boot-starter:1.2.20'
+    // https://mvnrepository.com/artifact/com.alibaba/easyexcel
+    implementation group: 'com.alibaba', name: 'easyexcel', version: '3.1.1'
+    implementation 'javax.mail:mail:1.5.0-b01'
+    implementation 'com.thoughtworks.xstream:xstream:1.4.19'
+    implementation 'org.redisson:redisson:3.8.0'
+    implementation 'org.springframework.retry:spring-retry'
+
+    implementation ('com.wishare.component:bizlog-spring-starter:1.0.6') {
+        exclude group: 'com.alibaba', module: 'fastjson'
+    }
+
+    implementation 'org.xhtmlrenderer:flying-saucer-pdf:9.1.22'
+    implementation 'org.freemarker:freemarker:2.3.31'
+
+    implementation 'org.apache.axis2:axis2-saaj:1.8.2'
+//    implementation 'jakarta.xml.soap:jakarta.xml.soap-api:1.4.2'
+
+    //诺诺开票
+    implementation 'com.nuonuo:open-sdk:1.0.5.2'
+    // sharding-jdbc
+    implementation 'org.apache.shardingsphere:shardingsphere-jdbc-core-spring-boot-starter:5.1.0'
+
+    // guava 重试
+    implementation 'com.github.rholder:guava-retrying:2.0.0'
+
+    implementation ('com.wishare.component:wishare-component-export-spring-boot-starter:1.0.16')
+    // 导入标准化业务组件
+    implementation ('com.wishare.component:wishare-component-import-spring-boot-starter:0.0.30'){
+        exclude group: 'com.xuxueli', module: 'xxl-job-core'
+    }
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
+    implementation 'com.wishare.component:multitasklog-starter:0.1.0'
+
+//    testImplementation 'org.mockito:mockito-core:5.8.0'
+
+    implementation 'com.wishare.component:multitasklog-starter:0.0.5'
+
+    // 引入指定版本的 Tomcat 依赖
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:9.0.102'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-el:9.0.102'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:9.0.102'
+}
+
+// 因为用了快照，每次获取都去获取最新的
+configurations {
+    all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+}
+
+sourceSets {
+    main{
+        resources {
+            srcDirs 'src/main/java' //可以将java目录下的所有非.java资源打包到classes下
+        }
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

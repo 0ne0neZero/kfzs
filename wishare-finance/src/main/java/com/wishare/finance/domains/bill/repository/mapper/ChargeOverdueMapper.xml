@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.ChargeOverdueMapper">
+
+    <update id="updateByBillId">
+           update  charge_overdue
+            SET deleted = 1
+            where
+             bill_id in
+        <foreach collection="chargeOverdueEList" index="index" item="item" open="(" separator="," close=")">
+            #{item.billId}
+        </foreach>
+            or ref_bill_id in
+        <foreach collection="chargeOverdueEList" index="index" item="item" open="(" separator="," close=")">
+            #{item.billId}
+        </foreach>
+             and community_id = #{communityId}
+    </update>
+
+
+
+    <update id="deleteByBillIds">
+        update  charge_overdue
+        SET deleted = 1
+        where
+        bill_id in
+        <foreach collection="billIds"   item="billId" open="(" separator="," close=")">
+            #{billId}
+        </foreach>
+    </update>
+
+    <select id="queryPageBySearch" resultType="com.wishare.finance.domains.bill.dto.ChargeOverdueDto">
+        select b.id,
+               b.overdue_no,
+               b.bill_id,
+               b.bill_no,
+               b.bill_create_state,
+               b.ref_bill_id,
+               b.ref_bill_no,
+               b.community_id,
+               b.community_name,
+               b.room_id,
+               b.room_name,
+               b.charge_item_id,
+               b.charge_item_name,
+               b.customer_id,
+               b.customer_name,
+<!--               ROUND((b.overdue_amount * 0.01), 2) as overdueAmount,-->
+               b.overdue_amount,
+               b.overdue_rate,
+               b.overdue_begin_date,
+               b.tenant_id,
+               b.gmt_create,
+               b.creator,
+               b.operator,
+               b.gmt_modify,
+               b.deleted,
+               rb.settle_state as billSettleState,
+               rb.state,
+               rb.statutory_body_id,
+               rb.cost_center_id,
+               rb.verify_state,
+               rb.approved_state,
+               rb.carried_state,
+               rb.refund_state,
+               rb.reversed,
+               rb.bill_method,
+               rb.payer_name,
+               rb.payer_type
+        from charge_overdue b
+                 left join ${tableName} rb on rb.id = b.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryRoomCount" resultType="java.lang.Long">
+        select count(distinct b.room_id) from charge_overdue b
+        left join receivable_bill rb on rb.id = b.bill_id
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="querySumOverdueAmount" resultType="java.lang.Long">
+        select sum(rb.total_amount) from charge_overdue b
+         left join receivable_bill rb  on rb.id = b.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(*) from charge_overdue b
+             left join receivable_bill rb  on rb.id = b.bill_id
+            ${ew.customSqlSegment}
+    </select>
+</mapper>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.BillCarryMapper">
+
+  <resultMap id="BillCarryResultMap" type="com.wishare.finance.apps.model.bill.vo.BillCarryV">
+    <id column="room_id" property="roomId" />
+    <result column="room_name" property="roomName" />
+    <result column="community_id" property="communityId" />
+    <result column="community_name" property="communityName" />
+    <result column="carried_bill_id" property="carriedBillId" />
+    <result column="carried_bill_no" property="carriedBillNo" />
+    <result column="carryover_amount" property="carryoverAmount" />
+    <result column="bill_type" property="billType" />
+    <result column="approve_time" property="approveTime" />
+    <result column="carryover_time" property="carryoverTime" />
+    <result column="state" property="state" />
+    <result column="carry_rule" property="carryRule" />
+    <result column="auto_carry_rule" property="autoCarryRule" />
+    <result column="operator" property="operator" />
+    <result column="remark" property="remark" />
+    <result column="operator_name" property="operatorName" />
+    <result column="carryover_detail" property="carryoverDetail" typeHandler="com.wishare.finance.domains.bill.support.ListCarryoverDetailTypeHandler"/>
+    <result column="file_url" property="fileUrl" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+  </resultMap>
+
+  <select id="queryPageBySearch" resultMap="BillCarryResultMap">
+    select
+              b.room_id,
+              b.room_name,
+              b.community_id,
+              b.community_name,
+              a.carried_bill_id,
+              a.carried_bill_no,
+              a.carryover_amount,
+              a.carryover_detail,
+              a.bill_type,
+              a.approve_time,
+              a.carryover_time,
+              a.state,
+              a.carry_rule,
+              a.auto_carry_rule,
+              a.operator,
+              a.operator_name,
+              a.remark
+            FROM bill_carryover a
+                   inner join advance_bill b
+                              on a.carried_bill_id = b.id and a.deleted = 0 and b.deleted = 0
+                                and a.reversed = 0 and a.bill_type = 2
+              ${ew.customSqlSegment}
+    ORDER BY a.gmt_create DESC
+  </select>
+
+    <select id="queryCarryoverPage" resultMap="BillCarryResultMap">
+        select room_id,
+               room_name,
+               community_id,
+               community_name,
+               carried_bill_id,
+               carried_bill_no,
+               carryover_amount,
+               carryover_detail,
+               bill_type,
+               approve_time,
+               carryover_time,
+               state,
+               carry_rule,
+               auto_carry_rule,
+               operator,
+               operator_name,
+               remark,
+               file_url,
+               gmt_create
+        from (
+                (select b.room_id,
+                          b.room_name,
+                          b.community_id,
+                          b.community_name,
+                          a.carried_bill_id,
+                          a.carried_bill_no,
+                          a.carryover_amount,
+                          a.carryover_detail,
+                          a.bill_type,
+                          a.approve_time,
+                          a.carryover_time,
+                          a.state,
+                          a.carry_rule,
+                          a.auto_carry_rule,
+                          a.operator,
+                          a.operator_name,
+                          a.remark,
+                          a.file_url,
+                          a.gmt_create
+                   FROM bill_carryover a
+                            inner join advance_bill b
+                                       on a.carried_bill_id = b.id and a.deleted = 0 and b.deleted = 0
+                                           and a.reversed = 0 and a.bill_type = 2
+                       ${ew.customSqlSegment})
+              union
+                  (select b.room_id,
+                          b.room_name,
+                          b.community_id,
+                          b.community_name,
+                          a.carried_bill_id,
+                          a.carried_bill_no,
+                          a.carryover_amount,
+                          a.carryover_detail,
+                          a.bill_type,
+                          a.approve_time,
+                          a.carryover_time,
+                          a.state,
+                          a.carry_rule,
+                          a.auto_carry_rule,
+                          a.operator,
+                          a.operator_name,
+                          a.remark,
+                          a.file_url,
+                          a.gmt_create
+                   FROM bill_carryover a
+                            inner join ${tableName} b
+                                       on a.carried_bill_id = b.id and a.deleted = 0 and b.deleted = 0
+                                           and a.reversed = 0 and a.bill_type = 3
+                       ${ew.customSqlSegment})
+              ) as ab ORDER BY gmt_create DESC
+    </select>
+
+</mapper>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.GatherAndPayMapper">
+
+
+    <select id="queryPage" resultType="com.wishare.finance.domains.bill.dto.GatherAndPayDto">
+        SELECT id,
+               charge_item_name,
+               sup_cp_unit_name,
+               cp_unit_name,
+               pay_amount,
+               pay_channel,
+               pay_way,
+               pay_time,
+               gmt_create,
+               "gather" AS gatherAndPayType
+        FROM gather_detail d
+            ${ew.customSqlSegment}
+        UNION ALL
+        SELECT id,
+               charge_item_name,
+               sup_cp_unit_name,
+               cp_unit_name,
+               pay_amount,
+               pay_channel,
+               pay_way,
+               pay_time,
+               gmt_create,
+               "pay" AS gatherAndPayType
+        FROM pay_detail d
+            ${ew.customSqlSegment}
+        ORDER BY gmt_create DESC
+    </select>
+
+    <select id="billQueryPage" resultType="com.wishare.finance.domains.bill.dto.GatherAndPayDto">
+        SELECT
+            gb.id,
+            gb.total_amount as payAmount,
+            gb.pay_time as payTime,
+            "gather" AS gatherAndPayType,
+            gb.gmt_create as gmtCreate,
+            GROUP_CONCAT( DISTINCT gd.charge_item_name )  as chargeItemName,
+            gb.sup_cp_unit_name as supCpUnitName,
+            GROUP_CONCAT( DISTINCT gd.cp_unit_name ) as cpUnitName
+        FROM
+            ${gatherBillName} gb
+                LEFT JOIN ${gatherDetailName} gd ON gb.id = gd.gather_bill_id
+            ${ew.customSqlSegment}
+        GROUP BY
+            gb.id
+        UNION ALL
+        SELECT
+            gb.id,
+            gb.total_amount as payAmount,
+            gb.pay_time as payTime,
+            "pay" AS gatherAndPayType,
+            gb.gmt_create as gmtCreate,
+            GROUP_CONCAT( DISTINCT gd.charge_item_name )  as chargeItemName,
+            GROUP_CONCAT( DISTINCT gd.sup_cp_unit_name )  as supCpUnitName,
+            GROUP_CONCAT( DISTINCT gd.cp_unit_name )  as cpUnitName
+        FROM
+            pay_bill gb
+                LEFT JOIN pay_detail gd ON gb.id = gd.pay_bill_id
+            ${ew.customSqlSegment}
+        GROUP BY
+            gb.id
+    order by payTime desc
+
+    </select>
+
+    <!--分页查询收付款记录(收付款单维度无租户隔离)-->
+    <select id="billQueryPageIgnoreTenant" resultType="com.wishare.finance.domains.bill.dto.GatherAndPayDto">
+        SELECT
+            gb.id,
+            d.rec_pay_amount as payAmount,
+            d.pay_time as payTime,
+            "gather" AS gatherAndPayType,
+            gb.gmt_create as gmtCreate,
+            d.charge_item_name  as chargeItemName,
+            d.sup_cp_unit_name  AS supCpUnitName,
+            d.cp_unit_name  AS cpUnitName,
+            d.cp_unit_id  AS cpUnitId,
+            gb.start_time AS startTime,
+		        gb.end_time AS endTime
+        FROM
+            ${gatherBillName} gb
+                RIGHT JOIN ${gatherDetailName} d ON gb.id = d.gather_bill_id
+            ${ew.customSqlSegment}
+        UNION ALL
+        SELECT
+            pb.id,
+            pb.total_amount as payAmount,
+            pb.pay_time as payTime,
+            "pay" AS gatherAndPayType,
+            pb.gmt_create as gmtCreate,
+            GROUP_CONCAT( DISTINCT d.charge_item_name ) AS chargeItemName,
+            GROUP_CONCAT( DISTINCT d.sup_cp_unit_name ) AS supCpUnitName,
+            GROUP_CONCAT( DISTINCT d.cp_unit_name ) AS cpUnitName,
+            GROUP_CONCAT( DISTINCT d.cp_unit_id ) AS cpUnitId,
+            pb.start_time AS startTime,
+		        pb.end_time AS endTime
+        FROM
+            pay_bill pb
+                LEFT JOIN pay_detail d ON pb.id = d.pay_bill_id
+            ${ew2.customSqlSegment}
+        GROUP BY
+            pb.id
+        ORDER BY
+            payTime DESC
+    </select>
+
+
+
+    <select id="statisticsGather" resultType="java.lang.Long">
+        SELECT sum(pay_amount)
+        FROM gather_detail gb
+                 ${ew.customSqlSegment}
+    </select>
+
+    <select id="statisticsPay" resultType="java.lang.Long">
+        SELECT
+            sum( pay_amount )
+        FROM
+            pay_detail gb
+                ${ew.customSqlSegment}
+    </select>
+    <select id="statisticsGatherIgnoreTenant" resultType="java.lang.Long">
+        SELECT sum(rec_pay_amount)
+        FROM ${gatherDetailName} d
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="statisticsPayIgnoreTenant" resultType="java.lang.Long">
+        SELECT
+            sum( pay_amount )
+        FROM
+            pay_detail d
+            ${ew.customSqlSegment}
+    </select>
+</mapper>

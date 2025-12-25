@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.repository.mapper.VoucherRuleMapper">
+
+    <resultMap id="VoucherRule" type="com.wishare.finance.domains.voucher.entity.VoucherRule">
+        <result column="id" property="id" />
+        <result column="event_type" property="eventType" />
+        <result column="rule_name" property="ruleName" />
+        <result column="book_mode" property="bookMode" />
+        <result column="conditions" property="conditions" typeHandler="com.wishare.finance.domains.voucher.support.ListVoucherTemplateConditionHandler"/>
+        <result column="voucher_template_id" property="voucherTemplateId" />
+        <result column="schedule_rule" property="scheduleRule" typeHandler="com.wishare.finance.infrastructure.support.JSONTypeHandler"/>
+        <result column="schedule_id" property="scheduleId" />
+        <result column="push_mode" property="pushMode" />
+        <result column="execute_state" property="executeState" />
+        <result column="disabled" property="disabled" />
+        <result column="deleted" property="deleted" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="creator_name" property="creatorName" />
+        <result column="creator" property="creator" />
+        <result column="gmt_create" property="gmtCreate" />
+        <result column="operator_name" property="operatorName" />
+        <result column="operator" property="operator" />
+        <result column="gmt_modify" property="gmtModify" />
+    </resultMap>
+
+    <select id="selectPageBySearch" resultMap="VoucherRule">
+        select * from voucher_rule ${ew.customSqlSegment}
+    </select>
+
+    <select id="selectPageBySchemeSearch" resultMap="VoucherRule">
+        select
+           distinct vr.*
+        from
+            voucher_rule vr
+                left join voucher_scheme_rule vsr on
+                vr.id = vsr.voucher_rule_id
+                left join voucher_scheme vs on
+                vs.id = vsr.voucher_scheme_id
+            ${ew.customSqlSegment}
+        ORDER BY vr.rule_name
+    </select>
+
+</mapper>

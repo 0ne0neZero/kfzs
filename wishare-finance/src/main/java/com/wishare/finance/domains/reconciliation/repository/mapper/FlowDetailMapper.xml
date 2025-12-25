@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.reconciliation.repository.mapper.FlowDetailMapper">
+
+    <select id="statisticsAmount" resultType="com.wishare.finance.apps.model.reconciliation.dto.FlowStatisticsDto">
+        select
+        IFNULL( sum(fd.settle_amount) , 0 ) as totalAmount,
+        IFNULL( sum(if(fd.claim_status = 1,fd.settle_amount,0)), 0) as claimAmount,
+        IFNULL( sum(if(fd.claim_status = 0,fd.settle_amount,0)), 0) as unclaimedAmount
+        from flow_detail fd
+        where fd.deleted = 0
+        <if test="idList != null and idList.size() > 0">
+            and fd.id in
+            <foreach collection="idList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="statisticsAmount2" resultType="com.wishare.finance.apps.model.reconciliation.dto.FlowStatisticsDto">
+        select
+        IFNULL( sum(a.settle_amount) , 0 ) as totalAmount,
+        IFNULL( sum(if(a.claim_status = 1,a.settle_amount,0)), 0) as claimAmount,
+        IFNULL( sum(if(a.claim_status = 0,a.settle_amount,0)), 0) as unclaimedAmount,
+        IFNULL( sum(if(a.claim_status = 2,a.settle_amount,0)), 0) as suspendAmount
+        from (select distinct fd.id, fd.settle_amount, fd.claim_status
+              from flow_detail fd
+                       left join flow_claim_detail fcd on fd.id = fcd.flow_id and fcd.deleted = 0
+                       left join flow_claim_record fcr on fcd.flow_claim_record_id = fcr.id and fcr.deleted = 0
+                       LEFT JOIN statutory_body_account sba
+                                 ON fd.our_account = sba.bank_account
+                       LEFT JOIN bank_account_cost_org ba
+                                 ON ba.bank_account_id = sba.id
+                  ${ew.customSqlSegment}) as a
+    </select>
+
+    <select id="getListByInvoiceIds" resultType="com.wishare.finance.domains.reconciliation.dto.FlowInvoiceDetailDto">
+        select
+            fd.id,
+            fd.serial_number,
+            fd.settle_amount,
+            fd.pay_time,
+            fd.opposite_account,
+            fd.opposite_name,
+            fd.opposite_bank,
+            fd.our_account,
+            fd.our_name,
+            fd.our_bank,
+            fd.summary,
+            fd.fund_purpose,
+            fd.trading_platform,
+            fd.transaction_mode,
+            fcd.invoice_id,
+            fcd.flow_amount
+        from flow_detail fd
+        inner join flow_claim_detail fcd on fd.id = fcd.flow_id
+        where 1=1
+        <if test="state != null">
+           and fcd.state = #{state                                                                                                  }
+        </if>
+        and fcd.invoice_id in
+        <foreach collection="invoiceIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <select id="getNewReconciliationFlows" resultType="com.wishare.finance.domains.reconciliation.dto.FlowReconciliationDetailDto">
+        select
+            fcd.invoice_id,
+            fcd.flow_id,
+            fcd.flow_amount,
+            fcd.claim_type,
+            fcd.claim_id_type
+        from flow_claim_record fcr
+        left join  flow_claim_detail fcd on fcr.id = fcd.flow_claim_record_id
+        where 1=1
+            and fcd.state = 0
+            and fcd.deleted = 0
+            and  fcr.deleted = 0
+            and fcr.reconcile_flag != 1
+            and fcr.sup_cp_unit_id = #{supCpUnitId}
+
+    </select>
+
+
+    <select id="getReconciliationFlows" resultType="com.wishare.finance.domains.reconciliation.dto.FlowInvoiceReconciliationDetailDto">
+        select
+        fd.id,
+        fd.serial_number,
+        fd.settle_amount,
+        fd.pay_time,
+        fd.opposite_account,
+        fd.opposite_name,
+        fd.opposite_bank,
+        fd.our_account,
+        fd.our_name,
+        fd.our_bank,
+        fd.summary,
+        fd.fund_purpose,
+        fd.trading_platform,
+        fd.transaction_mode,
+        fcd.invoice_id,
+        fcd.flow_amount,
+        fcd.claim_type,
+        fcd.claim_id_type
+        from flow_detail fd
+        inner join flow_claim_detail fcd on fd.id = fcd.flow_id
+        where 1=1
+        <if test="state != null">
+            and fcd.state = #{state                                                                                                  }
+        </if>
+        and fcd.invoice_id in
+        <foreach collection="invoiceIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+  <select id="listByConditions" resultType="com.wishare.finance.domains.reconciliation.entity.FlowDetailE">
+      select * from flow_detail f ${ew.customSqlSegment}
+  </select>
+
+    <select id="getIdsByFlowIds" resultType="java.lang.Long">
+        select fcd.flow_claim_record_id from flow_claim_detail fcd where fcd.flow_id in
+        <foreach collection="flowIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryDetailPage" resultType="com.wishare.finance.domains.reconciliation.entity.FlowDetailE">
+        SELECT fd.*
+        FROM `flow_detail` fd
+            LEFT JOIN statutory_body_account sba
+                    ON fd.our_account = sba.bank_account
+            LEFT JOIN bank_account_cost_org ba
+                    ON ba.bank_account_id = sba.id
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryDetailPage2" resultType="com.wishare.finance.domains.reconciliation.FlowDetailVo">
+        SELECT distinct
+            fd.*,
+            fcr.id flowClaimRecordId,
+            fcr.serial_number flowClaimRecordSerialNumber,
+            vb.id voucherBillId,
+            vb.voucher_bill_no voucherBillNo
+        ba.cost_center_id,
+        ba.cost_center_name
+        FROM `flow_detail` fd
+        LEFT JOIN statutory_body_account sba ON fd.our_account = sba.bank_account
+        LEFT JOIN bank_account_cost_org ba ON ba.bank_account_id = sba.id
+        <!-- 流水认领记录 -->
+        left join flow_claim_detail fcd on fcd.flow_id = fd.id and fcd.deleted = 0
+        left join flow_claim_record fcr on fcr.id = fcd.flow_claim_record_id and fcr.deleted = 0
+        <!-- 报账单 -->
+        left join voucher_bill_zj vb on JSON_CONTAINS(vb.record_id_list,concat('',fcr.id,'')) and vb.deleted = 0
+        ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="queryDetailList" resultType="com.wishare.finance.domains.reconciliation.entity.FlowDetailE">
+        SELECT fd.*
+        FROM `flow_detail` fd
+                 LEFT JOIN statutory_body_account sba
+                           ON fd.our_account = sba.bank_account
+                 LEFT JOIN bank_account_cost_org ba
+                           ON ba.bank_account_id = sba.id
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="querySerialNumbers" parameterType="java.lang.Integer" resultType="java.lang.String">
+        SELECT serial_number
+        FROM flow_detail
+        WHERE deleted = #{state}
+    </select>
+
+    <update id="updateFlowClaimRecordFlag">
+        UPDATE  flow_claim_record  fcr  SET  fcr.reconcile_flag  = 1
+        where fcr.id  IN (
+
+            SELECT DISTINCT  fcd.flow_claim_record_id from flow_claim_detail fcd
+            WHERE  fcd.invoice_id  IN
+         <foreach collection="invoiceIds" item="item" separator="," open="(" close=")">
+            #{item}
+         </foreach>
+
+                  )
+    </update>
+
+    <update id="updateReconcileFlag">
+        UPDATE  flow_claim_record  fcr  SET  fcr.reconcile_flag  = #{reconcileFlag}
+        where fcr.id = #{flowClaimRecordId}
+    </update>
+
+
+    <select id="getFlowClaimRecord"  resultType="com.wishare.finance.domains.reconciliation.entity.FlowClaimRecordE">
+        select fcr.*
+            from  flow_claim_record fcr
+        left join flow_claim_detail fcd on  fcr.id = fcd.flow_claim_record_id
+        where fcd.flow_id = #{flowId}
+        limit 1
+    </select>
+
+    <select id="getFlowClaimDetailByInvoiceIds"  resultType="com.wishare.finance.domains.reconciliation.entity.FlowClaimDetailE">
+        SELECT   * from flow_claim_detail fcd
+          WHERE  fcd.invoice_id  IN
+        <foreach collection="invoiceIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getByFlowClaimRecordId"  resultType="com.wishare.finance.domains.reconciliation.entity.FlowClaimDetailE">
+        SELECT   * from flow_claim_detail fcd
+        WHERE  fcd.flow_claim_record_id  IN
+        <foreach collection="flowClaimRecordIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <select id="selectPayTime" resultType="java.lang.String" >
+        select
+          CASE
+                 WHEN MIN(fd.pay_time) = MAX(fd.pay_time)
+                     THEN MIN(fd.pay_time)
+                 ELSE CONCAT(MIN(fd.pay_time), ' - ', MAX(fd.pay_time))
+                 END AS payTime
+        from  flow_claim_detail  fcd
+        left join  flow_detail fd on fd.id = fcd.flow_id and  fcd.deleted = 0
+        where  fcd.invoice_id in
+        <foreach collection="invoiceIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getTenantId" resultType="com.wishare.finance.domains.reconciliation.entity.FlowDetailE" >
+        select * from  `flow_detail`
+        where deleted = 0
+        limit 1;
+    </select>
+
+    <select id="queryFlowDetailComplexPage" resultType="com.wishare.finance.apps.model.reconciliation.vo.FlowDetailComplexV">
+        select fd.*,
+               fcr.id as flow_claim_record_id,
+               fcr.serial_number as flow_claim_record_serial_number,
+               fcr.voucher_bill_id,
+               fcr.voucher_bill_no,
+               CASE
+                   <!-- 若fd.jsfsbh为NULL，走原逻辑取：fcr.pay_channel_type，兼容历史已经同步来的流水数据展示 -->
+                   WHEN fd.jsfsbh IS NULL THEN fcr.pay_channel_type
+                    <!-- 若fd.jsfsbh不为NULL，那么结算方式由fd.jsfsbh决定 -->
+                   WHEN fd.jsfsbh = '002' THEN 0
+                   ELSE 1
+               END AS payChannelType,
+               sba.statutory_body_id,
+               ba.cost_org_id
+        from flow_detail fd
+                 left join flow_claim_detail fcd on fd.id = fcd.flow_id and fcd.deleted = 0
+                 left join flow_claim_record fcr on fcd.flow_claim_record_id = fcr.id and fcr.deleted = 0
+                 left join statutory_body_account sba on fd.our_account = sba.bank_account
+                 left join bank_account_cost_org ba on ba.bank_account_id = sba.id
+            ${ew.customSqlSegment}
+    </select>
+
+
+</mapper>

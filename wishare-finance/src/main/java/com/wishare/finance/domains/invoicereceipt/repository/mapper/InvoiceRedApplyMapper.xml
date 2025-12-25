@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.invoicereceipt.repository.mapper.InvoiceRedApplyMapper">
+
+    <select id="getApplyByStatus"
+            resultType="com.wishare.finance.domains.invoicereceipt.entity.invoicing.InvoiceRedApplyE">
+        SELECT
+            id,
+            invoice_receipt_id,
+            gmt_modify,
+            operator,
+            operator_name,
+            gmt_create,
+            creator,
+            creator_name,
+            tenant_id,
+            detail,
+            request_status,
+            `status`,
+            red_reason,
+            bill_uuid,
+            blue_invoice_receipt_id,
+            invoice_serial_num
+        FROM invoice_red_apply
+        where status in
+        <foreach collection="statusList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+
+        <if test="beginDate != null">
+            and gmt_create > #{beginDate}
+        </if>
+    </select>
+</mapper>
+

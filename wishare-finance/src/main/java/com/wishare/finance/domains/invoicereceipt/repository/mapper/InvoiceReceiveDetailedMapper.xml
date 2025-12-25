@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.invoicereceipt.repository.mapper.InvoiceReceiveDetailedMapper">
+
+    <resultMap type="com.wishare.finance.domains.invoicereceipt.entity.invoicebook.InvoiceReceiveDetailedE" id="InvoiceReceiptDetailMap">
+        <result property="id" column="id" />
+        <result property="invoiceNum" column="invoice_num" />
+        <result property="state" column="state" />
+        <result property="deleted" column="deleted" />
+        <result property="tenantId" column="tenant_id" />
+        <result property="creatorName" column="creator_name" />
+        <result property="creator" column="creator" />
+        <result property="gmtCreate" column="gmt_create" />
+        <result property="operatorName" column="operator_name" />
+        <result property="operator" column="operator" />
+        <result property="gmtModify" column="gmt_modify" />
+        <result property="invoiceReceiveId" column="invoice_receive_id" />
+    </resultMap>
+
+    <sql id="field">
+        id, invoice_num, state, deleted, tenant_id, creator_name, creator, gmt_create, operator_name, operator, gmt_modify, invoice_receive_id
+    </sql>
+
+    <select id="getInvoiceReceiptNo" resultType="java.lang.String">
+        SELECT
+        invoice_num
+        FROM
+            `invoice_receive_detailed`
+        <where>
+            <if test="invoiceReceiptIds != null and invoiceReceiptIds.size() > 0">
+                and invoice_receive_id in
+                <foreach collection="invoiceReceiptIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="state != null">
+                and state = #{state}
+            </if>
+            <if test="invoiceType != null">
+                and invoice_type = #{invoiceType}
+            </if>
+            ORDER BY invoice_num ASC
+            <if test="pageSize != null">
+                LIMIT 0,#{pageSize}
+            </if>
+        </where>
+
+    </select>
+
+
+</mapper>
+

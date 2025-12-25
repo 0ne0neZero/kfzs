@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.organization.repository.mapper.ShareChargeCostOrgMapper">
+
+    <select id="getRelation"
+            resultType="com.wishare.finance.domains.configure.organization.dto.ShareChargeCostOrgDto">
+        select ci.name 'share_charge_name', sc.share_charge_id,sc.share_proportion,sc.cost_org_id
+        from share_charge_cost_org sc
+                 inner join charge_item ci
+                           on sc.share_charge_id = ci.id
+        where sc.cost_org_id = #{costOrdId}
+    </select>
+
+    <select id="getShareChargeInfo"
+            resultType="com.wishare.finance.domains.configure.organization.dto.ShareChargeCostOrgDto">
+        select sc.cost_org_id, sc.share_charge_id, sc.share_proportion,ci.name as shareChargeName from share_charge_cost_org sc
+            inner JOIN charge_item ci on sc.share_charge_id=ci.id
+            where sc.cost_org_id = #{costOrdId}
+              and ci.share_parent_id=#{shareChargeId}
+              LIMIT 1
+    </select>
+</mapper>

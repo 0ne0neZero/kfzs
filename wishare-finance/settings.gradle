@@ -1,0 +1,11 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            allowInsecureProtocol = true
+            url 'http://maven.uama.cc:7610/nexus/content/groups/public'
+        }
+    }
+}
+rootProject.name = 'wishare-finance'

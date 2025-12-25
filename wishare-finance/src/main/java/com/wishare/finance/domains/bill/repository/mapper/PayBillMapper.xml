@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.PayBillMapper">
+
+    <select id="queryPage" resultType="com.wishare.finance.domains.bill.dto.PayBillDto">
+        SELECT
+            b.*
+        FROM
+            (
+                SELECT
+                    pb.*,
+                    GROUP_CONCAT( DISTINCT pd.cost_center_id ) AS cost_center_id,
+                    GROUP_CONCAT( DISTINCT pd.cost_center_name ) AS cost_center_name,
+                    GROUP_CONCAT( DISTINCT pd.charge_item_id ) AS charge_item_id,
+                    GROUP_CONCAT( DISTINCT pd.charge_item_name ) AS charge_item_name,
+                    GROUP_CONCAT( DISTINCT pd.cp_org_id ) AS cp_org_id,
+                    GROUP_CONCAT( DISTINCT pd.cp_org_name ) AS cp_org_name,
+                    GROUP_CONCAT( DISTINCT pd.sup_cp_unit_id ) AS sup_cp_unit_id,
+                    GROUP_CONCAT( DISTINCT pd.sup_cp_unit_name ) AS sup_cp_unit_name,
+                    GROUP_CONCAT( DISTINCT pd.cp_unit_id ) AS cp_unit_id,
+                    GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS cp_unit_name
+                FROM
+                    pay_bill pb
+                        LEFT JOIN pay_detail pd ON pb.id = pd.pay_bill_id
+                GROUP BY
+                    pb.id
+            ) b
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryTotal" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        select
+            count(1) as billTotal,
+            sum(b.total_amount) as amountTotal,
+            SUM(b.discount_amount) as discountAmountTotal,
+            SUM(b.refund_amount ) AS refundAmountTotal,
+            SUM(b.carried_amount ) AS carriedAmountTotal,
+            SUM(b.total_amount - b.refund_amount - b.carried_amount ) AS actualPayAmountTotal
+        from pay_bill b
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryById" resultType="com.wishare.finance.domains.bill.dto.PayBillDto">
+        SELECT
+            b.*,
+            GROUP_CONCAT(DISTINCT pd.cost_center_id) as cost_center_id,
+            GROUP_CONCAT(DISTINCT pd.cost_center_name) as cost_center_name,
+            GROUP_CONCAT(DISTINCT pd.charge_item_id) as charge_item_id,
+            GROUP_CONCAT(DISTINCT pd.charge_item_name) as chargeItemName,
+            GROUP_CONCAT(DISTINCT pd.cp_org_id) as cp_org_id,
+            GROUP_CONCAT(DISTINCT pd.cp_org_name) as cp_org_name,
+            GROUP_CONCAT(DISTINCT pd.sup_cp_unit_id) as sup_cp_unit_id,
+            GROUP_CONCAT(DISTINCT pd.sup_cp_unit_name) as sup_cp_unit_name,
+            GROUP_CONCAT(DISTINCT pd.cp_unit_id) as cp_unit_id,
+            GROUP_CONCAT(DISTINCT pd.cp_unit_name) as cp_unit_name
+        FROM
+            pay_bill b
+                LEFT JOIN pay_detail pd on b.id = pd.pay_bill_id
+        where b.deleted = 0 and b.id = #{payBillId}
+        GROUP BY b.id
+    </select>
+
+    <select id="queryByIdList" resultType="com.wishare.finance.domains.bill.dto.PayBillDto">
+        SELECT
+        b.*,
+        GROUP_CONCAT(DISTINCT pd.cost_center_id) as cost_center_id,
+        GROUP_CONCAT(DISTINCT pd.cost_center_name) as cost_center_name,
+        GROUP_CONCAT(DISTINCT pd.charge_item_id) as charge_item_id,
+        GROUP_CONCAT(DISTINCT pd.charge_item_name) as chargeItemName,
+        GROUP_CONCAT(DISTINCT pd.cp_org_id) as cp_org_id,
+        GROUP_CONCAT(DISTINCT pd.cp_org_name) as cp_org_name,
+        GROUP_CONCAT(DISTINCT pd.sup_cp_unit_id) as sup_cp_unit_id,
+        GROUP_CONCAT(DISTINCT pd.sup_cp_unit_name) as sup_cp_unit_name,
+        GROUP_CONCAT(DISTINCT pd.cp_unit_id) as cp_unit_id,
+        GROUP_CONCAT(DISTINCT pd.cp_unit_name) as cp_unit_name
+        FROM
+        pay_bill b
+        LEFT JOIN pay_detail pd on b.id = pd.pay_bill_id
+        where b.deleted = 0
+        <if test="payBillIdList != null and payBillIdList.size() > 0">
+            and b.id in
+            <foreach collection="payBillIdList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY b.id
+    </select>
+
+    <select id="pageBillInferenceInfo" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+        select b.id, b.bill_no, b.statutory_body_id, b.statutory_body_name, bd.sup_cp_unit_id as communityId,
+               bd.sup_cp_unit_name as communityName, bd.inference_state, b.sys_source as `source`, b.sb_account_id,
+               bd.charge_item_id, bd.charge_item_name, bd.cp_unit_id as roomId, bd.cp_unit_name as roomName,
+               b.start_time, b.end_time, b.out_bill_no, b.out_bus_no, b.currency, b.total_amount, b.discount_amount,
+               bd.pay_amount as receivableAmount, b.discount_amount, b.carried_amount, b.refund_amount, b.invoice_amount,
+               b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.state, b.on_account, b.refund_state, b.verify_state,
+               b.approved_state, b.carried_state, b.invoice_state, b.reversed, b.reconcile_state, b.tax_rate, bd.id as concatId,
+               bd.pay_time as gmtCreate, bd.cost_center_id, bd.cost_center_name, bd.payable_bill_id as taxBillId
+        from pay_detail bd inner join pay_bill b on bd.pay_bill_id = b.id ${ew.customSqlSegment}
+    </select>
+
+    <select id="pageBillInferenceOffInfo" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+        select b.id, b.bill_no, b.statutory_body_id, b.statutory_body_name, bd.sup_cp_unit_id as communityId,
+               bd.sup_cp_unit_name as communityName, bd.inference_state, b.sys_source as `source`, b.sb_account_id,
+               bd.charge_item_id, bd.charge_item_name, bd.cp_unit_id as roomId, bd.cp_unit_name as roomName,
+               b.start_time, b.end_time, b.out_bill_no, b.out_bus_no, b.currency, b.total_amount, b.discount_amount,
+               bd.pay_amount as receivableAmount, b.discount_amount, b.carried_amount, b.refund_amount, b.invoice_amount,
+               b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.state, b.on_account, b.refund_state, b.verify_state,
+               b.approved_state, b.carried_state, b.invoice_state, b.reversed, b.reconcile_state, b.tax_rate, bd.id as concatId,
+               bd.pay_time as gmtCreate, bd.cost_center_id, bd.cost_center_name, bd.payable_bill_id as taxBillId
+        from pay_detail bd inner join pay_bill b on bd.pay_bill_id = b.id and (b.reversed = 1 or b.state = 2) ${ew.customSqlSegment}
+    </select>
+
+    <select id="listVoucherPayBillByQuery"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT
+            b.id AS businessBillId,
+            b.bill_no AS businessBillNo,
+            b.statutory_body_id,
+            b.statutory_body_name,
+            pd.cost_center_id,
+            pd.cost_center_name,
+            pd.charge_item_id,
+            pd.charge_item_name,
+            b.id AS sceneId,
+            #{sceneType}   as sceneType,
+            #{businessBillType}  as businessBillType,
+            b.total_amount,
+            pd.pay_amount AS actualPayAmount,
+            b.discount_amount,
+            b.tax_amount,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.account_year,
+            b.account_date,
+            b.sb_account_id,
+            b.sys_source,
+            pd.payee_id as customerId,
+            pd.payee_name as customerName,
+            b.business_unit_id
+        FROM pay_bill b
+                 LEFT JOIN pay_detail pd ON pd.pay_bill_id = b.id
+                 LEFT JOIN ${tableName} vbd ON vbd.scene_id = b.id and vbd.scene_type =  #{sceneType} AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+
+    <update id="updateAccountId">
+        UPDATE pay_bill SET sb_account_id = #{sbAccountId},
+                            pn_account_id = #{pnAccountId}
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+</mapper>

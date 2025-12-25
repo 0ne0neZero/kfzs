@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.reconciliation.repository.mapper.ReconciliationDetailMapper">
+
+    <select id="reconciliationClearDetailStatistics" resultType="com.wishare.finance.apps.model.reconciliation.vo.ReconciliationClearStatisticsV">
+        select IFNULL(sum(c), 0) as actualTotal,
+               IFNULL(sum(b), 0) as flowClaimTotal,
+               IFNULL(sum(a), 0) as commission
+        from (select distinct channel_seq_id,
+
+                              actual_amount
+                                  as c,
+                              channel_trade_amount
+                                  as b,
+                              commission
+                                  as a
+              from reconciliation_detail
+            ${ew.customSqlSegment}) as rd;
+
+
+    </select>
+
+    <select id="reconciliationDetailStatistics" resultType="com.wishare.finance.apps.model.reconciliation.vo.ReconciliationStatisticsV">
+        select
+            IFNULL( sum(actual_amount) , 0 ) as actualTotal,
+            IFNULL( sum(flow_claim_amount), 0) as flowClaimTotal,
+            IFNULL( sum(invoice_amount), 0) as invoiceTotal,
+            IFNULL( sum(receivable_amount), 0) as receivableAmount,
+             IFNULL( sum(refund_amount), 0) as carriedAmount
+        from reconciliation_detail
+                 ${ew.customSqlSegment}
+    </select>
+
+    <select id="getByBillIds" resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationDetailE">
+        select
+           *
+        from reconciliation_detail
+                where bill_id in
+        <foreach collection="billIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        and deleted = 0
+    </select>
+
+    <select id="getByBillIdsAndReconciliationId" resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationDetailE">
+        select
+        *
+        from reconciliation_detail
+        where bill_id in
+        <foreach collection="billIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        and deleted = 0 and reconciliation_id  = #{reconciliationId}
+    </select>
+
+    <select id="getByReconciliationId" resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationDetailE">
+        select
+        *
+        from reconciliation_detail
+        where reconciliation_id = #{reconciliationId}
+        and deleted = 0
+    </select>
+    <select id="reconciliationDetailPageYuan"
+            resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationDetailE">
+        select group_concat(distinct bill_no) billNo,
+               r.id,
+               r.recon_det_no,
+               r.statutory_body_id,
+               r.statutory_body_name,
+               r.cost_center_id,
+               r.cost_center_name,
+               r.charge_item_id,
+               r.charge_item_name,
+               r.bill_id,
+               r.bill_type,
+               r.reconciliation_id,
+               r.result,
+               r.reconcile_mode,
+               r.receivable_amount,
+               r.actual_amount,
+               r.invoice_amount,
+               r.receipt_amount,
+               r.refund_amount,
+               r.carried_amount,
+               r.act_refund_amount,
+               r.flow_claim_amount,
+               r.reconcile_time,
+               r.start_time,
+               r.end_time,
+               r.trade_time,
+               r.settle_ids,
+               r.invoice_ids,
+               r.flow_ids,
+               r.refund_ids,
+               r.sys_source,
+               r.commission,
+               r.pay_way,
+               r.pay_channel,
+               r.channel_mid,
+               r.channel_pay_way,
+               r.channel_seq_id,
+               r.channel_trade_amount,
+               r.channel_recon_state,
+               r.bank_seq_id,
+               r.deleted,
+               r.creator,
+               r.creator_name,
+               r.gmt_create,
+               r.operator,
+               r.operator_name,
+               r.gmt_modify,
+               voucher_bill_id,
+               voucher_bill_no
+        from reconciliation_detail r
+                  join reconciliation_yinlian l on r.channel_seq_id = l.search_reference_no and r.deleted=0 and l.deleted=0
+            ${ew.customSqlSegment}
+        group by channel_seq_id
+    </select>
+    <select id="reconciliationDetailPageNoYuan"
+            resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationDetailE">
+        select group_concat(distinct bill_no) billNo,
+               r.id,
+               r.recon_det_no,
+               r.statutory_body_id,
+               r.statutory_body_name,
+               r.cost_center_id,
+               r.cost_center_name,
+               r.charge_item_id,
+               r.charge_item_name,
+               r.bill_id,
+               r.bill_type,
+               r.reconciliation_id,
+               r.result,
+               r.reconcile_mode,
+               r.receivable_amount,
+               r.actual_amount,
+               r.invoice_amount,
+               r.receipt_amount,
+               r.refund_amount,
+               r.carried_amount,
+               r.act_refund_amount,
+               r.flow_claim_amount,
+               r.reconcile_time,
+               r.start_time,
+               r.end_time,
+               r.trade_time,
+               r.settle_ids,
+               r.invoice_ids,
+               r.flow_ids,
+               r.refund_ids,
+               r.sys_source,
+               r.commission,
+               r.pay_way,
+               r.pay_channel,
+               r.channel_mid,
+               r.channel_pay_way,
+               r.channel_seq_id,
+               r.channel_trade_amount,
+               r.channel_recon_state,
+               r.bank_seq_id,
+               r.deleted,
+               r.creator,
+               r.creator_name,
+               r.gmt_create,
+               r.operator,
+               r.operator_name,
+               r.gmt_modify,
+               voucher_bill_id,
+               voucher_bill_no
+        from reconciliation_detail r
+                  join reconciliation_yinlian l on r.channel_seq_id = l.seq_id and r.deleted=0 and l.deleted=0
+            ${ew.customSqlSegment}
+        group by channel_seq_id
+    </select>
+
+    <select id="getByBillIdsAndResult" resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationDetailE">
+        select
+        *
+        from reconciliation_detail
+        where bill_id in
+        <foreach collection="billIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        and deleted = 0
+        and result = 2
+    </select>
+
+</mapper>

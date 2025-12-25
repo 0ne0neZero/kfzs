@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.subject.repository.mapper.SubjectSystemMapper">
+    <sql id="tableFields" >
+        ss.id,
+        ss.code,
+        ss.name,
+        ss.disabled,
+        ss.tenant_id,
+        ss.deleted,
+        ss.creator_name,
+        ss.creator,
+        ss.gmt_create,
+        ss.operator_name,
+        ss.operator,
+        ss.gmt_modify
+    </sql>
+
+    <select id="queryPageByStatutoryBodyId" resultType="com.wishare.finance.domains.configure.subject.entity.SubjectSystemE">
+        SELECT DISTINCT
+            <include refid="tableFields" />
+        FROM
+        subject_system ss
+        INNER JOIN subject_statutory_relation ssr ON ss.id = ssr.subject_system_id
+        WHERE ssr.deleted = 0 and ss.deleted = 0
+        <if test="statutoryBodyId != null">
+            and ssr.statutory_body_id = #{statutoryBodyId}
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.mdm.repository.mapper.Mdm11Mapper">
+
+
+    <insert id="insertBatch">
+        INSERT INTO mdm11 (
+        id,
+        cusitem_fullname_chs,
+        is_disabled,
+        cusitem_name_chs,
+        treeinfo_is_detail,
+        treeinfo_path,
+        cusitem_code,
+        is_completed,
+        cusitem_property,
+        cusitem_category,
+        treeinfo_layer,
+        security_level,
+        def_number_col_01,
+        def_number_col_02,
+        def_number_col_03,
+        def_number_col_04,
+        def_number_col_05,
+        def_number_col_06,
+        def_number_col_07,
+        def_number_col_08,
+        def_number_col_09,
+        last_modified_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.id},
+            #{item.cusitemFullnameChs},
+            #{item.isDisabled},
+            #{item.cusitemNameChs},
+            #{item.treeinfoIsDetail},
+            #{item.treeinfoPath},
+            #{item.cusitemCode},
+            #{item.isCompleted},
+            #{item.cusitemProperty},
+            #{item.cusitemCategory},
+            #{item.treeinfoLayer},
+            #{item.securityLevel},
+            #{item.defNumberCol01},
+            #{item.defNumberCol02},
+            #{item.defNumberCol03},
+            #{item.defNumberCol04},
+            #{item.defNumberCol05},
+            #{item.defNumberCol06},
+            #{item.defNumberCol07},
+            #{item.defNumberCol08},
+            #{item.defNumberCol09},
+            #{item.lastModifiedTime}
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectCashFlowItems" resultType="com.wishare.finance.domains.mdm.entity.Mdm11E">
+        select *
+        from mdm11
+        where is_disabled = '0'
+    </select>
+</mapper>

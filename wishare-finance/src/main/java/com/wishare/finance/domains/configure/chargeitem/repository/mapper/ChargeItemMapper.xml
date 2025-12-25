@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.chargeitem.repository.mapper.ChargeItemMapper">
+    <sql id="tableFields" >
+        ci.id,
+        ci.code,
+        ci.name,
+        ci.attribute,
+        ci.parent_id,
+        ci.path,
+        ci.type,
+        ci.remark,
+        ci.showed,
+        ci.estimated,
+        ci.disabled,
+        ci.last_level,
+        ci.tenant_id,
+        ci.deleted,
+        ci.creator,
+        ci.creator_name,
+        ci.gmt_create,
+        ci.operator,
+        ci.operator_name,
+        ci.gmt_modify,
+        ci.business_flag,
+        ci.share_charge_id,
+        ci.share_parent_id
+    </sql>
+
+    <select id="getChargeItemByPath" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+        <include refid="tableFields" />
+        from
+        charge_item ci
+        where deleted = 0
+        <if test="idList != null and idList.size > 0">
+            and (
+            <foreach collection="idList" item="item" separator=" or ">
+                JSON_CONTAINS(ci.path, JSON_ARRAY(#{item}))
+            </foreach>
+            )
+        </if>
+        <if test="tenantId != null and tenantId != ''">
+            and ci.tenant_id = #{tenantId}
+        </if>
+    </select>
+
+    <select id="getChargeItemWithRateByPath" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+        <include refid="tableFields" />
+        from
+        charge_item ci
+        where ci.deleted = 0
+        <if test="idList != null and idList.size > 0">
+            and (
+            <foreach collection="idList" item="item" separator=" or ">
+                JSON_CONTAINS(ci.path, JSON_ARRAY(#{item}))
+            </foreach>
+            )
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        ORDER BY CONVERT(ci.code, SIGNED), ci.code
+    </select>
+
+    <select id="queryChargeItemByPage" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+        <include refid="tableFields" />
+        from
+        charge_item ci
+        where ci.id IN (
+            SELECT DISTINCT
+            JSON_EXTRACT( path, '$[0]' )
+            FROM
+            charge_item
+            ${ew.customSqlSegment}
+        )
+        ORDER BY CONVERT(ci.code, SIGNED), ci.code
+    </select>
+
+    <select id="getFilterChargeItemList" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+        <include refid="tableFields" />
+        from
+        charge_item ci
+        where ci.deleted = 0
+        <if test="tenantId != null and tenantId != ''">
+            and ci.tenant_id = #{tenantId}
+        </if>
+        <if test="filterId != null">
+            and (JSON_CONTAINS(ci.path, JSON_ARRAY(#{filterId})))
+        </if>
+    </select>
+
+    <select id="getLastLevelChargeItemList" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+            <include refid="tableFields" />
+        from charge_item ci
+        where  ci.id not in (select parent_id from charge_item where deleted = 0  and tenant_id = #{tenantId})
+    </select>
+
+    <select id="queryLastStage" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+        id,name,code,type,attribute
+        from charge_item
+        where deleted = 0 and disabled = 0 and tenant_id = #{tenantId}
+          and id not in (select parent_id from charge_item where tenant_id = #{tenantId} and parent_id != 0 and deleted = 0 GROUP BY parent_id)
+        <if test="typeList != null and typeList.size > 0">
+            and type in
+            <foreach collection="typeList" item="item" open="(" separator="," close=" )">
+                #{item}
+            </foreach>
+        </if>
+        <if test="attributeList != null and attributeList.size > 0">
+            and attribute in
+            <foreach collection="attributeList" item="item" open="(" separator="," close=" )">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="queryLastStageByPage" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+        <include refid="tableFields" />
+        from charge_item ci
+        ${ew.customSqlSegment}
+        and ci.id not in (select parent_id from charge_item where deleted=0 GROUP BY parent_id )
+
+    </select>
+
+    <select id="queryLastStageAndParentByPage" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+        <include refid="tableFields" />,
+        p.NAME AS parentName
+        from charge_item ci
+        INNER JOIN charge_item p ON ci.parent_id = p.id
+
+        ${ew.customSqlSegment}
+        and ci.id not in (select parent_id from charge_item where deleted=0 GROUP BY parent_id )
+
+    </select>
+
+    <select id="queryTaxItemNotRelationByPage" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+        <include refid="tableFields" />
+        from charge_item ci
+        LEFT JOIN tax_charge_item_relation tcir ON ci.id = tcir.charge_item_id and tcir.deleted = 0
+        ${ew.customSqlSegment}
+        <if test="lastStage != null and lastStage == 1">
+            and ci.id not in (select parent_id from charge_item GROUP BY parent_id)
+        </if>
+        order by ci.id desc
+    </select>
+
+    <select id="queryMaxCodeByParentId" resultType="java.lang.String">
+        select
+        MAX(code) as code
+        from charge_item ci
+        where ci.deleted = 0
+        <if test="parentId != null and parentId != ''">
+            and ci.parent_id = #{parentId}
+        </if>
+    </select>
+
+    <select id="queryChargeByLevelAndName" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        select
+        <include refid="tableFields" />
+        from charge_item ci
+        where deleted = 0
+        <if test="currentId != null">
+            and ci.id != #{currentId}
+        </if>
+        <if test="level != null">
+            and JSON_LENGTH(ci.path) = #{level}
+        </if>
+        <if test="name != null and name != ''">
+            and ci.name = #{name}
+        </if>
+        limit 1
+    </select>
+
+    <select id="lastChargeItems" resultType="com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemE">
+        SELECT
+        <include refid="tableFields" />
+        FROM charge_item AS ci
+        WHERE ci.id NOT IN
+              (
+                  SELECT DISTINCT(parent_id) FROM charge_item where deleted = 0
+              )
+          and deleted = 0
+        <if test="names != null and names.size > 0">
+            and
+            <foreach collection="names" item="name" open="(" separator="or" close=" )">
+                ci.name LIKE CONCAT('%', #{name}, '%')
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="getItemIdList" resultType="java.lang.String">
+        SELECT
+            ci.id
+        FROM
+            charge_item ci
+                INNER JOIN charge_item p ON ci.parent_id = p.id
+                AND ci.tenant_id = #{tenantId}
+                AND p.tenant_id = #{tenantId}
+        WHERE
+            ci.deleted = 0
+          AND ci.disabled = 0
+          AND ci.attribute = #{attribute}
+          AND ci.id NOT IN ( SELECT parent_id FROM charge_item WHERE deleted = 0 AND charge_item.tenant_id = #{tenantId} GROUP BY parent_id )
+        group by ci.id
+    </select>
+</mapper>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.reconciliation.repository.mapper.ReconcileRuleMapper">
+
+    <resultMap id="reconcileRuleEMap" type="com.wishare.finance.domains.reconciliation.entity.ReconcileRuleE">
+        <result property="id" column="id"/>
+        <result property="dimensionRule" column="dimension_rule"
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="scheduleRule" column="schedule_rule"
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="preconditions" column="preconditions"
+                typeHandler="com.wishare.finance.domains.reconciliation.support.ReconPreconditionsOBVJSONListTypeHandler"/>
+        <result property="reconcileType" column="reconcile_type"/>
+        <result property="reconcileMode" column="reconcile_mode"/>
+        <result property="ruleName" column="rule_name"/>
+        <result property="description" column="description"/>
+        <result property="scheduleId" column="schedule_id"/>
+        <result property="disabled" column="disabled"/>
+        <result property="executeState" column="execute_state"/>
+        <result property="payWayConditions" column="pay_way_conditions"/>
+        <result property="payChannelConditions" column="pay_channel_conditions"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="deleted" column="deleted"/>
+        <result property="creator" column="creator"/>
+        <result property="creatorName" column="creator_name"/>
+        <result property="gmtCreate" column="gmt_create"/>
+        <result property="operator" column="operator"/>
+        <result property="operatorName" column="operator_name"/>
+        <result property="gmtModify" column="gmt_modify"/>
+    </resultMap>
+
+    <select id="getByScheduleId" resultMap="reconcileRuleEMap">
+        select r.*
+        from reconcile_rule r
+        where r.reconcile_mode = 1
+          and r.reconcile_type = 0
+          and r.deleted = 0
+          and r.schedule_id = #{scheduleId}
+    </select>
+
+</mapper>

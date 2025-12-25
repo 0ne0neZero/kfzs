@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.subject.repository.mapper.AssisteInoutclassMapper">
+    <insert id="saveOrUpdateBatch">
+        insert into assiste_inoutclass (
+        id,
+        code,
+        name,
+        asc_code,
+        asc_name,
+        parent_code,
+        sync_system,
+        creator,
+        creator_name,
+        gmt_create,
+        operator,
+        operator_name,
+        gmt_modify) values
+        <foreach collection="aic" separator="," item="item" open="" close="">
+            (
+            #{item.id},
+            #{item.code},
+            #{item.name},
+            #{item.ascCode},
+            #{item.ascName},
+            #{item.parentCode},
+            #{item.syncSystem},
+            #{item.creator},
+            #{item.creatorName},
+            #{item.gmtCreate},
+            #{item.operator},
+            #{item.operatorName},
+            #{item.gmtModify})
+        </foreach>
+        on duplicate key update
+        name = values(name),
+        asc_code = values(asc_code),
+        asc_name = values(asc_name),
+        parent_code = values(parent_code),
+        sync_system = values(sync_system),
+        operator = values(operator),
+        operator_name = values(operator_name),
+        gmt_modify = values(gmt_modify)
+    </insert>
+
+    <select id="selectAssisteItems" resultType="com.wishare.finance.domains.configure.subject.entity.AssisteItemOBV">
+        select 3 as `type`,
+               code,
+               name,
+               asc_code,
+               asc_name
+        from assiste_inoutclass
+        where code like CONCAT('%', #{code}, '%')
+           or name like CONCAT('%', #{name}, '%') limit 500
+    </select>
+</mapper>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.PayDetailMapper">
+
+  <update id="batchUpdateDetailInferenceSate" parameterType="java.util.List">
+    update pay_detail set inference_state = #{state} where id in
+    <foreach collection="list" open="(" separator="," close=")" item="item">
+      #{item}
+    </foreach>
+  </update>
+
+  <select id="listInferenceInfoByIdAndInfer" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+    select b.id, b.bill_no, b.statutory_body_id, b.statutory_body_name, bd.sup_cp_unit_id as communityId,
+           bd.sup_cp_unit_name as communityName, bd.inference_state, b.sys_source as `source`, b.sb_account_id,
+           bd.charge_item_id, bd.charge_item_name, bd.cp_unit_id as roomId, bd.cp_unit_name as roomName,
+           b.start_time, b.end_time, b.out_bill_no, b.out_bus_no, b.currency, b.total_amount, b.discount_amount,
+           bd.pay_amount as receivableAmount, b.discount_amount, b.carried_amount, b.refund_amount, b.invoice_amount,
+           b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.state, b.on_account, b.refund_state, b.verify_state,
+           b.approved_state, b.carried_state, b.invoice_state, b.reversed, b.reconcile_state, b.tax_rate, bd.id as concatId,
+           bd.pay_time as gmtCreate, bd.cost_center_id, bd.cost_center_name, bd.payable_bill_id as taxBillId
+    from gather_detail bd inner join gather_bill b on bd.pay_bill_id = b.id ${ew.customSqlSegment}
+  </select>
+</mapper>

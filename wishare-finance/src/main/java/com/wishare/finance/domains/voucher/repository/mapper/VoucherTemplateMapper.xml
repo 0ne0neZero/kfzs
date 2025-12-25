@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.repository.mapper.VoucherTemplateMapper">
+
+    <resultMap id="VoucherTemplate" type="com.wishare.finance.domains.voucher.entity.VoucherTemplate">
+        <result column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="currency" property="currency" />
+        <result column="subject_system_id" property="subjectSystemId" />
+        <result column="subject_system_name" property="subjectSystemName" />
+        <result column="entries" property="entries" typeHandler="com.wishare.finance.domains.voucher.support.ListVoucherTemplateEntryHandler" />
+        <result column="disabled" property="disabled" />
+        <result column="red_voucher" property="redVoucher" />
+        <result column="deleted" property="deleted" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="creator_name" property="creatorName" />
+        <result column="creator" property="creator" />
+        <result column="gmt_create" property="gmtCreate" />
+        <result column="operator_name" property="operatorName" />
+        <result column="operator" property="operator" />
+        <result column="gmt_modify" property="gmtModify" />
+    </resultMap>
+
+    <select id="selectPageBySearch" resultMap="VoucherTemplate">
+        select * from voucher_template ${ew.customSqlSegment} ORDER BY name
+    </select>
+
+</mapper>

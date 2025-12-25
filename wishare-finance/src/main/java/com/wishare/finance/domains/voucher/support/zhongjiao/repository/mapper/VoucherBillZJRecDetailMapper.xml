@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.support.zhongjiao.repository.mapper.VoucherBillZJRecDetailMapper">
+
+
+    <delete id="deleteByVoucherBillNo">
+        delete from voucher_bill_zj_rec_detail
+        where inner_sheet_code = #{voucherBillNo}
+    </delete>
+
+    <select id="ftIdByVoucherBillNo" resultType="java.lang.String">
+        select distinct ft_id
+        from voucher_bill_zj_rec_detail
+        where deleted = 0
+        and inner_sheet_code = #{voucherBillNo}
+        and ft_id is not null
+    </select>
+
+    <!--根据报账单编号删除应收款明细数据-->
+    <update id="updateDeletedByVoucherBIllNo">
+        UPDATE  voucher_bill_zj_rec_detail
+        SET deleted  = 1,
+            gmt_modify = now()
+        WHERE inner_sheet_code = #{voucherBillNo}
+    </update>
+</mapper>

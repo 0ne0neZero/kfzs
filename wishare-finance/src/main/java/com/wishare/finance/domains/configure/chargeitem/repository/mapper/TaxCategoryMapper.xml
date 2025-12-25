@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.chargeitem.repository.mapper.TaxCategoryMapper">
+
+    <resultMap id="taxRateDetailDTO" type="com.wishare.finance.domains.configure.chargeitem.dto.tax.TaxCategoryD">
+        <!-- 定义cn_user字段的装载，一定不能少写 -->
+        <id property="id" column="id"/>
+        <result property="code" column="code"/>
+        <result property="name" column="name"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="path" column="path"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="disabled" column="disabled"/>
+        <result property="deleted" column="deleted"/>
+        <result property="creator" column="creator"/>
+        <result property="gmtCreate" column="gmt_create"/>
+        <result property="operator" column="operator"/>
+        <result property="gmtModify" column="gmt_modify"/>
+        <collection property="taxRateS" ofType="com.wishare.finance.domains.configure.chargeitem.dto.tax.TaxRateD">
+            <result property="taxRateId" column="taxRateId"/>
+            <result property="rate" column="rate"/>
+        </collection>
+    </resultMap>
+    <insert id="saveOrUpdateBatch">
+        insert into tax_category (
+        id,
+        code,
+        name,
+        parent_id,
+        path,
+        disabled,
+        creator,
+        creator_name,
+        gmt_create,
+        operator,
+        operator_name,
+        gmt_modify) values
+        <foreach collection="tcs" separator="," item="item" open="" close="">
+            (
+            #{item.id},
+            #{item.code},
+            #{item.name},
+            #{item.parentId},
+            #{item.path},
+            #{item.disabled},
+            #{item.creator},
+            #{item.creatorName},
+            #{item.gmtCreate},
+            #{item.operator},
+            #{item.operatorName},
+            #{item.gmtModify})
+        </foreach>
+        on duplicate key update
+        name = values(name),
+        parent_id = values(parent_id),
+        path = values(path),
+        disabled = values(disabled),
+        operator = values(operator),
+        operator_name = values(operator_name),
+        gmt_modify = values(gmt_modify)
+    </insert>
+
+    <select id="getTaxCategoryById" resultMap="taxRateDetailDTO">
+        SELECT tc.id,
+        tc.`code`,
+        tc.`name`,
+        tc.parent_id,
+        tc.path,
+        tc.tenant_id,
+        tc.disabled,
+        tc.deleted,
+        tc.creator,
+        tc.gmt_create,
+        tc.operator,
+        tc.gmt_modify,
+        tr.id as taxRateId,
+        tr.rate
+        FROM `tax_category` tc
+        LEFT JOIN tax_rate tr ON tc.id = tr.tax_category_id
+        where tc.id = #{id}
+        AND tc.deleted = 0 AND (tr.deleted = 0 || tr.deleted IS NULL)
+    </select>
+
+    <select id="getTaxCategoryList" resultMap="taxRateDetailDTO">
+        SELECT tc.id,
+        tc.`code`,
+        tc.`name`,
+        tc.parent_id,
+        tc.path,
+        tc.tenant_id,
+        tc.disabled,
+        tc.deleted,
+        tc.creator,
+        tc.gmt_create,
+        tc.operator,
+        tc.gmt_modify,
+        tr.id as taxRateId,
+        tr.rate
+        FROM `tax_category` tc
+        LEFT JOIN tax_rate tr ON tc.id = tr.tax_category_id
+        <where>
+            <if test="command.id != null ">
+                and tc.id = #{command}
+            </if>
+            <if test="command.name != null and command.name != ''">
+                and tc.name = #{form.name}
+            </if>
+            <if test="command.tenantId != null and command.tenantId != ''">
+                and tc.tenant_id = #{command.tenantId}
+            </if>
+        </where>
+        AND tc.deleted = 0 AND (tr.deleted = 0 || tr.deleted is NULL)
+        ORDER BY tc.gmt_create ASC
+    </select>
+
+
+    <select id="getTaxCategory" resultType="com.wishare.finance.domains.configure.chargeitem.entity.TaxCategoryE">
+        select * from tax_category
+        <where>
+            deleted = 0
+            <if test="command.id != null ">
+                and id = #{command.id}
+            </if>
+            <if test="command.name != null and command.name != ''">
+                and name = #{command.name}
+            </if>
+            <if test="command.tenantId != null and command.tenantId != ''">
+                and tenant_id = #{command.tenantId}
+            </if>
+        </where>
+    </select>
+
+    <select id="getTaxRate" resultType="com.wishare.finance.domains.configure.chargeitem.entity.TaxRateE">
+        select * from tax_rate where tax_category_id = #{taxCategoryId} and deleted = 0
+    </select>
+
+</mapper>
+

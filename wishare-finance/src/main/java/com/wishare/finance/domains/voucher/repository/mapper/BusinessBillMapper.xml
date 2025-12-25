@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.repository.mapper.BusinessBillMapper">
+
+
+    <select id="getByVoucherId" resultType="com.wishare.finance.domains.voucher.entity.BusinessBill">
+        SELECT * FROM `business_bill` WHERE JSON_CONTAINS(voucher_ids, #{voucherId})
+    </select>
+</mapper>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.invoicereceipt.repository.mapper.InvoiceBookMapper">
+
+    <resultMap type="com.wishare.finance.domains.invoicereceipt.entity.invoicebook.InvoiceBookE" id="InvoiceBookMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="invoiceBookNumber" column="invoice_book_number" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="buyOrgId" column="buy_org_id" jdbcType="INTEGER"/>
+        <result property="buyOrgName" column="buy_org_name" jdbcType="VARCHAR"/>
+        <result property="buyQuantity" column="buy_quantity" jdbcType="INTEGER"/>
+        <result property="denomination" column="denomination" jdbcType="INTEGER"/>
+        <result property="invoiceCode" column="invoice_code" jdbcType="VARCHAR"/>
+        <result property="state" column="state" jdbcType="INTEGER"/>
+        <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+        <result property="buyDate" column="buy_date" jdbcType="TIMESTAMP"/>
+        <result property="invoiceStartNumber" column="invoice_start_number" jdbcType="INTEGER"/>
+        <result property="invoiceEndNumber" column="invoice_end_number" jdbcType="INTEGER"/>
+    </resultMap>
+
+
+    <sql id="field">
+        id, invoice_book_number, type, buy_org_id, buy_org_name, buy_quantity, denomination, invoice_code, state, deleted, tenant_id, creator_name, creator, gmt_create, operator_name, operator, gmt_modify, buy_date, invoice_start_number, invoice_end_number
+    </sql>
+
+    <select id="queryPage" resultMap="InvoiceBookMap">
+        select
+        <include refid="field"></include>
+        FROM
+        invoice_book
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="getInvoiceReceiptCode"
+            resultType="com.wishare.finance.domains.invoicereceipt.entity.invoicebook.InvoiceBookE">
+        SELECT
+            ib.*
+        FROM
+            invoice_book ib
+                LEFT JOIN invoice_receive ir ON ir.receive_invoice_book_id = ib.id
+                LEFT JOIN invoice_receive_detailed ird ON ird.invoice_receive_id = ir.id
+        WHERE ird.invoice_num = #{invoiceNo}
+              and ib.type = #{type}
+    </select>
+
+
+</mapper>
+

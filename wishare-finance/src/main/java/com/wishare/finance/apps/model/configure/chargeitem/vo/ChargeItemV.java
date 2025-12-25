@@ -1,0 +1,113 @@
+package com.wishare.finance.apps.model.configure.chargeitem.vo;
+
+import com.wishare.finance.apps.model.configure.chargeitem.fo.TaxRateInfoF;
+import com.wishare.finance.domains.configure.chargeitem.command.chargeitem.ChargeItemBusinessCommand;
+import com.wishare.finance.domains.configure.chargeitem.entity.ChargeItemBusinessE;
+import com.wishare.starter.beans.Tree;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * 费项返回信息
+ *
+ * @author yancao
+ */
+@Getter
+@Setter
+@ApiModel("费项返回信息")
+public class ChargeItemV extends Tree<ChargeItemV, Long> {
+
+    @ApiModelProperty(value = "费项id")
+    private Long id;
+
+    @ApiModelProperty(value = "父费项id")
+    private Long parentId;
+
+    @ApiModelProperty("费项编码")
+    private String code;
+
+    @ApiModelProperty("费项名称")
+    private String name;
+
+    @ApiModelProperty(value = "费项类型")
+    private Integer type;
+
+    @ApiModelProperty(value = "费项属性 1收入,2支出，3代收代付及其他")
+    private Integer attribute;
+
+    @ApiModelProperty(value = "费项路径")
+    private List<Long> chargePath;
+
+    @ApiModelProperty(value = "业务标识")
+    private String businessFlag;
+
+    @ApiModelProperty(value = "分成费项编码id")
+    private String shareChargeId;
+
+    @ApiModelProperty(value = "分成费项父id")
+    private Long shareParentId;
+
+    @ApiModelProperty(value = "费项id路径 如：[1,2]")
+    private String path;
+
+    @ApiModelProperty(value = "备注")
+    private String remark;
+
+    @ApiModelProperty("是否禁用：0启用，1禁用")
+    private Integer disabled;
+
+    @ApiModelProperty("是否启用暂估收人:0未启用，1启用")
+    private Integer estimated;
+
+    @ApiModelProperty("是否显示:0隐藏 1显示")
+    private Integer showed;
+
+    @ApiModelProperty(value = "是否末级：0否,1是")
+    private Integer lastLevel;
+
+    @ApiModelProperty("创建人id")
+    private String creator;
+
+    @ApiModelProperty("创建人名称")
+    private String creatorName;
+
+    @ApiModelProperty("创建时间")
+    private LocalDateTime gmtCreate;
+
+    @ApiModelProperty("更新人id")
+    private String operator;
+
+    @ApiModelProperty("更新人名称")
+    private String operatorName;
+
+    @ApiModelProperty("更新时间")
+    private LocalDateTime gmtModify;
+
+    @ApiModelProperty(value = "税率路径")
+    private List<Long> ratePathList;
+
+    @ApiModelProperty(value = "分成费项信息")
+    private List<ShareChargeV> shareChargeVList;
+
+    @ApiModelProperty(value = "是否校验唯一性,1:关闭唯一性校验,其他:开启唯一性校验")
+    private Integer isUnique;
+
+    @ApiModelProperty(value = "是否为违约金 0 否 1 是")
+    private Integer isOverdue;
+
+    private List<ChargeItemBusinessCommand> businessCommands;
+
+    @ApiModelProperty(value = "业务板块编码")
+    private String businessSegmentCode;
+
+    @ApiModelProperty(value = "业务板块名称")
+    private String businessSegmentName;
+
+    @ApiModelProperty(value = "关联的税率id")
+    private List<TaxRateInfoF> taxRateInfos;
+}

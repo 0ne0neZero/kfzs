@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.support.zhongjiao.repository.mapper.VoucherBillDetailDxZJMapper">
+  <delete id="delete">
+    delete from voucher_bill_detail_dx_zj where voucher_bill_no = #{voucherBillNo}
+  </delete>
+
+
+  <select id="selectBySearch"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.entity.VoucherPushBillDetailDxZJ">
+            select * from voucher_bill_detail_dx_zj
+             ${ew.customSqlSegment}
+    </select>
+
+    <select id="selectVoucherPushBillDetailDxZJ"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.entity.VoucherPushBillDetailDxZJ">
+        select * from voucher_bill_detail_dx_zj
+                          ${ew.customSqlSegment}
+    </select>
+    <select id="queryMoney" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJDetailMoneyV">
+        select sum(tax_includ_amount)/100 as taxIncludAmount,
+               sum(tax_exclud_amount)/100 as taxExcludAmount
+        from voucher_bill_detail_dx_zj
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryConvertDetailMoney" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJConvertMoneyV">
+        select sum(tax_includ_amount)/100 as settleAmount,
+               sum(refund_amount)/100 as refundAmount
+        from voucher_bill_detail_dx_zj
+                 ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="queryFlowDetailPage" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJFlowDetailV">
+        select  distinct fcr.id,
+                fcr.serial_number,
+                fcr.claim_amount / 100 as claimAmount,
+                fcr.gmt_modify as claimDateTime,
+                fcr.sup_cp_unit_id,
+             CASE
+                 WHEN MIN(fd.pay_time) = MAX(fd.pay_time)
+                     THEN MIN(fd.pay_time)
+                 ELSE CONCAT(MIN(fd.pay_time), ' - ', MAX(fd.pay_time))
+                     END AS payTime
+            from  voucher_bill_detail_dx_zj  vbdz
+
+        left join flow_claim_detail  fcd on  vbdz.gather_bill_id = fcd.invoice_id and  fcd.deleted = 0  and fcd.state = 0
+        left join  flow_claim_record fcr on  fcr.id = fcd.flow_claim_record_id and  fcr.deleted = 0
+                and  vbdz.deleted = 0
+        left join  flow_detail  fd on fd.id = fcd.flow_id and fd.deleted = 0
+                ${ew.customSqlSegment}
+        group by fcr.id
+    </select>
+    <select id="queryFlowDetailPageNew" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJFlowDetailV">
+        select  distinct fcr.id,
+                         fcr.serial_number,
+                         fcr.claim_amount / 100 as claimAmount,
+                         fcr.claim_date as claimDateTime,
+                         fcr.sup_cp_unit_id,
+                         CASE
+                             WHEN MIN(fd.pay_time) = MAX(fd.pay_time)
+                                 THEN MIN(fd.pay_time)
+                             ELSE CONCAT(MIN(fd.pay_time), ' - ', MAX(fd.pay_time))
+                             END AS payTime
+        from  flow_claim_record fcr
+                  left join flow_claim_detail  fcd on   fcr.id = fcd.flow_claim_record_id and  fcr.deleted = 0 and  fcd.deleted = 0  and fcd.state = 0
+                  left join  flow_detail  fd on fd.id = fcd.flow_id and fd.deleted = 0
+            ${ew.customSqlSegment}
+        group by fcr.id
+    </select>
+    <select id="queryFlowClaimFilesV" resultType="com.wishare.finance.apps.pushbill.vo.FlowClaimFilesV" >
+        select  distinct
+            fcr.flow_files,
+            fcr.report_files,
+            fcr.claim_name,
+            fcr.gmt_create
+        from  voucher_bill_detail_dx_zj  vbdz
+                  left join flow_claim_detail  fcd on  vbdz.gather_bill_id = fcd.invoice_id and  fcd.deleted = 0 and fcd.state = 0
+                  left join  flow_claim_record fcr on  fcr.id = fcd.flow_claim_record_id and  fcr.deleted = 0
+                  and  vbdz.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryFlowClaimFilesVNew" resultType="com.wishare.finance.apps.pushbill.vo.FlowClaimFilesV" >
+        select  distinct
+            fcr.flow_files,
+            fcr.report_files,
+            fcr.claim_name,
+            fcr.gmt_create
+        from
+            flow_claim_record fcr
+        where fcr.id in
+        <foreach collection="ids" close=")" open="(" item="id" separator=",">
+            #{id}
+        </foreach>
+        and fcr.deleted = 0
+    </select>
+
+    <select id="queryConvertDetailPage" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJConvertDetailV" >
+        select
+            community_name,
+            charge_item_name,
+            tax_rate,
+            sum(refund_amount) as refundAmount,
+            sum(tax_includ_amount)/100 as settleAmount
+        from  voucher_bill_detail_dx_zj
+            ${ew.customSqlSegment}
+        group by  community_name,
+                  charge_item_name,
+                  tax_rate
+    </select>
+
+
+
+    <select id="queryRecDetailPage" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJRecDetailV" >
+        select
+            subject_name,
+            subject_ext_id as subjectIdExt,
+            sum(tax_includ_amount)/100 as taxIncludAmount
+        from  voucher_bill_detail_dx_zj
+                  ${ew.customSqlSegment}
+        group by  subject_name, subject_ext_id
+    </select>
+
+    <select id="queryRecCWYDetailPage" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJRecCWYDetailV" >
+        select
+            subject_name,
+            subject_ext_id as subjectIdExt,
+            sum(tax_includ_amount)/100 as taxIncludAmount,
+            sum(tax_exclud_amount)/100 as taxExcludAmount,
+            sum(tax_amount)/100 as taxAmount,
+            tax_rate as taxRate
+        from  voucher_bill_detail_dx_zj
+                  ${ew.customSqlSegment}
+        group by  subject_name, subject_ext_id, tax_rate
+    </select>
+
+
+
+    <select id="queryRecCWYDetail" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJRecCWYDetailV" >
+        select
+            vbd.subject_name subjectName,
+            vbd.subject_ext_id as subjectIdExt,
+            vbd.tax_includ_amount as taxIncludAmount,
+            vbd.tax_rate as taxRate,
+            tr.tax_type as taxType
+        from  voucher_bill_detail_dx_zj vbd
+        left join tax_rate tr on vbd.tax_rate_id = tr.id and tr.deleted = 0
+                  ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="queryCashFlowPage" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJCashFlowV" >
+        select
+            cash_flow_item as cashFlowName,
+            cash_flow_item_ext_id as cashFlowNameExtId,
+            sum(tax_includ_amount) /100 as amount,
+            "人民币" as currency
+        from  voucher_bill_detail_dx_zj
+                  ${ew.customSqlSegment}
+        group by cashFlowName,cashflow_item_ext_id
+    </select>
+
+
+    <select id="queryVoucherBillCostInfo" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillCostInfoV" >
+        select
+            subject_name as subjectName,
+            sum(tax_includ_amount) /100  as priceTaxAmount,
+            sum(tax_amount) /100 as deductibleAmount
+        from  voucher_bill_detail_dx_zj
+                  ${ew.customSqlSegment}
+        group by subject_name
+    </select>
+
+    <select id="getPaymentDetailsVByVoucherBillNoOnPay"
+            resultType="com.wishare.finance.apps.pushbill.vo.dx.vo.DxPaymentDetailsV">
+        select
+            vbddz.bill_id as billId,
+            vbddz.contract_name as contractName,
+            vbddz.community_id as communityId,
+            vbddz.community_name as communityName,
+            b.account_date as accountDate,
+            b.pay_time as payTime,
+            b.provision_status as provisionStatus,
+            b.settlement_status as settlementStatus,
+            cib.payment_id as paymentId,
+            cib.payment_code as paymentCode,
+            cib.payment_name as paymentName,
+            cib.signed_payment_id as signedPaymentId,
+            cib.signed_payment_code as signedPaymentCode,
+            cib.signed_payment_name as signedPaymentName,
+            0 as notSettlementAmount,
+            vbddz.tax_exclud_amount as taxExcludAmount,
+            vbddz.tax_includ_amount as taxIncludAmount,
+            vbddz.contract_id as contractId
+        from voucher_bill_detail_dx_zj vbddz
+        inner join receivable_bill b on b.id = vbddz.bill_id
+        left join charge_item ci on ci.id = b.charge_item_id
+        left join charge_item_business cib on cib.charge_item_id = b.charge_item_id
+            and cib.document_code = '004'
+            and cib.deleted = 0
+        where
+            vbddz.voucher_bill_no = #{voucherBillNo}
+            and vbddz.bill_event_type = #{billEventType}
+            and vbddz.deleted = 0
+            and b.sup_cp_unit_id = #{communityId}
+            and b.deleted = 0
+    </select>
+
+    <select id="getPaymentDetailsVByVoucherBillNoOnIncome"
+            resultType="com.wishare.finance.apps.pushbill.vo.dx.vo.DxPaymentDetailsV">
+        select
+            vbddz.bill_id as billId,
+            vbdz.voucher_bill_no as voucherBillNo,
+            vbddz.contract_id as contractId,
+            vbddz.contract_name as contractName,
+            vbddz.community_id as communityId,
+            vbddz.community_name as communityName,
+            vbddz.tax_rate_id as taxRateId,
+            b.account_date as accountDate,
+            b.pay_time as payTime,
+            b.provision_status as provisionStatus,
+            b.settlement_status as settlementStatus,
+            cib.payment_id as paymentId,
+            cib.payment_code as paymentCode,
+            cib.payment_name as paymentName,
+            cib.signed_payment_id as signedPaymentId,
+            cib.signed_payment_code as signedPaymentCode,
+            cib.signed_payment_name as signedPaymentName,
+            0 as notSettlementAmount,
+            vbddz.tax_exclud_amount as taxExcludAmount,
+            vbddz.tax_includ_amount as taxIncludAmount,
+            vbddz.tax_amount as taxAmount,
+            vbddz.tax_rate as taxRate,
+            vbddz.subject_id as subjectId,
+            vbddz.subject_name as subjectName
+        from voucher_bill_detail_dx_zj vbddz
+        inner join voucher_bill_dx_zj vbdz on vbdz.voucher_bill_no = vbddz.voucher_bill_no
+        left join tax_rate tr on tr.id = vbddz.tax_rate_id
+        left join receivable_bill b on b.id = vbddz.bill_id
+        left join charge_item ci on ci.id = b.charge_item_id
+        left join charge_item_business cib on cib.charge_item_id = b.charge_item_id
+            and cib.document_code = '023'
+            and cib.deleted = 0
+        where
+            vbddz.voucher_bill_no = #{voucherBillNo}
+          and vbddz.bill_event_type = #{billEventType}
+          and vbddz.deleted = 0
+          and b.sup_cp_unit_id = #{communityId}
+          and b.deleted = 0
+    </select>
+    <select id="getCostDetailsVByVoucherBillNoOnPay"
+            resultType="com.wishare.finance.apps.pushbill.vo.dx.vo.DxCostDetailsV">
+        select
+            vbddz.bill_id as billId,
+            vbddz.community_id as communityId,
+            vbddz.community_name as communityName,
+            vbddz.tax_includ_amount as taxInclusiveTotalAmount,
+            vbddz.tax_amount as deductibleTaxAmount,
+            vbddz.tax_exclud_amount as taxExcludedAmount,
+            cib.cost_payment_id as paymentId,
+            cib.cost_payment_code as paymentCode,
+            cib.cost_payment_name as paymentName,
+
+            smud.subject_level_last_id as subjectLevelLastId,
+            smud.subject_level_last_name as subjectLevelLastName
+
+        from voucher_bill_detail_dx_zj vbddz
+                 left join receivable_bill b on b.id = vbddz.bill_id
+                 left join charge_item ci on ci.id = b.charge_item_id
+                 left join charge_item_business cib on cib.charge_item_id = b.charge_item_id
+            and cib.document_code = '004'
+            and cib.deleted = 0
+                 left join subject_map_unit_detail smud on b.charge_item_id = smud.sub_map_unit_id
+            and smud.map_type = 1
+            and smud.subject_level_one_id = '162056287424141'
+        where
+            vbddz.voucher_bill_no = #{voucherBillNo}
+          and vbddz.bill_event_type = #{billEventType}
+          and vbddz.deleted = 0
+          and b.sup_cp_unit_id = #{communityId}
+          and b.deleted = 0
+    </select>
+
+    <select id="selectContractIdForMdm63OnPay" resultType="java.lang.String">
+        select distinct vbd.contract_id
+        from voucher_bill_detail_dx_zj vbd
+        left join voucher_bill_dx_zj vb on vb.voucher_bill_no = vbd.voucher_bill_no and vb.deleted = 0
+        where vbd.deleted = 0
+        and vbd.contract_id is not null
+        and vbd.contract_id != ''
+        and vb.push_state not in (1,3,5,6)
+        and vb.bill_event_type in (3,4,9)
+    </select>
+
+    <select id="selectContractIdForMdm63OnIncome" resultType="java.lang.String">
+        select distinct vbd.contract_id
+        from voucher_bill_detail_dx_zj vbd
+                 left join voucher_bill_dx_zj vb on vb.voucher_bill_no = vbd.voucher_bill_no and vb.deleted = 0
+        where vbd.deleted = 0
+          and vbd.contract_id is not null
+          and vbd.contract_id != ''
+        and vb.push_state not in (1,3,5,6)
+        and vb.bill_event_type in (5,6,8)
+    </select>
+
+    <select id="selectBZDBySearch"
+            resultType="com.wishare.finance.apps.pushbill.vo.PaymentApplicationBZDetailV">
+        select
+            vbddz.id as id,
+            vbddz.voucher_bill_detail_no as voucherBillDetailNo,
+            vbddz.voucher_bill_detail_no as billNO,
+            vbddz.gather_bill_no as gatherBillNo,
+            vbddz.bill_type as billType,
+            vbddz.community_id as communityId,
+            vbddz.community_name as communityName,
+            vbddz.invoice_state as invoiceState,
+            vbddz.tax_rate_id as taxRateId,
+            vbddz.tax_rate as taxRate,
+            vbddz.tax_amount as taxAmount,
+            vbddz.tax_exclud_amount as taxExcludAmount,
+            vbddz.tax_includ_amount as taxIncludAmount,
+            b.provision_status as provisionStatus,
+            b.invoice_state as invoiceState
+
+            from voucher_bill_detail_dx_zj vbddz
+          inner join receivable_bill b on b.id = vbddz.bill_id
+                      ${ew.customSqlSegment}
+    </select>
+
+    <update id="updatePushStateByVoucherBIllNo">
+        UPDATE  voucher_bill_detail_dx_zj
+        SET push_bill_state  = #{pushState}
+        WHERE voucher_bill_no = #{voucherBillNo}
+
+    </update>
+
+    <!--根据报账单号获取去重后封装数据-->
+    <select id="getbillDetailDxZjList" resultType="com.wishare.finance.domains.voucher.support.zhongjiao.entity.VoucherPushBillDetailDxZJ">
+        SELECT
+            voucher_bill_no,
+            GROUP_CONCAT(DISTINCT contract_name SEPARATOR ', ') AS contract_name,
+            IFNull(SUM(tax_includ_amount),0) AS tax_includ_amount,
+            IFNull(SUM(tax_exclud_amount),0) AS tax_exclud_amount,
+            MAX(community_name) AS community_name,
+            MAX(account_date) AS account_date,
+            max(bill_event_type) as bill_event_type
+        FROM
+            voucher_bill_detail_dx_zj
+        where deleted = 0
+        and voucher_bill_no IN
+        <foreach collection="voucherBillNoList" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        GROUP BY
+            voucher_bill_no;
+    </select>
+
+    <update id="deleteByVoucherBIllNo">
+        UPDATE  voucher_bill_detail_dx_zj
+        SET deleted  = 1
+        WHERE voucher_bill_no = #{voucherBillNo} and deleted = 0
+    </update>
+</mapper>

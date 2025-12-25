@@ -1,0 +1,340 @@
+package com.wishare.finance.infrastructure.remote.vo.customer;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.Accessors;
+import org.hibernate.validator.constraints.Length;
+import org.springframework.format.annotation.DateTimeFormat;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.alibaba.fastjson.annotation.JSONField;
+/**
+* <p>
+* 视图对象
+* </p>
+*
+* @author chenglong
+* @since 2023-07-0311
+*/
+@Getter
+@Setter
+@ToString
+@Accessors(chain = true)
+@ApiModel(value = "视图对象", description = "视图对象")
+public class CustomerV {
+
+    /**
+    * 主键ID
+    */
+    @ApiModelProperty("主键ID")
+    private String id;
+    /**
+    * 客户编码
+    */
+    @ApiModelProperty("客户编码")
+    private String code;
+    /**
+    * 客户名称
+    */
+    @ApiModelProperty("客户名称")
+    private String name;
+    /**
+    * 客户性质 1企业 2个人
+    */
+    @ApiModelProperty("客户性质 1企业 2个人")
+    private Integer nature;
+    /**
+     * 客户对接人所属组织ID
+     */
+    @ApiModelProperty("客户对接人所属组织ID")
+    private String chargeManPartId;
+    /**
+     * 客户对接人ID
+     */
+    @ApiModelProperty("客户对接人ID")
+    private String chargeManId;
+    /**
+     * 客户对接人
+     */
+    @ApiModelProperty("客户对接人")
+    private String chargeMan;
+    /**
+     * 对接人联系电话
+     */
+    @ApiModelProperty("对接人联系电话")
+    private String chargePhone;
+    /**
+     * 负责人ID
+     */
+    @ApiModelProperty("负责人ID")
+    private String managerId;
+    /**
+     * 负责人
+     */
+    @ApiModelProperty("负责人")
+    private String manager;
+    /**
+    * 行业分类编码
+    */
+    @ApiModelProperty("行业分类编码")
+    private String busTypeCode;
+    /**
+     * 分类名称
+     */
+    @ApiModelProperty("分类名称")
+    private String categoryName;
+    /**
+    * 行业分类
+    */
+    @ApiModelProperty("行业分类")
+    private String busType;
+    /**
+    * 客户品牌编码
+    */
+    @ApiModelProperty("客户品牌编码")
+    private String brandCode;
+    /**
+    * 客户品牌
+    */
+    @ApiModelProperty("客户品牌")
+    private String brand;
+    /**
+    * 客户来源编码
+    */
+    @ApiModelProperty("客户来源编码")
+    private String sourceCode;
+    /**
+    * 客户来源(1市场拓展 2自然来访 3内部推荐)
+    */
+    @ApiModelProperty("客户来源(1市场拓展 2自然来访 3内部推荐)")
+    private String source;
+    /**
+    * 级别编码
+    */
+    @ApiModelProperty("级别编码")
+    private String levelCode;
+    /**
+    * 级别名称
+    */
+    @ApiModelProperty("级别名称")
+    private String level;
+    /**
+    * 商机数量
+    */
+    @ApiModelProperty("商机数量")
+    private Integer chanceNum;
+    /**
+    * 是否成交:false未成交， true已成交
+    */
+    @ApiModelProperty("是否成交:false未成交， true已成交")
+    private Boolean dealStatus;
+    /**
+    * 合作状态(1合作中 2未合作  3已结束)
+    */
+    @ApiModelProperty("合作状态(1合作中 2未合作  3已结束)")
+    private Integer coopStatus;
+    /**
+    * 是否启用  0 开启 1 禁用
+    */
+    @ApiModelProperty("是否启用  0 开启 1 禁用")
+    private Integer disabled;
+    /**
+    * 纳税人资质编码
+    */
+    @ApiModelProperty("纳税人资质编码")
+    private Integer taxpayerTypeCode;
+    /**
+    * 纳税人识别号
+    */
+    @ApiModelProperty("纳税人识别号")
+    private String taxpayerCode;
+    /**
+    * 企业类型编码
+    */
+    @ApiModelProperty("企业类型编码")
+    private String enterpriseTypeCode;
+    /**
+    * 企业类型
+    */
+    @ApiModelProperty("企业类型")
+    private String enterpriseType;
+    /**
+    * 纳税人资质：1一般纳税人，2小规模纳税人，3简易征收纳税人，4政府机关
+    */
+    @ApiModelProperty("纳税人资质：1一般纳税人，2小规模纳税人，3简易征收纳税人，4政府机关")
+    private String taxpayerType;
+    /**
+    * 法人代表名称
+    */
+    @ApiModelProperty("法人代表名称")
+    private String legalManName;
+    /**
+    * 注册资本金
+    */
+    @ApiModelProperty("注册资本金")
+    private BigDecimal registerCapital;
+    /**
+    * 注册日期
+    */
+    @ApiModelProperty("注册日期")
+    @JsonFormat(pattern = "yyyy-MM-dd",timezone = "GMT+8")
+    @JSONField(format = "yyyy-MM-dd")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate registerDate;
+    /**
+    * 公司电话
+    */
+    @ApiModelProperty("公司电话")
+    private String phone;
+    /**
+    * 经营范围
+    */
+    @ApiModelProperty("经营范围")
+    private String serviceRange;
+    /**
+    * 注册地址省市区编码
+    */
+    @ApiModelProperty("注册地址省市区编码")
+    private String registerAddressCode;
+    /**
+    * 注册地址详细信息
+    */
+    @ApiModelProperty("注册地址详细信息")
+    private String registerAddressDetail;
+    /**
+    * 注册地址完整信息
+    */
+    @ApiModelProperty("注册地址完整信息")
+    private String registerAddress;
+    /**
+    * 个人-证件类型编码
+    */
+    @ApiModelProperty("个人-证件类型编码")
+    private String licenseTypeCode;
+    /**
+    * 个人-证件类型
+    */
+    @ApiModelProperty("个人-证件类型")
+    private String licenseType;
+    /**
+    * 个人-证件号码
+    */
+    @ApiModelProperty("个人-证件号码")
+    private String licenseNum;
+    /**
+    * 个人-性别 ( 男 or 女 )
+    */
+    @ApiModelProperty("个人-性别 ( 男 or 女 )")
+    private String sex;
+    /**
+    * 个人-出生日期
+    */
+    @ApiModelProperty("个人-出生日期")
+    @JsonFormat(pattern = "yyyy-MM-dd",timezone = "GMT+8")
+    @JSONField(format = "yyyy-MM-dd")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate birthDate;
+    /**
+    * 个人-年龄
+    */
+    @ApiModelProperty("个人-年龄")
+    private Integer age;
+    /**
+    * 个人-联系电话
+    */
+    @ApiModelProperty("个人-联系电话")
+    private String personPhone;
+    /**
+    * 个人-联系地址省市区编码
+    */
+    @ApiModelProperty("个人-联系地址省市区编码")
+    private String contactAddressCode;
+    /**
+    * 个人-联系地址详细信息
+    */
+    @ApiModelProperty("个人-联系地址详细信息")
+    private String contactAddressDetail;
+    /**
+    * 个人-联系地址完整信息
+    */
+    @ApiModelProperty("个人-联系地址完整信息")
+    private String contactAddress;
+    /**
+    * 租户id
+    */
+    @ApiModelProperty("租户id")
+    private String tenantId;
+    /**
+    * 创建时间
+    */
+    @ApiModelProperty("创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JSONField(format = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime gmtCreate;
+    /**
+    * 创建人ID
+    */
+    @ApiModelProperty("创建人ID")
+    private String creator;
+    /**
+    * 创建人姓名
+    */
+    @ApiModelProperty("创建人姓名")
+    private String creatorName;
+    /**
+    * 操作时间
+    */
+    @ApiModelProperty("操作时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone = "GMT+8")
+    @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JSONField(format = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime gmtModify;
+    /**
+    * 操作人ID
+    */
+    @ApiModelProperty("操作人ID")
+    private String operator;
+    /**
+    * 操作人姓名
+    */
+    @ApiModelProperty("操作人姓名")
+    private String operatorName;
+    /**
+    * 营业期限（开始）
+    */
+    @ApiModelProperty("营业期限（开始）")
+    @JsonFormat(pattern = "yyyy-MM-dd",timezone = "GMT+8")
+    @JSONField(format = "yyyy-MM-dd")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate busStartTime;
+    /**
+    * 统一社会信用代码
+    */
+    @ApiModelProperty("统一社会信用代码")
+    private String creditCode;
+    /**
+    * 营业期限（结束）
+    */
+    @ApiModelProperty("营业期限（结束）")
+    @JsonFormat(pattern = "yyyy-MM-dd",timezone = "GMT+8")
+    @JSONField(format = "yyyy-MM-dd")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate busEndTime;
+    /**
+     * 主数据编码 外部编码
+     */
+    @ApiModelProperty("主数据编码 外部编码")
+    private String mainDataCode;
+    /**
+     * 是否集团内单位0否1是
+     */
+    @ApiModelProperty("是否集团内单位 0否1是")
+    private String isInner;
+
+}

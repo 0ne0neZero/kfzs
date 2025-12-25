@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.ncc.repository.mapper.NcTaskMapper">
+
+
+  <select id="pageSupplierAndCustomer" resultType="com.alibaba.fastjson.JSONObject">
+    select *
+    from wishare_org.merchant
+    where deleted = 0
+  </select>
+
+  <select id="pageSpaceCommunity" resultType="com.alibaba.fastjson.JSONObject">
+    select *
+    from wishare_space.space_community
+    where disabled = 0
+  </select>
+
+  <select id="pageSpaceCommunityByName" resultType="com.alibaba.fastjson.JSONObject">
+    select id as code, `name`
+    from wishare_space.space_community
+    where disabled = 0
+    <if test="name != null">
+      and `name` like concat('%', #{name},'%')
+    </if>
+    limit 100
+  </select>
+
+  <select id="pageOrgFinance" resultType="com.alibaba.fastjson.JSONObject">
+    select *
+    from wishare_org.org_finance
+    where disabled = 0 and deleted = 0
+  </select>
+
+  <select id="getOrgFinanceByName" resultType="com.alibaba.fastjson.JSONObject">
+    select id as code, nameCn as `name`
+    from wishare_org.org_finance
+    where disabled = 0 and deleted = 0
+    <if test="name != null">
+      and nameCn like concat('%', #{name},'%')
+    </if>
+    limit 100
+  </select>
+</mapper>
+

@@ -1,0 +1,806 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.BillReconciliationMapper">
+
+    <update id="updateAdvance">
+        update advance_bill b
+        <if test="reconcileMode == 0">
+            set b.reconcile_state  = #{reconcileState}
+        </if>
+        <if test="reconcileMode == 1">
+            set b.mc_reconcile_state = #{reconcileState}
+        </if>
+        where b.id in
+        <foreach collection="billIds" item="item" separator="," open="(" close=")">
+            ${item}
+        </foreach>
+    </update>
+
+    <update id="updateGather">
+        update gather_bill b
+        <if test="reconcileMode == 0">
+            set b.reconcile_state  = #{reconcileState}
+        </if>
+        <if test="reconcileMode == 1">
+            set b.mc_reconcile_state = #{reconcileState}
+        </if>
+        where b.id in
+        <foreach collection="billIds" item="item" separator="," open="(" close=")">
+            ${item}
+        </foreach>
+        and b.sup_cp_unit_id = #{supCpUnitId}
+    </update>
+    <update id="updateRec">
+        update ${receivableBillName} rb
+        inner join ${gatherDetailName} gd on rb.id = gd.rec_bill_id
+        <if test="reconcileMode == 0">
+            <if test="reconcileState == 2">
+                set rb.reconcile_state  = (case when rb.settle_state = 1 then 1 else 2 end)
+            </if>
+            <if test="reconcileState != 2">
+                set rb.reconcile_state  = #{reconcileState}
+            </if>
+        </if>
+        <if test="reconcileMode == 1">
+            set rb.mc_reconcile_state = #{reconcileState}
+        </if>
+        where gd.gather_bill_id in
+        <foreach collection="billIds" item="item" separator="," open="(" close=")">
+            ${item}
+        </foreach>
+        and rb.sup_cp_unit_id = #{supCpUnitId}
+        and gd.sup_cp_unit_id = #{supCpUnitId}
+    </update>
+
+    <update id="updateReceivableBill">
+        update receivable_bill rb
+        <if test="reconcileMode == 0">
+            <if test="reconcileState == 2">
+                set rb.reconcile_state  = (case when rb.settle_state = 1 then 1 else 2 end)
+            </if>
+            <if test="reconcileState != 2">
+                set rb.reconcile_state  = #{reconcileState}
+            </if>
+        </if>
+        <if test="reconcileMode == 1">
+            set rb.mc_reconcile_state = #{reconcileState}
+        </if>
+        where rb.id in
+        <foreach collection="ids" item="item" separator="," open="(" close=")">
+            ${item}
+        </foreach>
+        and rb.sup_cp_unit_id = #{supCpUnitId}
+    </update>
+
+    <update id="updatePay">
+        update pay_bill pb
+        <if test="reconcileMode == 0">
+            set pb.reconcile_state  = #{reconcileState}
+        </if>
+        <if test="reconcileMode == 1">
+            set pb.mc_reconcile_state = #{reconcileState}
+        </if>
+        where pb.id in
+        <foreach collection="billIds" item="item" separator="," open="(" close=")">
+            ${item}
+        </foreach>
+    </update>
+    <select id="queryMerchantClearingReconciliationGroup" resultType="com.wishare.finance.domains.bill.dto.ReconciliationGroupDto">
+        SELECT
+        fb.statutory_body_id,
+        fb.statutory_body_name,
+--         fb.charge_item_id,
+--         fb.charge_item_name,
+        fb.cost_center_id,
+        fb.cost_center_name,
+        fb.sup_cp_unit_id as community_id ,
+        fb.sup_cp_unit_name as community_name,
+        fb.bill_type
+        FROM (
+        select
+        b.statutory_body_id,
+        b.statutory_body_name,
+--         gd.charge_item_id,
+--         gd.charge_item_name,
+        gd.cost_center_id,
+        gd.cost_center_name,
+        gd.sup_cp_unit_id,
+        gd.sup_cp_unit_name,
+        7 AS bill_type
+        from
+        ${gatherBillName} b
+        INNER JOIN ${gatherDetailName} gd ON
+        gd.gather_bill_id = b.id
+        where
+        b.deleted = 0
+        and gd.sup_cp_unit_id = #{supCpUnitId}
+        <if test="reconcileMode == 0">
+            and b.reconcile_state  &lt;> 2
+        </if>
+        <if test="reconcileMode == 1">
+            and b.mc_reconcile_state &lt;> 2
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        group by
+        <foreach collection="groupFields" item="item" separator="," open="" close="">
+            ${item}
+        </foreach>
+        ) fb
+        GROUP BY
+        <foreach collection="groupFields" item="item" separator="," open="" close="">
+            ${item}
+        </foreach>
+    </select>
+    <select id="queryReconciliationGroup" resultType="com.wishare.finance.domains.bill.dto.ReconciliationGroupDto">
+        SELECT
+        fb.statutory_body_id,
+        fb.statutory_body_name,
+        fb.cost_center_id,
+        fb.cost_center_name,
+        fb.sup_cp_unit_id as community_id,
+        fb.sup_cp_unit_name as community_name,
+        fb.bill_type
+        FROM (
+<!--        select-->
+<!--        b.statutory_body_id,-->
+<!--        b.statutory_body_name,-->
+<!--        pd.cost_center_id,-->
+<!--        pd.cost_center_name,-->
+<!--        pd.sup_cp_unit_id ,-->
+<!--        pd.sup_cp_unit_name,-->
+<!--        6 as bill_type-->
+<!--        from-->
+<!--        pay_bill b-->
+<!--        inner join pay_detail pd on b.id = pd.pay_bill_id-->
+<!--        where-->
+<!--        b.deleted = 0 and  pd.sup_cp_unit_id = #{supCpUnitId}-->
+<!--        <if test="reconcileMode == 0">-->
+<!--            and b.reconcile_state  &lt;> 2-->
+<!--        </if>-->
+<!--        <if test="reconcileMode == 1">-->
+<!--            and b.mc_reconcile_state &lt;> 2-->
+<!--        </if>-->
+<!--        <if test="ew != null">-->
+<!--            <if test="ew.nonEmptyOfWhere">-->
+<!--                AND-->
+<!--            </if>-->
+<!--            ${ew.sqlSegment}-->
+<!--        </if>-->
+<!--        group by-->
+<!--        <foreach collection="groupFields" item="item" separator="," open="" close="">-->
+<!--            ${item}-->
+<!--        </foreach>-->
+<!--        UNION ALL-->
+        select
+        b.statutory_body_id,
+        b.statutory_body_name,
+        gd.cost_center_id,
+        gd.cost_center_name,
+        gd.sup_cp_unit_id ,
+        gd.sup_cp_unit_name,
+        7 as bill_type
+        from
+        ${gatherDetailName} gd
+        inner join ${gatherBillName} b on gd.gather_bill_id = b.id
+        where
+         b.deleted = 0 and  gd.sup_cp_unit_id = #{supCpUnitId}
+        <if test="reconcileMode == 0">
+            and b.reconcile_state  &lt;> 2
+        </if>
+        <if test="reconcileMode == 1">
+            and b.mc_reconcile_state &lt;> 2
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        group by
+        <foreach collection="groupFields" item="item" separator="," open="" close="">
+            ${item}
+        </foreach>
+        ) fb
+        GROUP BY
+        <foreach collection="groupFields" item="item" separator="," open="" close="">
+            ${item}
+        </foreach>
+    </select>
+
+    <select id="getReconcileGroupsClear" resultType="com.wishare.finance.domains.bill.dto.ReconciliationGroupDto">
+        SELECT
+        fb.statutory_body_id,
+        fb.statutory_body_name,
+        fb.charge_item_id,
+        fb.charge_item_name,
+        fb.cost_center_id,
+        fb.cost_center_name,
+        fb.community_id,
+        fb.community_name
+        FROM (
+        SELECT
+            b.statutory_body_id,
+            b.statutory_body_name,
+            det.charge_item_id,
+            det.charge_item_name,
+            det.cost_center_id,
+            det.cost_center_name,
+            det.sup_cp_unit_id AS community_id,
+            det.sup_cp_unit_name AS community_name
+        FROM
+            ${gatherBillName} b
+                LEFT JOIN ${gatherDetailName} det ON b.id = det.gather_bill_id
+        group by
+        <foreach collection="groupFields" item="item" separator="," open="" close="">
+            ${item}
+        </foreach>
+        UNION ALL
+        SELECT
+            b.statutory_body_id,
+            b.statutory_body_name,
+            det.charge_item_id,
+            det.charge_item_name,
+            det.cost_center_id,
+            det.cost_center_name,
+            det.sup_cp_unit_id AS community_id,
+            det.sup_cp_unit_name AS community_name
+        FROM
+            pay_bill b
+                LEFT JOIN pay_detail det ON b.id = det.pay_bill_id
+        group by
+        <foreach collection="groupFields" item="item" separator="," open="" close="">
+            ${item}
+        </foreach>
+        UNION ALL
+        SELECT
+            b.statutory_body_id,
+            b.statutory_body_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.community_id,
+            b.community_name
+        FROM
+            advance_bill b
+                LEFT JOIN ${gatherDetailName} det ON b.id = det.gather_bill_id
+        group by
+        <foreach collection="groupFields" item="item" separator="," open="" close="">
+            ${item}
+        </foreach>)
+        fb
+        GROUP BY
+        <foreach collection="groupFields" item="item" separator="," open="" close="">
+            ${item}
+        </foreach>
+    </select>
+    <select id="getMerchantClearingReconciliationBill" resultType="com.wishare.finance.domains.bill.dto.ReconciliationBillDto">
+        SELECT
+         DISTINCT b.id,
+         b.bank_flow_no,
+         b.bill_no,
+         b.start_time,
+         b.end_time,
+         b.pay_time AS trade_time,
+         b.refund_amount,
+         b.carried_amount,
+         b.total_amount AS receivableAmount,
+         b.total_amount as noReductionAmount,
+         (b.total_amount - b.refund_amount - b.carried_amount) AS actualAmount,
+         b.trade_no,
+         b.statutory_body_id,
+         b.statutory_body_name,
+         b.sb_account_id,
+         b.sys_source,
+         -- gd.charge_item_id,
+         -- gd.charge_item_name,
+         gd.cost_center_id,
+         gd.cost_center_name,
+         gd.sup_cp_unit_id,
+         gd.sup_cp_unit_name,
+         gd.pay_channel,
+         gd.pay_way,
+         7 AS bill_type
+        FROM ${gatherDetailName} gd
+                 INNER JOIN ${gatherBillName} b ON
+                    gd.gather_bill_id = b.id
+        WHERE  b.deleted = 0
+          <if test="beginDate != null">
+              and b.pay_time &gt; CONCAT(#{beginDate},' 00:00:00')
+          </if>
+        and b.pay_time &lt; CONCAT(#{endDate},' 23:59:59')
+        and gd.pay_channel in ('UNIONPAY','ALIPAY','WECHATPAY','TLALLINPAY',
+                               'ALLINPAY_ALIAPPLET','ALLINPAY_WXAPPLET','ALLINPAY_UNIT_ALI',
+                               'ALLINPAY_UNIT_WX', 'ALLINPAY_UNIT_POS', 'WECHAT_MINI_PROGRAM_PAY', 'POS_SWIPE')
+        and b.mc_reconcile_state &lt;> 2
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        order by id
+    </select>
+
+    <select id="getReconciliationPayBill" resultType="com.wishare.finance.domains.bill.dto.ReconciliationBillDto">
+        select
+            distinct
+            pb.id,
+            pb.bill_no,
+            pb.start_time,
+            pb.end_time,
+            pb.pay_time as trade_time,
+            pb.refund_amount,
+            pb.carried_amount,
+            pb.total_amount as receivableAmount,
+            (pb.total_amount - pb.refund_amount - pb.carried_amount) as actualAmount,
+            pb.trade_no,
+            pb.statutory_body_id,
+            pb.statutory_body_name,
+            pb.sb_account_id,
+            pb.sys_source,
+--             pd.charge_item_id,
+--             pd.charge_item_name,
+            pd.cost_center_id,
+            pd.cost_center_name,
+            pd.sup_cp_unit_id ,
+            pd.sup_cp_unit_name,
+            pd.pay_channel,
+            pd.pay_way,
+            6 as bill_type
+        from  pay_bill pb inner join pay_detail pd on pb.id =  pd.pay_bill_id
+        where   pb.deleted = 0 and pd.deleted = 0
+          and pd.sup_cp_unit_id = #{supCpUnitId}
+        and pd.id in
+        <foreach collection="payBillIdList" item="item" separator="," open="(" close=")">
+        #{item}
+        </foreach>
+        <if test="reconcileMode == 0">
+            and pb.reconcile_state &lt;> 2
+        </if>
+        <if test="reconcileMode == 1">
+            and pb.mc_reconcile_state &lt;> 2
+        </if>
+    </select>
+
+
+    <select id="getFYReconciliationGatherBill" resultType="com.wishare.finance.domains.bill.dto.ReconciliationBillDto">
+        select
+        distinct b.id,
+        b.bill_no,
+        b.start_time,
+        b.end_time,
+        b.pay_time as trade_time,
+        b.refund_amount,
+        b.carried_amount,
+        b.total_amount as receivableAmount,
+        b.total_amount as noReductionAmount,
+        (b.total_amount - b.refund_amount - b.carried_amount) as actualAmount,
+        b.trade_no,
+        b.statutory_body_id,
+        b.statutory_body_name,
+        b.sb_account_id,
+        b.sys_source,
+        --         gd.charge_item_id,
+        --         gd.charge_item_name,
+        gd.cost_center_id,
+        gd.cost_center_name,
+        gd.sup_cp_unit_id ,
+        gd.sup_cp_unit_name,
+        b.pay_channel,
+        b.pay_way,
+        7 as bill_type
+        from
+        ${gatherBillName} b
+        inner join  ${gatherDetailName} gd on b.id = gd.gather_bill_id
+        where
+        b.deleted = 0   and gd.sup_cp_unit_id = #{supCpUnitId}  and b.approved_state = 2
+        and b.id in
+        <foreach collection="gatherBillIdList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        <if test="reconcileMode == 0">
+            and b.reconcile_state &lt;> 2
+        </if>
+        <if test="reconcileMode == 1">
+            and b.mc_reconcile_state &lt;> 2
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        order by id
+
+    </select>
+
+
+
+    <select id="getGatherBillForOffLine" resultType="com.wishare.finance.domains.bill.dto.ReconciliationBillDto">
+        select
+            b.id,
+            b.bill_no,
+            gd.cost_center_id,
+            gd.cost_center_name,
+            b.statutory_body_id,
+            b.statutory_body_name,
+            b.sup_cp_unit_id  as supCpUnitId,
+            b.sup_cp_unit_name as supCpUnitName,
+            b.bank_flow_no,
+            b.pay_time as tradeTime,
+            b.total_amount as actualAmount
+        from
+            gather_bill b
+        left join  gather_detail gd on b.id = gd.gather_bill_id
+        where b.pay_time <![CDATA[ >=  ]]> #{startTime}
+          and b.pay_time <![CDATA[ <=  ]]> #{endTime}
+        and b.pay_channel = 'OFFLINE_UNION_PAY'
+        and b.mc_reconcile_state in (0, 3)
+        and b.sup_cp_unit_id  = #{supCpUnitId}
+        and gd.sup_cp_unit_id  = #{supCpUnitId}
+        and gd.cost_center_id = #{costCenterId}
+     </select>
+
+
+
+
+
+    <select id="getReconciliationGatherBill" resultType="com.wishare.finance.domains.bill.dto.ReconciliationBillDto">
+        select
+        distinct
+        b.id,
+        b.bill_no,
+        b.start_time,
+        b.end_time,
+        b.pay_time as trade_time,
+        gd.refund_amount,
+        gd.carried_amount,
+        gd.rec_pay_amount AS receivableAmount,
+        (gd.pay_amount - gd.refund_amount - gd.carried_amount ) AS actualAmount,
+        b.trade_no,
+        b.statutory_body_id,
+        b.statutory_body_name,
+        b.sb_account_id,
+        b.sys_source,
+--         gd.charge_item_id,
+--         gd.charge_item_name,
+        gd.cost_center_id,
+        gd.cost_center_name,
+        gd.sup_cp_unit_id ,
+        gd.sup_cp_unit_name,
+        b.pay_channel,
+        b.pay_way,
+        7 as billType,
+        rb.id as recId
+        from
+        ${gatherBillName} b
+        left join  ${gatherDetailName} gd on b.id = gd.gather_bill_id
+        left join  ${receivableBillName} rb on gd.rec_bill_id = rb.id
+        where
+         b.deleted = 0
+        and gd.sup_cp_unit_id = #{supCpUnitId}
+        and NOT EXISTS (
+            SELECT 1
+                FROM ${gatherDetailName} pd
+            WHERE b.id = pd.gather_bill_id AND pd.available = 1
+        )
+        and rb.invoice_state in (2, 3)
+        <if test="reconcileMode == 0">
+            and b.reconcile_state &lt;> 2
+        </if>
+        <if test="reconcileMode == 1">
+            and b.mc_reconcile_state &lt;> 2
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+
+    UNION ALL
+        select
+        distinct
+        b.id,
+        b.bill_no,
+        b.start_time,
+        b.end_time,
+        b.pay_time as trade_time,
+        gd.refund_amount,
+        gd.carried_amount,
+        gd.rec_pay_amount AS receivableAmount,
+        (gd.pay_amount - gd.refund_amount - gd.carried_amount ) AS actualAmount,
+        b.trade_no,
+        b.statutory_body_id,
+        b.statutory_body_name,
+        b.sb_account_id,
+        b.sys_source,
+        --         gd.charge_item_id,
+        --         gd.charge_item_name,
+        gd.cost_center_id,
+        gd.cost_center_name,
+        gd.sup_cp_unit_id ,
+        gd.sup_cp_unit_name,
+        b.pay_channel,
+        b.pay_way,
+        7 as billType,
+        rb.id as recId
+        from
+        ${gatherBillName} b
+        left join  ${gatherDetailName} gd on b.id = gd.gather_bill_id
+        left join  advance_bill rb on gd.rec_bill_id = rb.id
+        where
+        b.deleted = 0
+        and gd.sup_cp_unit_id = #{supCpUnitId}
+        and NOT EXISTS (
+        SELECT 1
+        FROM ${gatherDetailName} pd
+        WHERE b.id = pd.gather_bill_id AND pd.available = 1
+        )
+        and rb.invoice_state in (2, 3)
+        <if test="reconcileMode == 0">
+            and b.reconcile_state &lt;> 2
+        </if>
+        <if test="reconcileMode == 1">
+            and b.mc_reconcile_state &lt;> 2
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        order by id
+    </select>
+
+    <select id="getReconciliationBillByInvoice" resultType="com.wishare.finance.domains.bill.dto.ReconciliationBillDto">
+        select
+            *
+        from  invoice_receipt ir
+        left join invoice_receipt_detail ird on ir.id = ird.invoice_receipt_id and ird.bill_type in (1, 3)
+        left join receivable_bill rb on  ird.bill_id  = rb.id
+        where
+        ir.claim_status = 1 and ir.state in(2, 5, 8) and ir.deleted = 0 and ird.deleted = 0 and rb.deleted = 0
+        and rb.sup_cp_unit_id = #{supCpUnitId}
+        and ir.id in
+        <foreach collection="invoiceIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        <if test="reconcileMode == 0">
+            and rb.reconcile_state &lt;> 2
+        </if>
+        <if test="reconcileMode == 1">
+            and rb.mc_reconcile_state &lt;> 2
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        order by id
+    </select>
+    
+    
+
+    <select id="getReconciliationInvoiceBill" resultType="com.wishare.finance.domains.bill.dto.ReconciliationBillDto">
+        select
+        distinct b.id,
+        b.bill_no,
+        b.start_time,
+        b.end_time,
+        b.pay_time as trade_time,
+        b.refund_amount,
+        b.carried_amount,
+        b.total_amount as receivableAmount,
+        b.total_amount as noReductionAmount,
+        (b.total_amount - b.refund_amount - b.carried_amount) as actualAmount,
+        b.trade_no,
+        b.statutory_body_id,
+        b.statutory_body_name,
+        b.sb_account_id,
+        b.sys_source,
+--         gd.charge_item_id,
+--         gd.charge_item_name,
+        gd.cost_center_id,
+        gd.cost_center_name,
+        gd.sup_cp_unit_id ,
+        gd.sup_cp_unit_name,
+        gd.pay_channel,
+        gd.pay_way,
+        7 as bill_type
+        from
+        invoice_receipt ir
+        inner join invoice_receipt_detail ird on ir.id = ird.invoice_receipt_id and ird.bill_type in (1, 3, 7)
+        inner join ${gatherDetailName} gd on ird.bill_id = gd.rec_bill_id
+        inner join ${gatherBillName} b on gd.gather_bill_id = b.id
+        where
+        ir.claim_status = 1 and ir.state in(2, 5, 8) and ir.deleted = 0 and ird.deleted = 0 and b.deleted = 0
+        and gd.sup_cp_unit_id = #{supCpUnitId}
+        and ir.id in
+        <foreach collection="invoiceIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        <if test="reconcileMode == 0">
+            and b.reconcile_state &lt;> 2
+        </if>
+        <if test="reconcileMode == 1">
+            and b.mc_reconcile_state &lt;> 2
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        order by id
+    </select>
+
+    <select id="getReconciliationBillGatherRefunds" resultType="com.wishare.finance.domains.bill.dto.ReconciliationRefundDto">
+        select
+        br.id,
+        br.bill_id,
+        br.bill_type,
+        br.refund_amount,
+        br.refund_way,
+        br.refund_channel,
+        br.refund_time
+        from
+        bill_refund br
+        inner join ${gatherDetailName} gd on
+        (br.bill_id = gd.gather_bill_id
+        and br.bill_type in (2, 7))
+        or (br.bill_id = gd.rec_bill_id
+        and br.bill_type in (1, 3))
+        where
+        gd.gather_bill_id in
+        <foreach collection="refundQuery.gatherBillIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getRefundInfos" resultType="com.wishare.finance.domains.bill.dto.ReconciliationRefundDto">
+        select
+        br.id,
+        br.refund_no,
+        br.bill_id,
+        br.bill_type,
+        br.refund_amount,
+        br.refund_way,
+        br.refund_channel,
+        br.refund_time,
+        gb.statutory_body_id,
+        gb.statutory_body_name
+        from
+        bill_refund br
+        inner join ${gatherDetailName} gd on
+        (br.bill_id = gd.gather_bill_id
+        and br.bill_type in (2, 7))
+        or (br.bill_id = gd.rec_bill_id
+        and br.bill_type in (1, 3))
+        inner join gather_bill gb on gb.id = gd.gather_bill_id
+        where
+        br.id in
+        <foreach collection="refundQuery.settleIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getRecBillDetailsById" resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationRecBillDetailOBV">
+        select
+            rb.id as bill_id,
+            rb.bill_no,
+            rb.bill_type,
+            rb.total_amount,
+            rb.receivable_amount,
+            rb.statutory_body_id,
+            rb.statutory_body_name,
+            rb.cost_center_id,
+            rb.cost_center_name,
+            (rb.settle_amount - rb.refund_amount - rb.carried_amount) as actual_amount,
+            rb.charge_item_name,
+            rb.room_name,
+            rb.community_id
+        from
+            receivable_bill rb
+        where
+                rb.id in (
+                select
+                    gd.rec_bill_id
+                from
+                    ${gatherDetailName} gd
+                where
+                    gd.gather_bill_id = #{gatherId})
+          and rb.sup_cp_unit_id = #{supCpUnitId}
+    UNION ALL
+        select
+            ab.id as bill_id,
+            ab.bill_no,
+            2  as bill_type,
+            ab.total_amount,
+            ab.receivable_amount,
+            ab.statutory_body_id,
+            ab.statutory_body_name,
+            ab.cost_center_id,
+            ab.cost_center_name,
+            (ab.settle_amount - ab.refund_amount - ab.carried_amount) as actual_amount,
+            ab.charge_item_name,
+            ab.room_name,
+            ab.community_id
+        from  advance_bill ab
+            where ab.id  in (
+               select
+                    gd.rec_bill_id
+                from
+                    ${gatherDetailName} gd
+                where
+                    gd.gather_bill_id = #{gatherId})
+              and ab.sup_cp_unit_id = #{supCpUnitId}
+
+    </select>
+    <select id="getRecBillDetailsByBillNoList"
+            resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationRecBillDetailOBV">
+
+        select
+        rb.id as bill_id,
+        rb.bill_no,
+        rb.bill_type,
+        rb.total_amount,
+        rb.receivable_amount,
+        rb.statutory_body_id,
+        rb.statutory_body_name,
+        rb.cost_center_id,
+        rb.cost_center_name,
+        (rb.settle_amount - rb.refund_amount - rb.carried_amount) as actual_amount,
+        rb.charge_item_name,
+        rb.room_name,
+        rb.community_id
+        from
+        receivable_bill rb
+        where
+        rb.id in (
+        select
+        gd.rec_bill_id
+        from
+        ${gatherDetailName} gd
+        where
+        gd.gather_bill_no in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>)
+        and rb.sup_cp_unit_id = #{supCpUnitId}
+        UNION ALL
+        select
+        ab.id as bill_id,
+        ab.bill_no,
+        2 as bill_type,
+        ab.total_amount,
+        ab.receivable_amount,
+        ab.statutory_body_id,
+        ab.statutory_body_name,
+        ab.cost_center_id,
+        ab.cost_center_name,
+        (ab.settle_amount - ab.refund_amount - ab.carried_amount) as actual_amount,
+        ab.charge_item_name,
+        ab.room_name,
+        ab.community_id
+        from advance_bill ab
+        where ab.id in (
+        select
+        gd.rec_bill_id
+        from
+        ${gatherDetailName} gd
+        where
+        gd.gather_bill_no in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>)
+        and ab.sup_cp_unit_id = #{supCpUnitId}
+    </select>
+
+
+</mapper>

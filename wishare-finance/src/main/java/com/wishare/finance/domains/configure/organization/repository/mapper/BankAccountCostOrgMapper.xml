@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.organization.repository.mapper.BankAccountCostOrgMapper">
+
+    <select id="getRelation"
+            resultType="com.wishare.finance.domains.configure.organization.dto.BankAccountCostOrgDto">
+        select sba.bank_name 'bank_account_name', bc.bank_account_id, bank_account
+        from bank_account_cost_org bc
+            left join statutory_body_account sba
+                on bc.bank_account_id = sba.id
+        where bc.cost_org_id = #{costOrdId} and bc.tenant_id = #{tenantId}
+    </select>
+
+    <select id="queryStaIdByCostIds" resultType="com.wishare.finance.domains.configure.organization.entity.StatutoryBodyAccountE">
+        select b.statutory_body_id,b.bank_account
+        from bank_account_cost_org a left join statutory_body_account b
+            on a.bank_account_id = b.id and b.disabled = 0 and b.deleted = 0
+        where a.cost_org_id in
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="queryCostOrgIdByBankAccount" resultType="java.lang.String">
+        select statutory_body_id
+        from statutory_body_account
+        where bank_account = #{bankAccount}
+        limit 1
+    </select>
+</mapper>

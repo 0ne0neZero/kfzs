@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.invoicereceipt.repository.mapper.InvoiceReceiptMapper">
+
+    <resultMap type="com.wishare.finance.domains.invoicereceipt.entity.invoicing.InvoiceReceiptE" id="InvoicingRecordMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="invoiceReceiptNo" column="invoice_receipt_no" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="communityId" column="community_id" jdbcType="VARCHAR"/>
+        <result property="communityName" column="community_name" jdbcType="VARCHAR"/>
+        <result property="customerId" column="customer_id" jdbcType="VARCHAR"/>
+        <result property="customerName" column="customer_name" jdbcType="VARCHAR"/>
+        <result property="customerPhone" column="customer_phone" jdbcType="VARCHAR"/>
+        <result property="applyTime" column="apply_time" jdbcType="TIMESTAMP"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="priceTaxAmount" column="price_tax_amount" jdbcType="INTEGER"/>
+        <result property="state" column="state" jdbcType="INTEGER"/>
+        <result property="clerk" column="clerk" jdbcType="VARCHAR"/>
+        <result property="remark" column="remark" jdbcType="VARCHAR"/>
+        <result property="sysSource" column="sys_source" jdbcType="INTEGER"/>
+        <result property="invSource" column="inv_source" jdbcType="INTEGER"/>
+        <result property="claimStatus" column="claim_status" jdbcType="INTEGER"/>
+        <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap id="InvoiceForBillMap" type="com.wishare.finance.apps.model.bill.fo.InvoiceBillDto">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="invoiceReceiptNo" column="invoice_receipt_no" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="billId" column="bill_id" jdbcType="INTEGER"/>
+        <result property="billNo" column="bill_no" jdbcType="VARCHAR"/>
+        <result property="settleAmount" column="settle_amount" jdbcType="VARCHAR"/>
+        <result property="priceTaxAmount" column="price_tax_amount" jdbcType="VARCHAR"/>
+        <result property="invoiceReceiptId" column="invoice_receipt_id" jdbcType="VARCHAR"/>
+        <result property="invoiceAmount" column="invoice_amount" jdbcType="INTEGER"/>
+        <result property="taxRate" column="tax_rate" jdbcType="VARCHAR"/>
+        <result property="state" column="state" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="field">
+        id, invoice_receipt_no, type, community_id, community_name, customer_id, customer_name, customer_phone, apply_time, billing_time, price_tax_amount, state, clerk, remark, sys_source, inv_source, claim_status, deleted, tenant_id, creator_name, creator, gmt_create, operator_name, operator, gmt_modify
+    </sql>
+
+    <select id="getByBillId"
+            resultType="com.wishare.finance.domains.invoicereceipt.entity.invoicing.InvoiceReceiptE">
+        SELECT
+            distinct
+            ir.id,
+            ir.invoice_receipt_no,
+            ir.clerk,
+            ir.price_tax_amount,
+            ir.billing_time,
+            ir.type,
+            ir.state
+        FROM
+            invoice_receipt_detail ird
+                LEFT JOIN invoice_receipt ir ON ird.invoice_receipt_id = ir.id
+        where ird.bill_id =#{billId}
+        <if test="types != null and types.size() > 0">
+            and ir.type in
+            <foreach collection="types" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY ir.gmt_create DESC
+    </select>
+
+    <select id="getBillInvoiceList" resultMap="InvoiceForBillMap" parameterType="java.util.List">
+        select ird.id, ird.bill_id, ird.bill_no, ir.invoice_receipt_no, ird.settle_amount, ir.type, ir.billing_time,
+               ir.price_tax_amount, ir.id as invoice_receipt_id,ird.invoice_amount, ird.tax_rate, ir.state
+        from invoice_receipt ir, invoice_receipt_detail ird
+        where ir.id = ird.invoice_receipt_id and ir.state in (2, 5, 8) and ir.deleted = 0 and ird.deleted = 0
+        and ird.bill_type = #{billType}
+        and ird.bill_id in
+        <foreach collection="billIdList" item="item" index="index" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryDetailPage" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceAndReceiptDto">
+        SELECT
+            ir.gmt_create,
+            ir.id,
+            ir.invoice_receipt_no,
+            ir.community_name,
+            ir.cost_center_name,
+            ir.statutory_body_name,
+            ir.price_tax_amount,
+            ir.type,
+            ir.state,
+            ir.billing_time,
+            ir.customer_name,
+            ir.extend_field_one,
+            ir.sys_source,
+            IFNULL(sum(rb.settle_amount - rb.refund_amount - rb.carried_amount),0) as settleAmount,
+            min( rb.start_time ) AS billStartTime,
+            max( rb.end_time ) AS billEndTime,
+            group_concat( DISTINCT ird.charge_item_name ) AS chargeItemName,
+            group_concat( DISTINCT ird.room_name ) AS roomName
+        FROM
+            invoice_receipt ir
+                LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+                LEFT JOIN invoice i on i.invoice_receipt_id = ir.id
+                left join advance_bill rb on rb.id = ird.bill_id
+            ${ew.customSqlSegment}
+        GROUP BY
+            ir.id
+        UNION All
+        SELECT
+            ir.gmt_create,
+            ir.id,
+            ir.invoice_receipt_no,
+            ir.community_name,
+            ir.cost_center_name,
+            ir.statutory_body_name,
+            ir.price_tax_amount,
+            ir.type,
+            ir.state,
+            ir.billing_time,
+            ir.customer_name,
+            ir.extend_field_one,
+            ir.sys_source,
+            IFNULL(sum(rb.settle_amount - rb.refund_amount - rb.carried_amount),0) as settleAmount,
+            min( rb.start_time ) AS billStartTime,
+            max( rb.end_time ) AS billEndTime,
+            group_concat( DISTINCT ird.charge_item_name ) AS chargeItemName,
+            group_concat( DISTINCT ird.room_name ) AS roomName
+        FROM
+            invoice_receipt ir
+                LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+                LEFT JOIN invoice i on i.invoice_receipt_id = ir.id
+                left join ${receivableBillName} rb on rb.id = ird.bill_id
+            ${ew.customSqlSegment}
+        GROUP BY
+            ir.id
+        ORDER BY
+            billing_time desc
+    </select>
+
+    <select id="queryAmount" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceAndReceiptStatisticsDto">
+        SELECT
+        IFNULL( sum( IF ( claim_status = 1, price_tax_amount, 0 )), 0 ) AS claimAmount,
+        IFNULL( sum( IF ( claim_status = 0, price_tax_amount, 0 )), 0 ) AS unclaimedAmount,
+        IFNULL( sum( price_tax_amount ), 0 ) AS totalAmount,
+        group_concat( DISTINCT room_id ) AS roomId,
+        IFNULL( sum( settle_amount ), 0) as settle_amount
+        from (
+            select
+            ir.price_tax_amount,
+            ir.claim_status,
+            ird.room_id,
+            IFNULL(sum(rb.settle_amount - rb.refund_amount - rb.carried_amount),0) as settle_amount
+            from invoice_receipt ir
+            LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+            right join ${receivableBillName} rb on ird.bill_id = rb.id
+            LEFT JOIN invoice i on i.invoice_receipt_id = ir.id
+            where ir.deleted = 0 and ir.state in (2,8) and (i.invoice_type = 1 or i.invoice_type is null) AND rb.settle_amount > 0
+        <if test="sysSource != null">
+                and ir.sys_source = #{sysSource}
+            </if>
+            <if test="idList != null and idList.size() > 0">
+                and ir.id in
+                <foreach collection="idList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY ir.id
+            union all
+            select
+                ir.price_tax_amount,
+                ir.claim_status,
+                ird.room_id,
+                IFNULL(sum(rb.settle_amount - rb.refund_amount - rb.carried_amount),0) as settle_amount
+            from invoice_receipt ir
+            LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+            right join advance_bill rb on rb.id = ird.bill_id
+            LEFT JOIN invoice i on i.invoice_receipt_id = ir.id
+            where ir.deleted = 0 and ir.state in (2,8) and (i.invoice_type = 1 or i.invoice_type is null) AND rb.settle_amount > 0
+                <if test="sysSource != null">
+                    and ir.sys_source = #{sysSource}
+                </if>
+                <if test="idList != null and idList.size() > 0">
+                    and ir.id in
+                    <foreach collection="idList" item="item" separator="," open="(" close=")">
+                        #{item}
+                    </foreach>
+                </if>
+            GROUP BY ir.id
+        ) a
+    </select>
+
+    <select id="queryAmount2" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceAndReceiptStatisticsDto">
+        SELECT
+        IFNULL( sum( IF ( claim_status = 1, price_tax_amount, 0 )), 0 ) AS claimAmount,
+        IFNULL( sum( IF ( claim_status = 0, price_tax_amount, 0 )), 0 ) AS unclaimedAmount,
+        IFNULL( sum( price_tax_amount ), 0 ) AS totalAmount,
+        group_concat( DISTINCT room_id ) AS roomId,
+        IFNULL( sum( settle_amount ), 0) as settle_amount
+        from (
+        select
+        ir.price_tax_amount,
+        ir.claim_status,
+        ird.room_id,
+        IFNULL(sum(rb.settle_amount - rb.refund_amount - rb.carried_amount),0) as settle_amount
+        from invoice_receipt ir
+        LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+        right join ${table} rb on ird.bill_id = rb.id
+        LEFT JOIN invoice i on i.invoice_receipt_id = ir.id
+        ${ew.customSqlSegment}
+        and ir.state in (2,8) and (i.invoice_type = 1 or i.invoice_type is null) AND rb.settle_amount > 0
+        GROUP BY ir.id
+        union all
+        select
+        ir.price_tax_amount,
+        ir.claim_status,
+        ird.room_id,
+        IFNULL(sum(rb.settle_amount - rb.refund_amount - rb.carried_amount),0) as settle_amount
+        from invoice_receipt ir
+        LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+        right join advance_bill rb on rb.id = ird.bill_id
+        LEFT JOIN invoice i on i.invoice_receipt_id = ir.id
+        ${ew.customSqlSegment}
+        and ir.state in (2,8) and (i.invoice_type = 1 or i.invoice_type is null) AND rb.settle_amount > 0
+        GROUP BY ir.id
+        ) a
+    </select>
+
+    <!--根据账单id获取开票金额-->
+    <select id="invoiceReceiptAmount" resultType="java.lang.Long">
+        SELECT
+            sum(ir.price_tax_amount)
+        FROM
+            invoice_receipt_detail ird
+                LEFT JOIN invoice_receipt ir ON ird.invoice_receipt_id = ir.id
+        <where>
+            <if test="billIdList != null and billIdList.size() > 0">
+                and ird.bill_id in
+                <foreach collection="billIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="invoiceReceiptStateList != null and invoiceReceiptStateList.size() > 0">
+                and ir.state in
+                <foreach collection="invoiceReceiptStateList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <select id="countByInvoiceNo" resultType="java.lang.Long">
+        SELECT
+            count(i.id)
+        FROM
+            invoice i
+                LEFT JOIN invoice_receipt ir ON i.invoice_receipt_id = ir.id
+        WHERE
+            i.invoice_no = #{invoiceNo}
+        <if test="state != null and state.size() > 0">
+            and ir.state not in
+            <foreach collection="state" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="queryInvoiceDetailByGatherBillIds"
+            resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceDto">
+        SELECT DISTINCT
+            ir.id,
+            ir.invoice_receipt_no,
+            ir.community_id,
+            ir.community_name,
+            ir.customer_id,
+            ir.customer_name,
+            ir.customer_phone,
+            ir.price_tax_amount,
+            ir.billing_time,
+            ir.clerk,
+            ir.state,
+            ir.sys_source,
+            ir.source,
+            ir.statutory_body_id,
+            ir.statutory_body_name,
+            ir.type,
+            ir.inv_rec_unit_id,
+            ir.inv_rec_unit_name,
+            i.invoice_type,
+            i.invoice_code,
+            i.invoice_no,
+            i.invoice_url,
+            i.nuonuo_url,
+            i.fail_reason,
+            i.invoice_title_type,
+            i.buyer_tax_num,
+            i.saler_tax_num,
+            i.saler_tel,
+            i.invoice_serial_num,
+            i.saler_account,ird.gather_bill_id
+        FROM
+            invoice i
+                LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+                LEFT JOIN invoice_receipt_detail ird ON ird.invoice_receipt_id = ir.id
+        WHERE
+        <if test="gatherBillIds != null and gatherBillIds.size() > 0">
+             ird.gather_bill_id in
+            <foreach collection="gatherBillIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="getLastReceiptNo" resultType="java.lang.String">
+        SELECT
+            invoice_receipt_no
+        FROM
+            invoice_receipt
+        WHERE
+            type = 6
+        ORDER BY
+            gmt_create DESC
+            LIMIT 1
+    </select>
+    <select id="queryByRedInvoiceReceipt" resultType="java.lang.Integer">
+        SELECT count(invoice_receipt_no) FROM invoice_receipt
+        where invoice_receipt_no=#{invoiceReceiptNo}
+    </select>
+</mapper>
+

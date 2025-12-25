@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.mdm.repository.mapper.Mdm63Mapper">
+
+
+    <delete id="deleteByCtCode">
+        delete from mdm63 where contract_code = #{ctCode}
+    </delete>
+
+    <delete id="deleteByCtCodeAndPartnerCodeInCertainPeriod">
+        delete from mdm63
+        where contract_code = #{ctCode}
+        and partner_id = #{partnerCode}
+        and last_modified_time <![CDATA[ >= ]]> #{start}
+        and last_modified_time <![CDATA[ <= ]]>#{end}
+        <if test="projectId != null and projectId != ''">
+            and project_info_code = #{projectId}
+        </if>
+    </delete>
+
+    <select id="selectByCondition" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select * from mdm63 where ctCode=#{ctCode} and idExt=#{idExt} and arap_module='AR'
+    </select>
+
+    <select id="queryOnContract" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select m.*
+        from mdm63 m
+        left join voucher_bill_dx_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id
+        where m.contract_code = #{ctCode}
+        and m.funds_prop_id = #{paymentId}
+        and m.arap_module = #{apArType}
+        and b.bill_event_type = #{sourceBillEventType}
+          and m.ft_id not in (
+            select ft_id
+            from mdm63_lock
+            where deleted = 0
+        )
+    </select>
+    <select id="queryOnContractByFtId" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select m.*
+        from mdm63 m
+        left join voucher_bill_dx_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id
+        where m.ft_id in (
+            select ft_id
+            from mdm63_lock
+            where deleted = 0
+            and voucher_bill_no = #{voucherBillNo}
+        )
+    </select>
+
+    <select id="queryOnContract2" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select m.*
+        from mdm63 m
+                 left join voucher_bill_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id
+        where m.contract_code = #{ctCode}
+          and m.funds_prop_id = #{paymentId}
+          and m.arap_module = #{apArType}
+          and b.bill_event_type = #{sourceBillEventType}
+          and m.ft_id not in (
+            select ft_id
+            from mdm63_lock
+            where deleted = 0
+        )
+    </select>
+
+    <select id="queryOnSettlementIds" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select m.*
+        from mdm63 m
+        left join voucher_bill_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id
+        where b.bill_event_type = #{sourceBillEventType}
+        and b.settlement_id in
+        <foreach collection="settlementIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="queryOnPaymentAppId" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select m.*
+        from mdm63 m
+        left join voucher_bill_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id
+        left join payment_application_form f on f.id = b.pay_app_id
+        where b.bill_event_type = #{sourceBillEventType}
+        and f.id = #{payAppId}
+        and m.arap_module = #{apArType}
+        and m.ft_id not in (
+                select ft_id
+                from mdm63_lock
+                where deleted = 0
+            )
+    </select>
+
+    <select id="queryOnSettlementIdAndPaymentId" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select m.*
+        from mdm63 m
+        left join voucher_bill_dx_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id
+        where b.bill_event_type = #{sourceBillEventType}
+        and b.settlement_id = #{settlementId}
+        and m.funds_prop_id = #{paymentId}
+        and m.arap_module = #{apArType}
+          and m.ft_id not in (
+            select ft_id
+            from mdm63_lock
+            where deleted = 0
+        )
+    </select>
+
+    <select id="queryPageOnRec" resultType="com.wishare.finance.apps.pushbill.vo.Mdm63FrontV">
+        select m.ft_id as ftId,
+               m.arap_module as arapModule,
+               m.bill_num as billNum,
+               m.biz_date as bizDate,
+               m.partner_code as partnerCode,
+               m.dhx_je as dhxJe,
+               m.contract_code as contractNo,
+               m.project_info_code as projectInfoCode,
+               m.funds_prop_id as fundsPropId,
+               m.funds_prop_name as fundsPropName,
+               m.summary as summary
+        from mdm63 m
+        <if test="fromContract">
+            left join voucher_bill_dx_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id and b.bill_event_type = 6
+        </if>
+        <if test="!fromContract">
+            left join voucher_bill_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id and b.bill_event_type = 1
+        </if>
+        where m.project_info_code = #{projectId}
+         and m.partner_code = #{partnerCode}
+         and m.contract_code = #{contractNo}
+         and m.arap_module = #{arapModule}
+         <if test="fundsPropId != null and fundsPropId != ''">
+             and m.funds_prop_id = #{fundsPropId}
+         </if>
+         <if test="billNum != null and billNum != ''">
+             and m.bill_num like concat('%',#{billNum},'%')
+         </if>
+         <if test="bizDate != null">
+             and m.biz_date = #{bizDate}
+         </if>
+         <if test="queryVoucherBillNo != null and queryVoucherBillNo != ''">
+             and b.voucher_bill_no like concat('%',#{queryVoucherBillNo},'%')
+         </if>
+        and m.ft_id not in (
+            select ft_id
+            from mdm63_lock
+            where deleted = 0
+        )
+        /*数据过滤，仅展示YSD开头的核销编码 */
+        and m.bill_num like 'YSD%'
+    </select>
+
+    <select id="queryForReceiptAutoMatch" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select m.*
+        from mdm63 m
+        <if test="fromContract">
+            left join voucher_bill_dx_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id and b.bill_event_type = 6
+        </if>
+        <if test="!fromContract">
+            left join voucher_bill_zj b on b.deleted = 0 and b.finance_id = m.source_bill_id and b.bill_event_type = 1
+        </if>
+        where m.arap_module = #{arapModule}
+        and m.project_info_code = #{projectId}
+        and m.contract_code = #{contractNo}
+        and m.partner_code = #{partnerCode}
+        <if test="paymentId != null and paymentId != ''">
+            and m.funds_prop_id = #{paymentId}
+        </if>
+        and m.ft_id not in (
+            select ft_id
+            from mdm63_lock
+            where deleted = 0
+        )
+        /*数据过滤，仅展示YSD开头的核销编码 */
+        and m.bill_num like 'YSD%'
+        -- and b.id is not null
+    </select>
+
+    <select id="selectByFtIds" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select *
+        from mdm63
+        where ft_id in
+        <foreach collection="ftIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO mdm63 (
+        id,
+        bill_num,
+        biz_date,
+        dq_rq,
+        arap_module,
+        partner_id,
+        partner_code,
+        contract_id,
+        contract_code,
+        project_info_id,
+        project_info_code,
+        funds_prop_id,
+        clear_amount,
+        dhx_je,
+        amount,
+        last_modified_time,
+        ft_id,
+        organization_id,
+        funds_prop_name,
+        yb_bh,
+        bw_bbh,
+        foreign_currency,
+        dhx_je_yb,
+        hx_je_yb,
+        source_bill_code,
+        source_bill_id,
+        summary
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.id},
+            #{item.billNum},
+            #{item.bizDate},
+            #{item.dqRq},
+            #{item.arapModule},
+            #{item.partnerId},
+            #{item.partnerCode},
+            #{item.contractId},
+            #{item.contractCode},
+            #{item.projectInfoId},
+            #{item.projectInfoCode},
+            #{item.fundsPropId},
+            #{item.clearAmount},
+            #{item.dhxJe},
+            #{item.amount},
+            #{item.lastModifiedTime},
+            #{item.ftId},
+            #{item.organizationId},
+            #{item.fundsPropName},
+            #{item.ybBh},
+            #{item.bwBbh},
+            #{item.foreignCurrency},
+            #{item.dhxJeYb},
+            #{item.hxJeYb},
+            #{item.sourceBillCode},
+            #{item.sourceBillId},
+            #{item.summary}
+            )
+        </foreach>
+    </insert>
+
+    <select id="queryMdm63Page" resultType="com.wishare.finance.apps.pushbill.vo.Mdm63FrontV">
+        select m.ft_id as ftId,
+        m.arap_module as arapModule,
+        m.bill_num as billNum,
+        m.biz_date as bizDate,
+        m.partner_code as partnerCode,
+        m.dhx_je as dhxJe,
+        m.contract_code as contractNo,
+        m.project_info_code as projectInfoCode,
+        m.funds_prop_id as fundsPropId,
+        m.funds_prop_name as fundsPropName,
+        m.summary as summary
+        from mdm63 m
+        where
+            /*项目ID*/
+            m.project_info_code = #{projectId}
+            /*往来单位*/
+            and m.partner_code = #{partnerCode}
+            /*合同编码*/
+            and m.contract_code = #{contractNo}
+            /*标识*/
+            and m.arap_module = #{arapModule}
+            and m.ft_id not in (
+            select ft_id
+            from mdm63_lock
+            where deleted = 0
+            )
+
+    </select>
+
+    <select id="getMdm63ByFtId" resultType="com.wishare.finance.domains.mdm.entity.Mdm63E">
+        select *
+        from mdm63
+        where ft_id = #{ftId}
+    </select>
+</mapper>

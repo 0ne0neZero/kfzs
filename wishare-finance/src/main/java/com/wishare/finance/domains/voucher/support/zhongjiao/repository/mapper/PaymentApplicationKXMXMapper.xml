@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.support.zhongjiao.repository.mapper.PaymentApplicationKXMXMapper">
+
+    <select id="selectKXBySearch"
+            resultType="com.wishare.finance.apps.pushbill.vo.PaymentApplicationKXDetailV">
+        select
+            pafk.heyfbh,
+            pafk.write_off_info_amount as writeOffInfoAmount,
+            pafk.subject_name as subjectName,
+            pafk.funding_plan_number as fundingPlanNumber,
+            pafk.subject_code as subjectCode,
+            pafk.budget_account_name as budgetAccountName,
+            pafk.pay_way as payWay,
+            pafk.amount,
+            pafk.due_date as dueDate
+
+        From
+             payment_application_form_kxmx pafk
+
+            ${ew.customSqlSegment}
+
+    </select>
+</mapper>

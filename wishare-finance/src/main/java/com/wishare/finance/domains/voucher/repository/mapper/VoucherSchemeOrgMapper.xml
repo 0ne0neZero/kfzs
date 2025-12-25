@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.repository.mapper.VoucherSchemeOrgMapper">
+
+    <resultMap id="VoucherSchemeOrg" type="com.wishare.finance.domains.voucher.entity.VoucherSchemeOrg">
+        <result column="id" property="id" />
+        <result column="voucher_scheme_id" property="voucherSchemeId" />
+        <result column="org_id" property="orgId" />
+        <result column="org_code" property="orgCode" />
+        <result column="org_name" property="orgName" />
+        <result column="org_type" property="orgType" />
+        <result column="deleted" property="deleted" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="creator_name" property="creatorName" />
+        <result column="creator" property="creator" />
+        <result column="gmt_create" property="gmtCreate" />
+    </resultMap>
+
+    <select id="selectPageBySearch" resultMap="VoucherSchemeOrg">
+        select * from voucher_scheme_org ${ew.customSqlSegment}
+    </select>
+
+    <select id="schemeListByOrgIds" resultType="com.wishare.finance.domains.voucher.entity.VoucherScheme">
+        select
+            vs.*
+        from
+            voucher_scheme vs
+         inner join voucher_scheme_org vso on vs.id = vso.voucher_scheme_id
+         and vso.org_id in
+        <foreach collection="orgIds" separator="," open="(" close=")" item="item">
+            #{item}
+        </foreach>
+        where
+               vs.deleted = 0
+          and  vs.disabled= 1
+          and  vso.deleted = 0
+    </select>
+
+</mapper>

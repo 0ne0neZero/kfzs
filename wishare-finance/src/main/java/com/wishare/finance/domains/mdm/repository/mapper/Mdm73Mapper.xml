@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.mdm.repository.mapper.Mdm73Mapper">
+    <insert id="insertBatch">
+        INSERT INTO mdm73 (
+        `id`,
+        `account_no`,
+        `account_name_chs`,
+        `account_name_en`,
+        `account_name_cht`,
+        `account_unit`,
+        `account_property`,
+        `account_status`,
+        `bank`,
+        `bank_name_of_china`,
+        `bank_no_of_china`,
+        `city`,
+        `last_modified_time`,
+        `open_account_unit`,
+        `open_date`,
+        `province`,
+        `country`,
+        `inner_or_outer`
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+             #{item.id},
+             #{item.accountNo},
+             #{item.accountNameChs},
+             #{item.accountNameEn},
+             #{item.accountNameCht},
+             #{item.accountUnit},
+             #{item.accountProperty},
+             #{item.accountStatus},
+             #{item.bank},
+             #{item.bankNameOfChina},
+             #{item.bankNoOfChina},
+             #{item.city},
+             #{item.lastModifiedTime},
+             #{item.openAccountUnit},
+             #{item.openDate},
+             #{item.province},
+             #{item.country},
+             #{item.innerOrOuter}
+            )
+        </foreach>
+    </insert>
+
+
+    <delete id="deleteByOid">
+        delete from mdm73
+        where open_account_unit = #{oid}
+    </delete>
+</mapper>

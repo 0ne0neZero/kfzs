@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.invoicereceipt.repository.mapper.ReceiptTemplateMapper">
+
+    <select id="pageList" resultType="com.wishare.finance.domains.invoicereceipt.entity.invoicing.ReceiptTemplateE">
+        SELECT *
+        FROM receipt_template AS rt
+        ${ew.customSqlSegment}
+    </select>
+</mapper>

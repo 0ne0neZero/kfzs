@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.invoicereceipt.repository.mapper.InvoiceReceiptDetailMapper">
+
+    <resultMap type="com.wishare.finance.domains.invoicereceipt.entity.invoicing.InvoiceReceiptDetailE" id="InvoiceReceiptDetailMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="invoiceReceiptId" column="invoice_receipt_id" jdbcType="INTEGER"/>
+        <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+        <result property="num" column="num" jdbcType="VARCHAR"/>
+        <result property="taxRate" column="tax_rate" jdbcType="VARCHAR"/>
+        <result property="unit" column="unit" jdbcType="VARCHAR"/>
+        <result property="price" column="price" jdbcType="VARCHAR"/>
+        <result property="withTaxFlag" column="with_tax_flag" jdbcType="INTEGER"/>
+        <result property="billId" column="bill_id" jdbcType="INTEGER"/>
+        <result property="billNo" column="bill_no" jdbcType="VARCHAR"/>
+        <result property="billType" column="bill_type" jdbcType="INTEGER"/>
+        <result property="gatherBillId" column="gather_bill_id" jdbcType="INTEGER"/>
+        <result property="gatherBillNo" column="gather_bill_no" jdbcType="VARCHAR"/>
+        <result property="gatherDetailId" column="gather_detail_id" jdbcType="INTEGER"/>
+        <result property="billStartTime" column="bill_start_time" jdbcType="TIMESTAMP"/>
+        <result property="billEndTime" column="bill_end_time" jdbcType="TIMESTAMP"/>
+        <result property="billPayTime" column="bill_pay_time" jdbcType="TIMESTAMP"/>
+        <result property="settleAmount" column="settle_amount" jdbcType="INTEGER"/>
+        <result property="invoiceAmount" column="invoice_amount" jdbcType="INTEGER"/>
+        <result property="roomId" column="room_id" jdbcType="VARCHAR"/>
+        <result property="roomName" column="room_name" jdbcType="VARCHAR"/>
+        <result property="chargeItemId" column="charge_item_id" jdbcType="INTEGER"/>
+        <result property="chargeItemName" column="charge_item_name" jdbcType="VARCHAR"/>
+        <result property="spectype" column="specType" jdbcType="VARCHAR"/>
+        <result property="remark" column="remark" jdbcType="VARCHAR"/>
+        <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap id="InvoiceForBillMap" type="com.wishare.finance.apps.model.bill.fo.InvoiceBillDto">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="invoiceReceiptNo" column="invoice_receipt_no" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="billId" column="bill_id" jdbcType="INTEGER"/>
+        <result property="billNo" column="bill_no" jdbcType="VARCHAR"/>
+        <result property="settleAmount" column="settle_amount" jdbcType="VARCHAR"/>
+        <result property="priceTaxAmount" column="price_tax_amount" jdbcType="VARCHAR"/>
+        <result property="invoiceReceiptId" column="invoice_receipt_id" jdbcType="VARCHAR"/>
+        <result property="invoiceAmount" column="invoice_amount" jdbcType="INTEGER"/>
+        <result property="taxRate" column="tax_rate" jdbcType="VARCHAR"/>
+        <result property="state" column="state" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <sql id="field">
+        id, invoice_receipt_id, goods_name, num, tax_rate, unit, price, with_tax_flag, bill_id, bill_no, gather_bill_id, gather_bill_no, gather_detail_id, bill_type, bill_start_time, bill_end_time, bill_pay_time, settle_amount,invoice_amount, room_id, room_name, charge_item_id, charge_item_name, specType,remark,remark_new, deleted, tenant_id, creator_name, creator, gmt_create, operator_name, operator, gmt_modify
+    </sql>
+
+    <select id="getByInvoiceReceiptId" resultMap="InvoiceReceiptDetailMap">
+        SELECT
+        <include refid="field"></include>
+        FROM
+            invoice_receipt_detail
+        WHERE
+            invoice_receipt_id = #{invoiceReceiptId}
+    </select>
+
+    <select id="getBillIdsByType" resultType="com.wishare.finance.apps.model.invoice.invoice.vo.InvoiceReceiptDetailV">
+        select bill_id, bill_no, bill_type, charge_item_name, price, num, invoice_amount, settle_amount
+        from invoice_receipt_detail ird left join invoice_receipt ir on ird.invoice_receipt_id = ir.id
+        #{qm.customSqlSegment}
+    </select>
+
+    <select id="getInvoiceBillDetails" resultType="com.wishare.finance.domains.invoicereceipt.dto.InvoiceBillDetailDto">
+        select
+            distinct
+            ir.id,
+            ir.invoice_receipt_no as invoiceNo,
+            ir.price_tax_amount as invoiceAmount,
+            ir.price_tax_amount as receiptAmount,
+--             ird.bill_id,
+            ir.type as invoiceType,
+            ir.billing_time as invoiceTime,
+            ir.creator,
+            ir.creator_name
+        from invoice_receipt ir inner join invoice_receipt_detail ird on ir.id = ird.invoice_receipt_id
+        where ir.state in(2,5,8) and (ird.bill_id in
+        <foreach collection="billIds" open="(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+        <if test="recIds != null and recIds.size > 0">
+            or ird.bill_id in
+            <foreach collection="recIds" open="(" close=")" item="item" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        )
+    </select>
+
+
+    <select id="listPartRedInvoices" resultMap="InvoiceForBillMap" parameterType="java.util.List">
+        select ird.id, ird.bill_id, ird.bill_no, ir.invoice_receipt_no, ird.settle_amount, ir.type, ir.billing_time,
+        ir.price_tax_amount, ir.id as invoice_receipt_id,ird.invoice_amount, ird.tax_rate, ir.state
+        from invoice_receipt ir, invoice_receipt_detail ird, invoice iv
+       where ir.id = ird.invoice_receipt_id and ir.state = 2 and ir.deleted = 0 and ird.deleted = 0 and iv.invoice_receipt_id = ir.id
+        and ird.bill_id = #{billId}
+        and iv.blue_invoice_receipt_id in
+        <foreach collection="invoiceReceiptIds" item="item" index="index" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getByGatherBillIds" resultType="com.wishare.finance.domains.invoicereceipt.dto.InvoiceBillDetailDto">
+        select
+            DISTINCT ir.id,
+            ir.invoice_receipt_no as invoiceNo,
+            ird.invoice_amount,
+            ir.price_tax_amount as receiptAmount,
+            -- gd.gather_bill_id as bill_id,
+            ir.type as invoiceType,
+            -- ir.billing_time as invoiceTime,
+            ir.creator,
+            ir.creator_name
+        from invoice_receipt ir
+                 inner join invoice_receipt_detail ird on ir.id = ird.invoice_receipt_id
+                 inner join  ${gatherDetailName} gd on  (ird.bill_id = gd.rec_bill_id
+            and ird.bill_type in (1, 3))
+--             or (ird.bill_id = gd.rec_bill_id
+--                 and ird.bill_type in (1, 3))
+        where ir.state in(2,5,8) and gd.gather_bill_id in
+        <foreach collection="giQuery.gatherBillIds" item="item" index="index" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <select id="getReceiptByGatherDetailIds" resultType="com.wishare.finance.domains.invoicereceipt.dto.InvoiceBillDetailDto">
+        select
+          ir.id,
+          ir.invoice_receipt_no as invoiceNo,
+          ird.gather_detail_id as gatherDetailId,
+          ir.type as invoiceType
+          from invoice_receipt ir
+          inner join invoice_receipt_detail ird on ir.id = ird.invoice_receipt_id
+          where ird.deleted = 0 and ird.gather_detail_id in
+          <foreach collection="gatherBillIds" item="item" index="index" separator="," open="(" close=")">
+              #{item}
+          </foreach>
+          GROUP BY id
+    </select>
+
+
+
+
+
+    <select id="getInvoiceByRecBillIds" resultType="com.wishare.finance.domains.invoicereceipt.dto.InvoiceBillDetailDto">
+        select
+        DISTINCT
+        ir.id,
+        ir.invoice_receipt_no as invoiceNo,
+        ird.invoice_amount,
+        ir.price_tax_amount as receiptAmount,
+        ird.bill_id,
+        ir.type as invoiceType,
+        -- ir.billing_time as invoiceTime,
+        ir.creator,
+        ir.creator_name
+        from invoice_receipt ir
+        inner join invoice_receipt_detail ird on ir.id = ird.invoice_receipt_id
+        where ir.state in(2,5,8) and ird.bill_id in
+        <foreach collection="giQuery.receivableBillIds" item="item" index="index" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <select id="getByPayBillIds" resultType="com.wishare.finance.domains.invoicereceipt.dto.InvoiceBillDetailDto">
+        select
+            ir.id,
+            ir.invoice_receipt_no as invoiceNo,
+            ird.invoice_amount,
+            ir.price_tax_amount as receiptAmount,
+            pd.pay_bill_id as bill_id,
+            ir.type as invoiceType,
+            ir.billing_time as invoiceTime,
+            ir.creator,
+            ir.creator_name
+        from invoice_receipt ir
+                 inner join invoice_receipt_detail ird on ir.id = ird.invoice_receipt_id
+                 inner join pay_detail pd on (ird.bill_id = pd.pay_bill_id and ird.bill_type = 6)
+            or (ird.bill_id = pd.payable_bill_id and ird.bill_type = 4)
+        where ir.state in(2,5,8) and pd.pay_bill_id in
+        <foreach collection="payQuery.payBillIds" item="item" index="index" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getInvoiceByInvRecUnitId" resultType="com.wishare.finance.domains.invoicereceipt.dto.InvoiceBillDetailDto">
+        select
+        ir.id,
+        ir.invoice_receipt_no as invoiceNo,
+        ird.invoice_amount,
+        ir.price_tax_amount as receiptAmount,
+        ird.bill_id,
+        ir.type as invoiceType,
+        ir.billing_time as invoiceTime,
+        ir.creator,
+        ir.creator_name
+        from invoice_receipt ir
+        left join invoice_receipt_detail ird on ir.id = ird.invoice_receipt_id
+        where ir.state in(2,5,8) and ir.inv_rec_unit_id = #{invRecUnitId}
+    </select>
+
+    <update id="updateBillPayTime">
+<!--        UPDATE-->
+<!--        invoice_receipt ir-->
+<!--        LEFT JOIN invoice_receipt_detail ird ON ird.invoice_receipt_id = ir.id-->
+<!--        SET ird.bill_pay_time = #{billPayTime}-->
+<!--        WHERE ir.type = 6 AND ir.after_payment = #{afterPayment} AND ird.bill_type = #{billType} AND ird.bill_id = #{billId}-->
+        UPDATE invoice_receipt_detail ird
+        SET ird.bill_pay_time = #{billPayTime}
+        WHERE
+            ird.bill_type = #{billType}
+          AND ird.bill_id = #{billId} and  EXISTS (
+            SELECT
+                id
+            FROM
+                invoice_receipt ir
+            WHERE
+                ird.invoice_receipt_id = ir.id
+              AND ir.type = 6
+              AND ir.after_payment = #{afterPayment}
+        )
+    </update>
+
+
+    <select id="queryInvoiceDetailList" resultType="com.wishare.finance.apps.model.invoice.invoice.vo.InvoiceDetailAndReceiptV">
+        select rd.*,ir.community_id,ir.state
+        from invoice_receipt_detail rd
+            INNER JOIN invoice_receipt ir on rd.invoice_receipt_id = ir.id
+            <where>
+                <if test="supCpUnitId != null and supCpUnitId != ''">
+                    ir.community_id =#{supCpUnitId}
+                </if>
+                 <if test="billId != null and billId != ''">
+                     and rd.bill_id =  #{billId}
+                 </if>
+                and rd.gather_detail_id is null
+            </where>
+    </select>
+
+    <select id="getValidInvoiceReceiptIds" resultType="java.lang.Long">
+        SELECT ir.id FROM invoice_receipt ir
+                     WHERE ir.id in
+                           ( SELECT invoice_receipt_id FROM invoice_receipt_detail ird WHERE ird.gather_bill_id = #{gatherBillId})
+                       AND ir.state in (2,8)
+    </select>
+
+    <select id="getValidInvoiceIdsByGatherBillIds" resultType="java.lang.Long">
+        SELECT ir.id FROM invoice_receipt ir
+            INNER JOIN invoice i on i.invoice_receipt_id=ir.id
+        WHERE ir.id in
+              ( SELECT invoice_receipt_id FROM invoice_receipt_detail ird WHERE ird.gather_bill_id = #{gatherBillId})
+          AND ir.state in (1,2,4,8)
+          AND ir.type NOT IN ( 5, 6, 7 )
+          AND i.invoice_type=1
+    </select>
+
+    <select id="getValidInvoiceIdsByBillId" resultType="java.lang.Long">
+        SELECT ir.id FROM invoice_receipt ir
+              INNER JOIN invoice i on i.invoice_receipt_id=ir.id
+        WHERE ir.id in
+              ( SELECT invoice_receipt_id FROM invoice_receipt_detail ird WHERE ird.bill_id = #{gatherBillId})
+          AND ir.state in (2,8)
+          AND ir.type NOT IN ( 5, 6, 7 )
+          AND i.invoice_type=1
+    </select>
+
+    <select id="findOldCommunityToRefresh" resultType="java.lang.String">
+        SELECT DISTINCT community_id
+        FROM invoice_receipt ir
+            LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+        WHERE ird.gather_bill_id is null AND ird.gather_detail_id IS NULL
+    </select>
+
+    <select id="queryEmptyInvoiceDetail"
+        resultType="com.wishare.finance.apps.model.invoice.invoice.vo.InvoiceDetailAndReceiptV">
+        select rd.*,ir.community_id,ir.state
+        from invoice_receipt_detail rd
+        INNER JOIN invoice_receipt ir on rd.invoice_receipt_id = ir.id and ir.state = 2 and ir.price_tax_amount > 0
+        <where>
+            <if test="supCpUnitId != null and supCpUnitId != ''">
+                ir.community_id =#{supCpUnitId}
+            </if>
+            <if test="billId != null and billId != ''">
+                and rd.bill_id = #{billId}
+            </if>
+            and rd.gather_detail_id is null
+        </where>
+    </select>
+</mapper>
+

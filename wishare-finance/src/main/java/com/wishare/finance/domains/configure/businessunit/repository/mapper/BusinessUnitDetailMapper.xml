@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.businessunit.repository.mapper.BusinessUnitDetailMapper">
+
+    <select id="queryBusinessUnitIdByRelevanceId" resultType="java.lang.Long">
+        SELECT business_unit_id
+        FROM business_unit_detail
+        WHERE business_unit_detail.relevance_id = #{id}
+        AND business_unit_detail.deleted = 0
+        AND type = 1
+    </select>
+
+    <select id="queryAccountByUnitId"
+            resultType="com.wishare.finance.apps.model.configure.businessunit.vo.BusinessUnitAccountV">
+        SELECT
+        DISTINCT
+        sba.bank_name AS 'bankName',
+        sba.bank_account AS 'bankAccount',
+        sba.id as 'sbAccountId'
+        FROM
+        business_unit bu
+        INNER JOIN business_unit_detail bud ON bud.business_unit_id = bu.id
+        AND bud.deleted = 0
+        AND bud.type = 4
+        LEFT JOIN statutory_body_account sba ON bud.relevance_id = sba.id
+        AND sba.disabled = 0
+        AND sba.deleted = 0
+        WHERE
+        bu.disabled = 0
+        AND bu.deleted = 0
+        <if test="unitIds != null and unitIds.size > 0">
+            AND bu.id IN(
+            <foreach collection="unitIds" separator="," item="item">
+                #{item}
+            </foreach>
+            )
+        </if>
+    </select>
+
+</mapper>

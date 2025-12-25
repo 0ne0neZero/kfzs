@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.reconciliation.repository.mapper.FlowClaimGatherDetailMapper">
+
+    <select id="queryIdByRecordIds" resultType="java.lang.Long">
+        SELECT fcgd.gather_detail_id
+        FROM flow_claim_gather_detail  fcgd
+        WHERE fcgd.flow_claim_record_id in
+        <foreach collection="recordIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+    
+</mapper>

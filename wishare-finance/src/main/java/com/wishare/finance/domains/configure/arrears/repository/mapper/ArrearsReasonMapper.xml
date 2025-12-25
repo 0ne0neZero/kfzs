@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.arrears.repository.mapper.ArrearsReasonMapper">
+
+
+    <sql id="queryOverdueReasonBillPageBillSql">
+        select
+        a.arrears_reason,
+        a.arrears_category_name,
+        a.gmt_modify,
+        a.arrears_category_id,
+        b.id,
+        b.bill_no,
+        b.bill_type,
+        b.community_id,
+        b.community_name,
+        b.charge_item_id,
+        b.charge_item_name,
+        b.room_id,
+        b.room_name,
+        b.payer_type,
+        b.payer_name,
+        b.payer_id,
+        b.start_time,
+        b.end_time,
+        b.total_amount,
+        b.receivable_amount,
+        b.tax_amount,
+        b.deductible_amount,
+        b.overdue_amount,
+        b.discount_amount,
+        b.settle_amount,
+        b.refund_amount,
+        b.carried_amount,
+        b.invoice_amount,
+        b.reverse_amount,
+        b.preferential_amount,
+        b.preferential_refund_amount,
+        b.deduction_amount,
+        b.state,
+        b.settle_state,
+        b.carried_state,
+        b.refund_state,
+        b.reversed
+        FROM (
+        SELECT bill_id, MAX(gmt_modify) as gmt_modify
+        FROM arrears_reason
+        GROUP BY bill_id
+        ) AS ar
+        inner JOIN arrears_reason a ON ar.bill_id = a.bill_id AND a.gmt_modify = ar.gmt_modify
+        <choose>
+            <when test="_parameter.containsKey('tblName') and tblName != null and tblName.length > 0">
+                inner JoIN ${tblName} b ON b.id = a.bill_id
+            </when>
+            <otherwise>
+                inner JoIN receivable_bill b ON b.id = a.bill_id
+            </otherwise>
+        </choose>
+        ${ew.customSqlSegment}
+    </sql>
+
+
+
+
+
+
+
+    <select id="queryPageBill"
+            resultType="com.wishare.finance.apps.model.configure.arrearsCategory.vo.ArrearsReasonBillV">
+        SELECT a.arrears_reason,
+               a.arrears_category_name,
+               a.gmt_modify,
+               a.arrears_category_id,
+               b.id,
+               b.bill_no,
+               b.bill_type,
+               b.community_id,
+               b.community_name,
+               b.charge_item_id,
+               b.charge_item_name,
+               b.room_id,
+               b.room_name,
+               b.payer_type,
+               b.payer_name,
+               b.payer_id,
+               b.start_time,
+               b.end_time,
+               b.total_amount,
+               b.receivable_amount,
+               b.tax_amount,
+               b.deductible_amount,
+               b.overdue_amount,
+               b.discount_amount,
+               b.settle_amount,
+               b.refund_amount,
+               b.carried_amount,
+               b.invoice_amount,
+               b.reverse_amount,
+               b.preferential_amount,
+               b.preferential_refund_amount,
+               b.deduction_amount,
+               b.state,
+               b.settle_state,
+               b.carried_state,
+               b.refund_state,
+               b.reversed
+        FROM (
+                 SELECT bill_id, MAX(gmt_modify) as gmt_modify
+                 FROM arrears_reason
+                 GROUP BY bill_id
+             ) AS ar
+                 inner JOIN arrears_reason a ON ar.bill_id = a.bill_id AND a.gmt_modify = ar.gmt_modify
+                 inner JoIN receivable_bill b ON b.id = a.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="queryPageBillCount"
+            resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM (
+                 SELECT bill_id, MAX(gmt_modify) as gmt_modify
+                 FROM arrears_reason
+                 GROUP BY bill_id
+             ) AS ar
+                 inner JOIN arrears_reason a ON ar.bill_id = a.bill_id AND a.gmt_modify = ar.gmt_modify
+                 inner JoIN receivable_bill b ON b.id = a.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="batchReasonBillTotal" resultType="com.wishare.finance.domains.bill.dto.ReasonBillTotalDto">
+        select
+            count( 1 ) AS billTotal,
+            sum( b.receivable_amount ) AS receivableAmountTotal,
+            SUM( b.settle_amount ) AS settleAmountTotal,
+            SUM( b.discount_amount ) AS discountAmountTotal,
+            SUM( b.refund_amount ) AS refundAmountTotal,
+            SUM( b.overdue_amount ) AS overdueAmountTotal,
+            SUM( b.carried_amount ) AS carriedAmountTotal
+        FROM (
+                 SELECT bill_id, MAX(gmt_modify) as gmt_modify
+                 FROM arrears_reason
+                 GROUP BY bill_id
+             ) AS ar
+                 inner JOIN arrears_reason a ON ar.bill_id = a.bill_id AND a.gmt_modify = ar.gmt_modify
+                 inner JoIN receivable_bill b ON b.id = a.bill_id
+            ${ew.customSqlSegment}
+    </select>
+    <select id="queryNewArrearsReason" resultType="com.wishare.finance.domains.configure.arrears.entity.ArrearsReasonE">
+        select * from
+        (select * FROM arrears_reason where deleted = 0
+        <if test="billIds != null and billIds.size() != 0">
+            and bill_id in
+            <foreach collection="billIds" index="index" item="bill_id" open="(" separator="," close=")">
+                #{bill_id}
+            </foreach>
+        </if>
+        and tenant_id = #{tenantId}  order by gmt_modify desc limit 9999) t
+        GROUP BY
+        t.bill_id
+    </select>
+</mapper>

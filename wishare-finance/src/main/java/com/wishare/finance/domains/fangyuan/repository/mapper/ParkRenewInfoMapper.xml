@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.fangyuan.repository.mapper.ParkRenewInfoMapper">
+
+    <select id="queryPage" resultType="com.wishare.finance.domains.fangyuan.dto.ParkRenewInfoPageDto">
+    select
+        pri.result_code,
+        pri.result_msg,
+        group_concat(b.id) as id,
+        b.room_id,
+        b.room_name,
+        group_concat(b.bill_no) as bill_no,
+        b.community_id,
+        b.community_name,
+        b.charge_item_id,
+        b.charge_item_name,
+        b.customer_name,
+        b.bill_type,
+        sum(b.total_amount) as total_amount,
+        sum(b.receivable_amount) as receivable_amount,
+        sum(b.settle_amount) as settle_amount,
+        sum(b.settle_amount) as actual_pay_amount,
+        MIN(b.start_time) as start_time,
+        MAX(b.end_time) as end_time,
+        b.settle_state,
+        b.pay_infos,
+        b.pay_time,
+        b.payer_name,
+        b.payer_phone,
+        b.unit_price
+        from park_renew_info    pri
+        left join  receivable_bill  b on  pri.bill_id = b.id
+        ${ew.customSqlSegment}
+    </select>
+
+</mapper>

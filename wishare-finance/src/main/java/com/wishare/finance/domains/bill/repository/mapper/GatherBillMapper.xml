@@ -1,0 +1,1145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.GatherBillMapper">
+    <resultMap id="payInvoiceListMap" type="com.wishare.finance.domains.bill.dto.PayListDto">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="billNo" column="bill_no" jdbcType="VARCHAR"/>
+        <result property="statutoryBodyId" column="statutory_body_id" jdbcType="INTEGER"/>
+        <result property="statutoryBodyName" column="statutory_body_name" jdbcType="VARCHAR"/>
+        <result property="costCenterId" column="cost_center_id" jdbcType="INTEGER"/>
+        <result property="costCenterName" column="cost_center_name" jdbcType="VARCHAR"/>
+        <result property="sbAccountId" column="sb_account_id" jdbcType="INTEGER"/>
+        <result property="chargeItemId" column="charge_item_id" jdbcType="INTEGER"/>
+        <result property="chargeItemName" column="charge_item_name" jdbcType="VARCHAR"/>
+        <result property="cpOrgId" column="cp_org_id" jdbcType="VARCHAR"/>
+        <result property="cpOrgName" column="cp_org_name" jdbcType="VARCHAR"/>
+        <result property="supCpUnitId" column="sup_cp_unit_id" jdbcType="VARCHAR"/>
+        <result property="supCpUnitName" column="sup_cp_unit_name" jdbcType="VARCHAR"/>
+        <result property="cpUnitId" column="cp_unit_id" jdbcType="VARCHAR"/>
+        <result property="cpUnitName" column="cp_unit_name" jdbcType="VARCHAR"/>
+        <result property="payChannel" column="pay_channel" jdbcType="VARCHAR"/>
+        <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+        <result property="taxRateId" column="tax_rate_id" jdbcType="INTEGER"/>
+        <result property="taxRate" column="tax_rate" jdbcType="NUMERIC"/>
+        <result property="billType" column="bill_type" jdbcType="INTEGER"/>
+        <result property="outBusNo" column="out_bus_no" jdbcType="VARCHAR"/>
+        <result property="outBillNo" column="out_bill_no" jdbcType="VARCHAR"/>
+        <result property="outBusId" column="out_bus_id" jdbcType="VARCHAR"/>
+        <result property="currency" column="currency" jdbcType="VARCHAR"/>
+        <result property="totalAmount" column="total_amount" jdbcType="INTEGER"/>
+        <result property="payTime" column="pay_time" jdbcType="TIMESTAMP"/>
+        <result property="taxAmount" column="tax_amount" jdbcType="INTEGER"/>
+        <result property="invoiceAmount" column="invoice_amount" jdbcType="INTEGER"/>
+        <result property="onAccount" column="on_account" jdbcType="INTEGER"/>
+        <result property="accountHanded" column="account_handed" jdbcType="INTEGER"/>
+        <result property="sysSource" column="sys_source" jdbcType="INTEGER"/>
+    </resultMap>
+    <select id="queryPage" resultType="com.wishare.finance.domains.bill.dto.GatherBillDto">
+
+        SELECT
+            b.id, b.bill_no, b.out_bill_no,
+            b.out_bus_no, b.out_bus_id, b.statutory_body_id,
+            b.statutory_body_name, b.sup_cp_unit_id, b.sup_cp_unit_name,
+            b.sb_account_id, b.start_time, b.end_time, b.trade_no, b.pay_time,
+            b.pay_channel, b.pay_way, b.pay_source, b.mch_no, b.device_no, b.discounts,
+            b.tax_rate_id, b.tax_rate, b.tax_amount, b.description, b.currency, b.total_amount,
+            b.discount_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount,
+            b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.attach_params, b.sys_source, b.state, b.on_account,
+            b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state,
+            b.mc_reconcile_state, b.account_handed, b.inference_state, b.reversed, b.account_year, b.account_date,b.remark,
+            GROUP_CONCAT( DISTINCT gd.cost_center_id ) AS cost_center_id,
+            GROUP_CONCAT( DISTINCT gd.cost_center_name ) AS cost_center_name,
+            GROUP_CONCAT( DISTINCT gd.charge_item_id ) AS charge_item_id,
+            GROUP_CONCAT( DISTINCT gd.charge_item_name ) AS charge_item_name,
+            GROUP_CONCAT( DISTINCT gd.cp_org_id ) AS cp_org_id,
+            GROUP_CONCAT( DISTINCT gd.cp_org_name ) AS cp_org_name,
+            GROUP_CONCAT( DISTINCT gd.cp_unit_id ) AS cp_unit_id,
+            GROUP_CONCAT( DISTINCT gd.cp_unit_name ) AS cp_unit_name
+        FROM
+            ${gatherBillName} b
+                INNER JOIN ${gatherDetailName} gd ON b.id = gd.gather_bill_id and gd.available = 0
+                and gd.deleted = 0 and b.deleted = 0
+            ${ew.customSqlSegment}
+        GROUP BY
+            b.id
+        order by   b.id desc
+
+    </select>
+    <select id="queryGatherPage" resultType="com.wishare.finance.domains.bill.dto.GatherBillDto">
+        SELECT
+            b.id,
+            b.bill_no,
+            b.statutory_body_id,
+            b.statutory_body_name,
+            b.sup_cp_unit_id,
+            b.sup_cp_unit_name,
+            b.start_time,
+            b.end_time,
+            b.pay_time,
+            b.pay_channel,
+            b.pay_way,
+            b.pay_source,
+            b.trade_no,
+            b.total_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.invoice_amount,
+            b.deduction_amount,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.state,
+            b.approved_state,
+            b.invoice_state
+        FROM
+            ${gatherBillName} b
+                INNER JOIN ${gatherDetailName} gd ON b.id = gd.gather_bill_id and gd.available = 0
+                and gd.deleted = 0 and b.deleted = 0
+            ${ew.customSqlSegment}
+        GROUP BY
+            b.id
+        order by  b.id desc
+
+    </select>
+
+    <select id="queryPageCount" resultType="java.lang.Integer">
+        select count(1)
+        from (SELECT
+                  b.id
+              FROM
+                  ${gatherBillName} b
+                      INNER JOIN ${gatherDetailName} gd ON b.id = gd.gather_bill_id and gd.deleted = 0 and b.deleted = 0 and gd.available = 0
+                  ${ew.customSqlSegment}
+              GROUP BY
+                  b.id) total
+
+    </select>
+
+
+    <select id="queryTotal" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        select
+        count(1) as billTotal,
+        sum(b.total_amount) as amountTotal,
+        SUM(b.discount_amount) as discountAmountTotal,
+        SUM(b.refund_amount ) AS refundAmountTotal,
+        SUM(b.carried_amount ) AS carriedAmountTotal,
+        IFNULL(SUM(b.total_amount - b.refund_amount - b.carried_amount),0) AS actualPayAmountTotal,
+        IFNULL(b.cancelAmout,0) AS cancelAmout
+        <!--            from gather_bill b ${ew.customSqlSegment}-->
+        from
+        (SELECT b.id,
+        b.bill_no,
+        b.out_bill_no,
+        b.out_bus_no,
+        b.out_bus_id,
+        b.statutory_body_id,
+        b.statutory_body_name,
+        b.sup_cp_unit_id,
+        b.sb_account_id,
+        b.start_time,
+        b.end_time,
+        b.trade_no,
+        b.pay_time,
+        b.pay_channel,
+        b.pay_way,
+        b.pay_source,
+        b.mch_no,
+        b.device_no,
+        b.discounts,
+        b.tax_rate_id,
+        b.tax_rate,
+        b.tax_amount,
+        b.description,
+        b.currency,
+        b.total_amount,
+        b.discount_amount,
+        b.refund_amount,
+        b.carried_amount,
+        b.invoice_amount,
+        b.deduction_amount,
+        b.payee_id,
+        b.payee_name,
+        b.payer_id,
+        b.payer_name,
+        b.attach_params,
+        b.sys_source,
+        b.state,
+        b.on_account,
+        b.refund_state,
+        b.verify_state,
+        b.approved_state,
+        b.carried_state,
+        b.invoice_state,
+        b.reconcile_state,
+        b.mc_reconcile_state,
+        b.account_handed,
+        b.inference_state,
+        b.reversed,
+        b.account_year,
+        b.account_date,
+        GROUP_CONCAT( DISTINCT gd.cost_center_name ) AS cost_center_name,
+        GROUP_CONCAT( DISTINCT gd.charge_item_name ) AS charge_item_name,
+        GROUP_CONCAT( DISTINCT gd.cp_org_name ) AS cp_org_name,
+        GROUP_CONCAT( DISTINCT gd.cp_unit_name ) AS cp_unit_name,
+        SUM(gd.rec_pay_amount)	AS cancelAmout
+        from gather_bill b INNER JOIN gather_detail gd ON b.id = gd.gather_bill_id
+        ${ew.customSqlSegment}  GROUP BY b.id) b
+
+    </select>
+
+    <select id="queryTotalNew" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        SELECT
+            count( a.bcount ) AS billTotal,
+            SUM( a.bta ) AS amountTotal,
+            SUM( a.bda ) AS discountAmountTotal,
+            SUM( a.bra ) AS refundAmountTotal,
+            SUM( a.bca ) AS carriedAmountTotal,
+            SUM( a.bba ) AS actualPayAmountTotal
+        FROM
+            (
+                SELECT
+                    b.id AS bid,
+                    count( 1 ) AS bcount,
+                    b.total_amount AS bta,
+                    b.discount_amount AS bda,
+                    b.refund_amount AS bra,
+                    b.carried_amount AS bca,
+                    ( b.total_amount - b.refund_amount - b.carried_amount - b.discount_amount ) AS bba
+                FROM
+                    ${gatherBillName} b
+                        INNER JOIN ${gatherDetailName} gd ON b.id = gd.gather_bill_id and gd.available = 0
+                    ${ew.customSqlSegment}
+                GROUP BY
+                    b.id
+            ) a
+    </select>
+
+    <select id="payList" resultType="com.wishare.finance.domains.bill.dto.PayListDto">
+        SELECT b.id,
+               b.bill_no,
+               b.out_bill_no,
+               b.out_bus_no,
+               b.out_bus_id,
+               b.statutory_body_id,
+               b.statutory_body_name,
+               b.sb_account_id,
+               MIN(gd.charge_start_time) as start_time,
+               MAX(gd.charge_end_time) as end_time,
+               b.trade_no,
+               b.pay_time,
+               b.pay_channel,
+               b.pay_way,
+               b.tax_rate_id,
+               b.tax_rate,
+               b.tax_amount,
+               b.description,
+               b.currency,
+               b.total_amount,
+               b.discount_amount,
+               b.refund_amount,
+               b.carried_amount,
+               b.invoice_amount,
+               b.payee_id,
+               b.payee_name,
+               b.payer_id,
+               b.payer_name,
+               b.attach_params,
+               b.sys_source,
+               b.state,
+               b.on_account,
+               b.refund_state,
+               b.verify_state,
+               b.approved_state,
+               b.carried_state,
+               b.invoice_state,
+               b.reconcile_state,
+               b.mc_reconcile_state,
+               b.account_handed,
+               b.inference_state,
+               b.reversed,
+               b.account_date,
+               b.remark,
+               b.ext_field1,
+               b.ext_field2,
+               b.ext_field3,
+               b.ext_field4,
+               b.ext_field5,
+               b.ext_field6,
+               b.ext_field7,
+               b.ext_field8,
+               b.ext_field9,
+               b.ext_field10,
+               GROUP_CONCAT(DISTINCT gd.cost_center_id )   AS cost_center_id,
+               GROUP_CONCAT(DISTINCT gd.cost_center_name ) AS cost_center_name,
+               GROUP_CONCAT(DISTINCT gd.charge_item_id )   AS charge_item_id,
+               GROUP_CONCAT(DISTINCT gd.charge_item_name ) AS charge_item_name,
+               GROUP_CONCAT(DISTINCT gd.cp_org_id )        AS cp_org_id,
+               GROUP_CONCAT(DISTINCT gd.cp_org_name )      AS cp_org_name,
+               GROUP_CONCAT(DISTINCT gd.sup_cp_unit_id )   AS sup_cp_unit_id,
+               GROUP_CONCAT(DISTINCT gd.sup_cp_unit_name ) AS sup_cp_unit_name,
+               GROUP_CONCAT(DISTINCT gd.cp_unit_id )       AS cp_unit_id,
+               GROUP_CONCAT(DISTINCT gd.cp_unit_name )     AS cp_unit_name
+        FROM gather_bill b
+                 INNER JOIN gather_detail gd ON b.id = gd.gather_bill_id
+            ${ew.customSqlSegment}
+
+    </select>
+
+    <!--<select id="payInvoiceList" resultMap="payInvoiceListMap">
+        SELECT id,
+               bill_no,
+               out_bill_no,
+               out_bus_no,
+               out_bus_id,
+               statutory_body_id,
+               statutory_body_name,
+               sb_account_id,
+               start_time,
+               end_time,
+               trade_no,
+               pay_time,
+               pay_channel,
+               pay_way,
+               tax_rate_id,
+               tax_rate,
+               tax_amount,
+               description,
+               currency,
+               total_amount,
+               discount_amount,
+               refund_amount,
+               carried_amount,
+               invoice_amount,
+               payee_id,
+               payee_name,
+               payer_id,
+               payer_name,
+               attach_params,
+               sys_source,
+               state,
+               on_account,
+               refund_state,
+               verify_state,
+               approved_state,
+               carried_state,
+               invoice_state,
+               reconcile_state,
+               mc_reconcile_state,
+               account_handed,
+               inference_state,
+               reversed,
+               account_date,
+               remark,
+               ext_field1,
+               ext_field2,
+               ext_field3,
+               ext_field4,
+               ext_field5,
+               ext_field6,
+               ext_field7,
+               ext_field8,
+               ext_field9,
+               ext_field10,
+               cost_center_id,
+               cost_center_name,
+               charge_item_id,
+               charge_item_name,
+               cp_org_id,
+               cp_org_name,
+               sup_cp_unit_id,
+               sup_cp_unit_name,
+               cp_unit_id,
+               cp_unit_name,
+               rec_bill_id,
+               bill_type
+        FROM ((SELECT b.id,
+                      b.bill_no,
+                      b.out_bill_no,
+                      b.out_bus_no,
+                      b.out_bus_id,
+                      b.statutory_body_id,
+                      b.statutory_body_name,
+                      b.sb_account_id,
+                      b.start_time,
+                      b.end_time,
+                      b.trade_no,
+                      b.pay_time,
+                      b.pay_channel,
+                      b.pay_way,
+                      b.tax_rate_id,
+                      b.tax_rate,
+                      b.tax_amount,
+                      b.description,
+                      b.currency,
+                      b.total_amount,
+                      b.discount_amount,
+                      b.refund_amount,
+                      b.carried_amount,
+                      b.invoice_amount,
+                      b.payee_id,
+                      b.payee_name,
+                      b.payer_id,
+                      b.payer_name,
+                      b.attach_params,
+                      b.sys_source,
+                      b.state,
+                      b.on_account,
+                      b.refund_state,
+                      b.verify_state,
+                      b.approved_state,
+                      b.carried_state,
+                      b.invoice_state,
+                      b.reconcile_state,
+                      b.mc_reconcile_state,
+                      b.account_handed,
+                      b.inference_state,
+                      b.reversed,
+                      b.account_date,
+                      b.remark,
+                      b.ext_field1,
+                      b.ext_field2,
+                      b.ext_field3,
+                      b.ext_field4,
+                      b.ext_field5,
+                      b.ext_field6,
+                      b.ext_field7,
+                      b.ext_field8,
+                      b.ext_field9,
+                      b.ext_field10,
+                      GROUP_CONCAT(DISTINCT gd.cost_center_id )   AS cost_center_id,
+                      GROUP_CONCAT(DISTINCT gd.cost_center_name ) AS cost_center_name,
+                      GROUP_CONCAT(DISTINCT gd.charge_item_id )   AS charge_item_id,
+                      GROUP_CONCAT(DISTINCT gd.charge_item_name ) AS charge_item_name,
+                      GROUP_CONCAT(DISTINCT gd.cp_org_id )        AS cp_org_id,
+                      GROUP_CONCAT(DISTINCT gd.cp_org_name )      AS cp_org_name,
+                      GROUP_CONCAT(DISTINCT gd.sup_cp_unit_id )   AS sup_cp_unit_id,
+                      GROUP_CONCAT(DISTINCT gd.sup_cp_unit_name ) AS sup_cp_unit_name,
+                      GROUP_CONCAT(DISTINCT gd.cp_unit_id )       AS cp_unit_id,
+                      GROUP_CONCAT(DISTINCT gd.cp_unit_name )     AS cp_unit_name,
+                      gd.rec_bill_id as rec_bill_id,
+                      if(gd.gather_type = 1,2,gd.gather_type)  as bill_type
+               FROM ${gatherBillTableName} b
+                        LEFT JOIN ${gatherDetailTableName} gd ON b.id = gd.gather_bill_id
+                   ${ew.customSqlSegment}
+               GROUP BY b.id order by gd.pay_time DESC)
+              union all
+              (SELECT b.id,
+                      b.bill_no,
+                      b.out_bill_no,
+                      b.out_bus_no,
+                      b.out_bus_id,
+                      b.statutory_body_id,
+                      b.statutory_body_name,
+                      b.sb_account_id,
+                      b.start_time,
+                      b.end_time,
+                      b.trade_no,
+                      gd.pay_time,
+                      gd.pay_channel,
+                      gd.pay_way,
+                      b.tax_rate_id,
+                      b.tax_rate,
+                      b.tax_amount,
+                      b.description,
+                      b.currency,
+                      sum(b.total_amount) as total_amount,
+                      sum(b.discount_amount) as discount_amount,
+                      sum(b.refund_amount) as refund_amount,
+                      sum(b.carried_amount) as carried_amount,
+                      sum(b.invoice_amount) as invoice_amount,
+                      b.payee_id,
+                      b.payee_name,
+                      b.payer_id,
+                      b.payer_name,
+                      b.attach_params,
+                      b.sys_source,
+                      b.state,
+                      b.on_account,
+                      b.refund_state,
+                      b.verify_state,
+                      b.approved_state,
+                      b.carried_state,
+                      b.invoice_state,
+                      b.reconcile_state,
+                      b.mc_reconcile_state,
+                      b.account_handed,
+                      b.inference_state,
+                      b.reversed,
+                      b.account_date,
+                      b.remark,
+                      b.ext_field1,
+                      b.ext_field2,
+                      b.ext_field3,
+                      b.ext_field4,
+                      b.ext_field5,
+                      b.ext_field6,
+                      b.ext_field7,
+                      b.ext_field8,
+                      b.ext_field9,
+                      b.ext_field10,
+                      GROUP_CONCAT(DISTINCT b.cost_center_id )   AS cost_center_id,
+                      GROUP_CONCAT(DISTINCT b.cost_center_name ) AS cost_center_name,
+                      GROUP_CONCAT(DISTINCT b.charge_item_id )   AS charge_item_id,
+                      GROUP_CONCAT(DISTINCT b.charge_item_name ) AS charge_item_name,
+                      GROUP_CONCAT(DISTINCT b.cp_org_id )        AS cp_org_id,
+                      GROUP_CONCAT(DISTINCT b.cp_org_name )      AS cp_org_name,
+                      GROUP_CONCAT(DISTINCT b.sup_cp_unit_id )   AS sup_cp_unit_id,
+                      GROUP_CONCAT(DISTINCT b.sup_cp_unit_name ) AS sup_cp_unit_name,
+                      GROUP_CONCAT(DISTINCT b.cp_unit_id )       AS cp_unit_id,
+                      GROUP_CONCAT(DISTINCT b.cp_unit_name )     AS cp_unit_name,
+                      gd.rec_bill_id as rec_bill_id,
+                      2 as bill_type
+               FROM advance_bill b
+                        LEFT JOIN ${gatherDetailTableName} gd ON b.id = gd.gather_bill_id
+                   ${ew.customSqlSegment}
+                    and gd.out_pay_no is not null
+               GROUP BY gd.out_pay_no order by gd.pay_time DESC)) aa order by pay_time desc
+            limit ${(page.current-1)*page.size},#{page.size}
+    </select>
+
+    <select id="payInvoiceListCnt" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM ((SELECT b.id,
+                      b.bill_no,
+                      b.out_bill_no,
+                      b.out_bus_no,
+                      b.out_bus_id,
+                      b.statutory_body_id,
+                      b.statutory_body_name,
+                      b.sb_account_id,
+                      b.start_time,
+                      b.end_time,
+                      b.trade_no,
+                      b.pay_time,
+                      b.pay_channel,
+                      b.pay_way,
+                      b.tax_rate_id,
+                      b.tax_rate,
+                      b.tax_amount,
+                      b.description,
+                      b.currency,
+                      b.total_amount,
+                      b.discount_amount,
+                      b.refund_amount,
+                      b.carried_amount,
+                      b.invoice_amount,
+                      b.payee_id,
+                      b.payee_name,
+                      b.payer_id,
+                      b.payer_name,
+                      b.attach_params,
+                      b.sys_source,
+                      b.state,
+                      b.on_account,
+                      b.refund_state,
+                      b.verify_state,
+                      b.approved_state,
+                      b.carried_state,
+                      b.invoice_state,
+                      b.reconcile_state,
+                      b.mc_reconcile_state,
+                      b.account_handed,
+                      b.inference_state,
+                      b.reversed,
+                      b.account_date,
+                      b.remark,
+                      b.ext_field1,
+                      b.ext_field2,
+                      b.ext_field3,
+                      b.ext_field4,
+                      b.ext_field5,
+                      b.ext_field6,
+                      b.ext_field7,
+                      b.ext_field8,
+                      b.ext_field9,
+                      b.ext_field10,
+                      GROUP_CONCAT(DISTINCT gd.cost_center_id )   AS cost_center_id,
+                      GROUP_CONCAT(DISTINCT gd.cost_center_name ) AS cost_center_name,
+                      GROUP_CONCAT(DISTINCT gd.charge_item_id )   AS charge_item_id,
+                      GROUP_CONCAT(DISTINCT gd.charge_item_name ) AS charge_item_name,
+                      GROUP_CONCAT(DISTINCT gd.cp_org_id )        AS cp_org_id,
+                      GROUP_CONCAT(DISTINCT gd.cp_org_name )      AS cp_org_name,
+                      GROUP_CONCAT(DISTINCT gd.sup_cp_unit_id )   AS sup_cp_unit_id,
+                      GROUP_CONCAT(DISTINCT gd.sup_cp_unit_name ) AS sup_cp_unit_name,
+                      GROUP_CONCAT(DISTINCT gd.cp_unit_id )       AS cp_unit_id,
+                      GROUP_CONCAT(DISTINCT gd.cp_unit_name )     AS cp_unit_name,
+                      gd.rec_bill_id as rec_bill_id,
+                      if(gd.gather_type = 1,2,gd.gather_type)  as bill_type
+               FROM ${gatherBillTableName} b
+                        LEFT JOIN ${gatherDetailTableName} gd ON b.id = gd.gather_bill_id
+                   ${ew.customSqlSegment}
+               GROUP BY b.id order by gd.pay_time DESC)
+              union all
+              (SELECT b.id,
+                      b.bill_no,
+                      b.out_bill_no,
+                      b.out_bus_no,
+                      b.out_bus_id,
+                      b.statutory_body_id,
+                      b.statutory_body_name,
+                      b.sb_account_id,
+                      b.start_time,
+                      b.end_time,
+                      b.trade_no,
+                      gd.pay_time,
+                      gd.pay_channel,
+                      gd.pay_way,
+                      b.tax_rate_id,
+                      b.tax_rate,
+                      b.tax_amount,
+                      b.description,
+                      b.currency,
+                      sum(b.total_amount) as total_amount,
+                      sum(b.discount_amount) as discount_amount,
+                      sum(b.refund_amount) as refund_amount,
+                      sum(b.carried_amount) as carried_amount,
+                      sum(b.invoice_amount) as invoice_amount,
+                      b.payee_id,
+                      b.payee_name,
+                      b.payer_id,
+                      b.payer_name,
+                      b.attach_params,
+                      b.sys_source,
+                      b.state,
+                      b.on_account,
+                      b.refund_state,
+                      b.verify_state,
+                      b.approved_state,
+                      b.carried_state,
+                      b.invoice_state,
+                      b.reconcile_state,
+                      b.mc_reconcile_state,
+                      b.account_handed,
+                      b.inference_state,
+                      b.reversed,
+                      b.account_date,
+                      b.remark,
+                      b.ext_field1,
+                      b.ext_field2,
+                      b.ext_field3,
+                      b.ext_field4,
+                      b.ext_field5,
+                      b.ext_field6,
+                      b.ext_field7,
+                      b.ext_field8,
+                      b.ext_field9,
+                      b.ext_field10,
+                      GROUP_CONCAT(DISTINCT b.cost_center_id )   AS cost_center_id,
+                      GROUP_CONCAT(DISTINCT b.cost_center_name ) AS cost_center_name,
+                      GROUP_CONCAT(DISTINCT b.charge_item_id )   AS charge_item_id,
+                      GROUP_CONCAT(DISTINCT b.charge_item_name ) AS charge_item_name,
+                      GROUP_CONCAT(DISTINCT b.cp_org_id )        AS cp_org_id,
+                      GROUP_CONCAT(DISTINCT b.cp_org_name )      AS cp_org_name,
+                      GROUP_CONCAT(DISTINCT b.sup_cp_unit_id )   AS sup_cp_unit_id,
+                      GROUP_CONCAT(DISTINCT b.sup_cp_unit_name ) AS sup_cp_unit_name,
+                      GROUP_CONCAT(DISTINCT b.cp_unit_id )       AS cp_unit_id,
+                      GROUP_CONCAT(DISTINCT b.cp_unit_name )     AS cp_unit_name,
+                      gd.rec_bill_id as rec_bill_id,
+                      2 as bill_type
+               FROM advance_bill b
+                        LEFT JOIN ${gatherDetailTableName} gd ON b.id = gd.gather_bill_id
+                   ${ew.customSqlSegment}
+                    and gd.out_pay_no is not null
+               GROUP BY gd.out_pay_no order by gd.pay_time DESC)) aa
+    </select>-->
+
+    <select id="payInvoiceList" resultMap="payInvoiceListMap">
+        SELECT b.id,
+              b.bill_no,
+              b.out_bill_no,
+              b.out_bus_no,
+              b.out_bus_id,
+              b.statutory_body_id,
+              b.statutory_body_name,
+              b.sb_account_id,
+              b.start_time,
+              b.end_time,
+              b.trade_no,
+              b.pay_time,
+              b.pay_channel,
+              b.pay_way,
+              b.tax_rate_id,
+              b.tax_rate,
+              b.tax_amount,
+              b.description,
+              b.currency,
+              b.total_amount,
+              b.discount_amount,
+              b.refund_amount,
+              b.carried_amount,
+              b.invoice_amount,
+              b.payee_id,
+              b.payee_name,
+              b.payer_id,
+              b.payer_name,
+              b.attach_params,
+              b.sys_source,
+              b.state,
+              b.on_account,
+              b.refund_state,
+              b.verify_state,
+              b.approved_state,
+              b.carried_state,
+              b.invoice_state,
+              b.reconcile_state,
+              b.mc_reconcile_state,
+              b.account_handed,
+              b.inference_state,
+              b.reversed,
+              b.account_date,
+              b.remark,
+              b.ext_field1,
+              b.ext_field2,
+              b.ext_field3,
+              b.ext_field4,
+              b.ext_field5,
+              b.ext_field6,
+              b.ext_field7,
+              b.ext_field8,
+              b.ext_field9,
+              b.ext_field10,
+              GROUP_CONCAT(DISTINCT gd.cost_center_id )   AS cost_center_id,
+              GROUP_CONCAT(DISTINCT gd.cost_center_name ) AS cost_center_name,
+              GROUP_CONCAT(DISTINCT gd.charge_item_id )   AS charge_item_id,
+              GROUP_CONCAT(DISTINCT gd.charge_item_name ) AS charge_item_name,
+              GROUP_CONCAT(DISTINCT gd.cp_org_id )        AS cp_org_id,
+              GROUP_CONCAT(DISTINCT gd.cp_org_name )      AS cp_org_name,
+              GROUP_CONCAT(DISTINCT gd.sup_cp_unit_id )   AS sup_cp_unit_id,
+              GROUP_CONCAT(DISTINCT gd.sup_cp_unit_name ) AS sup_cp_unit_name,
+              GROUP_CONCAT(DISTINCT gd.cp_unit_id )       AS cp_unit_id,
+              GROUP_CONCAT(DISTINCT gd.cp_unit_name )     AS cp_unit_name,
+              gd.rec_bill_id as rec_bill_id,
+              if(gd.gather_type = 1,2,gd.gather_type)  as bill_type
+               FROM ${gatherBillTableName} b
+                        INNER JOIN ${gatherDetailTableName} gd ON b.id = gd.gather_bill_id
+                   ${ew.customSqlSegment}
+               GROUP BY b.id order by gd.pay_time DESC
+<!--            limit ${(page.current-1)*page.size},#{page.size}-->
+    </select>
+
+    <select id="payInvoiceListCnt" resultType="java.lang.Integer">
+        SELECT count(1)
+        FROM (SELECT count(1)
+               FROM ${gatherBillTableName} b
+                        INNER JOIN ${gatherDetailTableName} gd ON b.id = gd.gather_bill_id
+                   ${ew.customSqlSegment}
+               GROUP BY b.id) gb
+
+    </select>
+
+    <select id="queryById" resultType="com.wishare.finance.domains.bill.dto.GatherBillDto">
+        SELECT
+            b.id, b.bill_no, b.out_bill_no, b.out_bus_no, b.out_bus_id, b.statutory_body_id, b.statutory_body_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.sb_account_id, b.start_time, b.end_time, b.trade_no, b.pay_time, b.pay_channel, b.pay_way, b.pay_source, b.mch_no, b.device_no, b.discounts, b.tax_rate_id, b.tax_rate, b.tax_amount, b.description, b.currency, b.total_amount, b.discount_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.attach_params, b.sys_source, b.state, b.on_account, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.reversed, b.account_year, b.account_date
+                ,b.preferential,b.gmt_create,b.gmt_modify,
+            GROUP_CONCAT(DISTINCT gd.cost_center_id) as cost_center_id,
+            GROUP_CONCAT(DISTINCT gd.cost_center_name) as cost_center_name,
+            GROUP_CONCAT(DISTINCT gd.charge_item_id) as charge_item_id,
+            GROUP_CONCAT(DISTINCT gd.charge_item_name) as chargeItemName,
+            GROUP_CONCAT(DISTINCT gd.cp_org_id) as cp_org_id,
+            GROUP_CONCAT(DISTINCT gd.cp_org_name) as cp_org_name,
+            GROUP_CONCAT(DISTINCT gd.sup_cp_unit_id) as sup_cp_unit_id,
+            GROUP_CONCAT(DISTINCT gd.sup_cp_unit_name) as sup_cp_unit_name,
+            GROUP_CONCAT(DISTINCT gd.cp_unit_id) as cp_unit_id,
+            GROUP_CONCAT(DISTINCT gd.cp_unit_name) as cp_unit_name
+        FROM
+            ${gatherBillTableName} b
+                LEFT JOIN ${gatherDetailTableName} gd ON b.id = gd.gather_bill_id
+        where b.deleted = 0 and b.id = #{gatherBillId} and b.reversed = 0
+        GROUP BY b.id
+    </select>
+
+    <select id="queryByIdList" resultType="com.wishare.finance.domains.bill.dto.GatherBillDto">
+        SELECT
+        b.id, b.bill_no, b.out_bill_no, b.out_bus_no, b.out_bus_id, b.statutory_body_id, b.statutory_body_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.sb_account_id, b.start_time, b.end_time, b.trade_no, b.pay_time, b.pay_channel, b.pay_way, b.pay_source, b.mch_no, b.device_no, b.discounts, b.tax_rate_id, b.tax_rate, b.tax_amount, b.description, b.currency, b.total_amount, b.discount_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.attach_params, b.sys_source, b.state, b.on_account, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.reversed, b.account_year, b.account_date,
+        b.preferential,
+        GROUP_CONCAT(DISTINCT gd.cost_center_id) as cost_center_id,
+        GROUP_CONCAT(DISTINCT gd.cost_center_name) as cost_center_name,
+        GROUP_CONCAT(DISTINCT gd.charge_item_id) as charge_item_id,
+        GROUP_CONCAT(DISTINCT gd.charge_item_name) as chargeItemName,
+        GROUP_CONCAT(DISTINCT gd.cp_org_id) as cp_org_id,
+        GROUP_CONCAT(DISTINCT gd.cp_org_name) as cp_org_name,
+        GROUP_CONCAT(DISTINCT gd.sup_cp_unit_id) as sup_cp_unit_id,
+        GROUP_CONCAT(DISTINCT gd.sup_cp_unit_name) as sup_cp_unit_name,
+        GROUP_CONCAT(DISTINCT gd.cp_unit_id) as cp_unit_id,
+        GROUP_CONCAT(DISTINCT gd.cp_unit_name) as cp_unit_name
+        FROM
+        gather_bill b
+        inner JOIN gather_detail gd ON b.id = gd.gather_bill_id and gd.available = 0
+        where b.deleted = 0
+        and b.sup_cp_unit_id = #{supCpUnitId} and gd.sup_cp_unit_id = #{supCpUnitId}
+        <if test="gatherBillIdList != null and gatherBillIdList.size() > 0">
+            and b.id in
+            <foreach collection="gatherBillIdList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY b.id
+    </select>
+
+    <select id="pageBillInferenceInfo" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+        select b.id, b.bill_no, b.statutory_body_id, b.statutory_body_name, bd.sup_cp_unit_id as communityId,
+               bd.sup_cp_unit_name as communityName, bd.inference_state, b.sys_source as `source`, b.sb_account_id,
+               bd.charge_item_id, bd.charge_item_name, bd.cp_unit_id as roomId, bd.cp_unit_name as roomName,
+               b.start_time, b.end_time, b.out_bill_no, b.out_bus_no, b.currency, b.total_amount, b.discount_amount,
+               bd.pay_amount as receivableAmount, b.discount_amount, b.carried_amount, b.refund_amount, b.invoice_amount,
+               b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.state, b.on_account, b.refund_state, b.verify_state,
+               b.approved_state, b.carried_state, b.invoice_state, b.reversed, b.reconcile_state, b.tax_rate, bd.id as concatId,
+               bd.pay_time as gmtCreate, bd.cost_center_id, bd.cost_center_name, bd.rec_bill_id as taxBillId, bd.gather_type as taxBillType
+        from gather_detail bd inner join gather_bill b on bd.gather_bill_id = b.id ${ew.customSqlSegment}
+    </select>
+
+    <select id="pageBillInferenceOffInfo" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+        select b.id, b.bill_no, b.statutory_body_id, b.statutory_body_name, bd.sup_cp_unit_id as communityId,
+               bd.sup_cp_unit_name as communityName, bd.inference_state, b.sys_source as `source`, b.sb_account_id,
+               bd.charge_item_id, bd.charge_item_name, bd.cp_unit_id as roomId, bd.cp_unit_name as roomName,
+               b.start_time, b.end_time, b.out_bill_no, b.out_bus_no, b.currency, b.total_amount, b.discount_amount,
+               bd.pay_amount as receivableAmount, b.discount_amount, b.carried_amount, b.refund_amount, b.invoice_amount,
+               b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.state, b.on_account, b.refund_state, b.verify_state,
+               b.approved_state, b.carried_state, b.invoice_state, b.reversed, b.reconcile_state, b.tax_rate, bd.id as concatId,
+               bd.pay_time as gmtCreate, bd.cost_center_id, bd.cost_center_name, bd.rec_bill_id as taxBillId, bd.gather_type as taxBillType
+        from gather_detail bd inner join gather_bill b on bd.gather_bill_id = b.id and (b.reversed = 1 or b.state = 2) ${ew.customSqlSegment}
+    </select>
+
+    <select id="listVoucherBillByQuery"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT b.id              as businessBillId,
+               b.bill_no         as businessBillNo,
+               rb.statutory_body_id,
+               rb.statutory_body_name,
+               gd.cost_center_id,
+               gd.cost_center_name,
+               gd.charge_item_id,
+               gd.charge_item_name,
+               7                 as businessBillType,
+               rb.deductible_amount,
+               rb.receivable_amount,
+               rb.discount_amount,
+               gd.rec_pay_amount as actualPayAmount,
+               b.tax_rate_id,
+               b.tax_rate,
+               b.total_amount,
+               0                 as fee,
+               b.tax_amount,
+               b.account_year,
+               b.account_date,
+               gd.sup_cp_unit_id,
+               gd.sup_cp_unit_name,
+               gd.cp_unit_id,
+               gd.cp_unit_name,
+
+               IFNULL(rb.payer_id,rb.customer_id) as customerId,
+               IFNULL(rb.payer_name,rb.customer_name) as customerName,
+               IFNULL(rb.payer_type,rb.customer_type) as customerType,
+               b.sb_account_id,
+               b.sys_source,
+               vbd.id,
+               rb.business_code,
+               ${voucherEventType} as sceneType,
+               rb.business_name,
+               rb.business_unit_id,
+               gd.pay_time,
+               gd.pay_way,
+               gd.pay_channel,
+               gd.id as sceneId,
+                rb.id as receivableBillId
+
+        FROM gather_bill b
+                 LEFT JOIN gather_detail gd ON b.id = gd.gather_bill_id
+                 INNER JOIN receivable_bill rb ON gd.rec_bill_id = rb.id
+
+                 LEFT JOIN charge_item ci ON gd.charge_item_id = ci.id
+                 LEFT JOIN  ${tableName} vbd on vbd.scene_id = gd.id  and vbd.scene_type = #{voucherEventType} AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="listVoucherBankBillByQuery"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT b.id                                                  as businessBillId,
+               b.bill_no                                             as businessBillNo,
+               b.statutory_body_id,
+               b.statutory_body_name,
+               gd.cost_center_id,
+               gd.cost_center_name,
+               gd.charge_item_id,
+               gd.charge_item_name,
+               11                                                     as businessBillType,
+               b.total_amount,
+               gd.rec_pay_amount                                     as receivable_amount,
+               b.discount_amount,
+               gd.rec_pay_amount                                       as actualPayAmount,
+               b.tax_amount,
+               b.tax_rate_id,
+               b.tax_rate,
+               b.account_year,
+               b.account_date,
+               gd.sup_cp_unit_id,
+               gd.sup_cp_unit_name,
+               gd.cp_unit_id,
+               gd.cp_unit_name,
+               IFNULL(rb.payer_id,rb.customer_id) as customerId,
+               IFNULL(rb.payer_name,rb.customer_name) as customerName,
+               IFNULL(rb.payer_type,rb.customer_type) as customerType,
+               b.sb_account_id,
+               b.sys_source,
+               rd.commission                                         as fee,
+               vbd.id,
+               rb.business_code,
+               rb.business_name,
+               rb.business_unit_id
+        FROM gather_bill b
+                 LEFT JOIN gather_detail gd ON b.id = gd.gather_bill_id
+                 LEFT JOIN receivable_bill rb ON gd.rec_bill_id = rb.id
+                 LEFT JOIN  ${tableName} vbd on vbd.business_bill_id = b.id and vbd.business_bill_type = 11 AND (vbd.deleted is null or vbd.deleted = 0)
+                 INNER JOIN reconciliation_detail rd on rd.bill_id = b.id and rd.result = 2 and reconcile_mode = 1
+            ${ew.customSqlSegment}
+        group by b.id
+    </select>
+
+    <select id="listVoucherClaimBillByQuery"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT b.id              as businessBillId,
+               b.bill_no         as businessBillNo,
+               b.statutory_body_id,
+               b.statutory_body_name,
+               gd.cost_center_id,
+               gd.cost_center_name,
+               gd.charge_item_id,
+               gd.charge_item_name,
+               10                as businessBillType,
+               rb.deductible_amount,
+               b.total_amount,
+               gd.rec_pay_amount as receivable_amount,
+               b.discount_amount,
+               gd.rec_pay_amount as actualPayAmount,
+               b.tax_amount,
+               b.tax_rate_id,
+               b.tax_rate,
+               b.account_year,
+               b.account_date,
+               gd.sup_cp_unit_id,
+               gd.sup_cp_unit_name,
+               gd.cp_unit_id,
+               gd.cp_unit_name,
+
+               IFNULL(rb.payer_id,rb.customer_id) as customerId,
+               IFNULL(rb.payer_name,rb.customer_name) as customerName,
+               IFNULL(rb.payer_type,rb.customer_type) as customerType,
+               b.sb_account_id,
+               b.sys_source,
+               vbd.id,
+               rb.business_code,
+               rb.business_name,
+               rb.business_unit_id
+        FROM ${gatherBillTableName} b
+                 INNER JOIN (SELECT gd.id, gd.gather_type, gd.gather_bill_id, gd.gather_bill_no, gd.rec_bill_id, gd.rec_bill_no, gd.cost_center_id, gd.cost_center_name, gd.charge_item_id, gd.charge_item_name, gd.cp_org_id, gd.cp_org_name, gd.sup_cp_unit_id, gd.sup_cp_unit_name, gd.cp_unit_id, gd.cp_unit_name, gd.pay_channel, gd.pay_way, gd.out_pay_no, gd.carried_bill_id, gd.carried_bill_no, gd.carried_bill_type, gd.bill_carryover_id, gd.rec_pay_amount, gd.pay_amount, gd.payer_type, gd.payer_id, gd.payer_name, gd.payer_phone, gd.payee_id, gd.payee_name, gd.payee_phone, gd.pay_time, gd.charge_start_time, gd.charge_end_time, gd.inference_state, gd.tenant_id, gd.deleted, gd.available, gd.creator, gd.creator_name, gd.gmt_create, gd.operator, gd.operator_name, gd.gmt_modify, gd.refund_amount, gd.carried_amount, gd.deduction_amount
+
+                             FROM flow_claim_detail fcd
+                                      INNER JOIN invoice_receipt_detail ird
+                                                 ON ird.invoice_receipt_id = fcd.invoice_id AND
+                                                    fcd.invoice_amount > 0 AND fcd.state = 0
+                                      INNER JOIN ${gatherDetailTableName} gd
+                                                 ON gd.rec_bill_id = ird.bill_id AND gather_type = 0
+                             GROUP BY gd.id) gd ON b.id = gd.gather_bill_id
+                 INNER JOIN ${receivableBillTableName} rb ON gd.rec_bill_id = rb.id
+                 INNER JOIN charge_item ci ON ci.id = rb.charge_item_id
+                 LEFT JOIN ${tableName} vbd on vbd.business_bill_id = b.id and vbd.business_bill_type = 10 AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+    <select id="listVoucherBillByQueryFromContract"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT b.id              as businessBillId,
+               b.bill_no         as businessBillNo,
+               b.statutory_body_id,
+               b.statutory_body_name,
+               gd.cost_center_id,
+               gd.cost_center_name,
+               gd.charge_item_id,
+               gd.charge_item_name,
+               #{businessBillType}         as businessBillType,
+               rb.deductible_amount,
+               rb.receivable_amount,
+               rb.discount_amount,
+               gd.rec_pay_amount as actualPayAmount,
+               b.tax_rate_id,
+               b.tax_rate,
+               b.total_amount,
+               0                 as fee,
+               b.tax_amount,
+               b.account_year,
+               b.account_date,
+               gd.sup_cp_unit_id,
+               gd.sup_cp_unit_name,
+               gd.cp_unit_id,
+               gd.cp_unit_name,
+
+               IFNULL(rb.payer_id,rb.customer_id) as customerId,
+               IFNULL(rb.payer_name,rb.customer_name) as customerName,
+               IFNULL(rb.payer_type,rb.customer_type) as customerType,
+
+               b.sb_account_id,
+               b.sys_source,
+               vbd.id,
+               rb.business_code,
+               rb.business_name,
+               rb.business_unit_id,
+               gd.id as sceneId,
+               b.pay_channel
+        FROM gather_bill b
+                 LEFT JOIN gather_detail gd ON b.id = gd.gather_bill_id
+                 LEFT JOIN receivable_bill rb ON gd.rec_bill_id = rb.id
+                 LEFT JOIN ${tableName} vbd on vbd.scene_id = gd.id and vbd.scene_type = #{voucherEventType} AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="queryCountByTradeNo" resultType="java.lang.Integer">
+        SELECT
+            count(1)
+        FROM
+            gather_bill where trade_no = #{tradeNo} and sup_cp_unit_id = #{supCpUnitId} and deleted = 0
+
+
+    </select>
+
+    <select id="queryPageGatherBillIgnore" resultType="com.wishare.finance.domains.bill.dto.GatherDto">
+        SELECT
+            id,
+            total_amount as payAmount,
+            pay_time,
+            "gather" AS gatherAndPayType,
+            gmt_create
+        FROM
+            gather_bill b
+            ${ew.customSqlSegment}
+        ORDER BY
+            pay_time DESC
+    </select>
+
+    <update id="updateReceivableBillInferenceStateByGatherBillIds">
+        UPDATE receivable_bill SET inference_state = #{inferenceState}
+        WHERE sup_cp_unit_id = #{supCpUnitId} AND id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="gatherBillIds" resultType="java.lang.Long">
+        SELECT DISTINCT(rb.id)
+        FROM gather_bill AS gb, gather_detail AS gd, receivable_bill AS rb
+        WHERE gb.id = gd.gather_bill_id AND gd.rec_bill_id = rb.id
+        and gb.sup_cp_unit_id = #{supCpUnitId}
+        and gd.sup_cp_unit_id = #{supCpUnitId}
+        and rb.sup_cp_unit_id = #{supCpUnitId}
+        AND gb.id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <select id="queryGatherBillList"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT
+            b.id                    AS businessBillId,
+            b.bill_no               AS businessBillNo,
+            b.statutory_body_id,
+            b.statutory_body_name,
+            gd.cost_center_id,
+            gd.cost_center_name,
+            gd.charge_item_id,
+            gd.charge_item_name,
+            #{businessBillType}     AS businessBillType,
+            b.total_amount,
+            gd.rec_pay_amount       AS receivable_amount,
+            b.discount_amount,
+            gd.rec_pay_amount       AS actualPayAmount,
+            b.tax_amount,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.account_year,
+            b.account_date,
+            gd.sup_cp_unit_id,
+            gd.sup_cp_unit_name,
+            gd.cp_unit_id,
+            gd.cp_unit_name,
+            gd.payer_type       AS customerType,
+            gd.payer_id         AS customerId,
+            gd.payer_name       AS customerName,
+            b.sb_account_id,
+            b.sys_source,
+            vbd.id
+        FROM
+            gather_bill b
+                LEFT JOIN gather_detail gd ON b.id = gd.gather_bill_id
+                LEFT JOIN ${tableName} vbd ON vbd.business_bill_id = b.id and vbd.scene_type = #{sceneType} AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+
+    <update id="updateSbAccountId">
+        UPDATE gather_bill SET sb_account_id = #{sbAccountId}
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and sup_cp_unit_id = #{supCpUnitId}
+    </update>
+    <update id="updateGatherDetail">
+        UPDATE gather_detail SET inference_state = 1
+        WHERE sup_cp_unit_id = #{supCpUnitId} AND id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="getByOutBusIdV" resultType="com.wishare.finance.domains.bill.entity.GatherBill">
+        select *
+        from gather_bill
+        where out_bus_id = #{hncId}
+          and sup_cp_unit_id = 'b5e9a62120c201162f948c6071bd6d83'
+    </select>
+
+    <select id="getByTradeNo" resultType="com.wishare.finance.domains.bill.entity.GatherBill">
+        select  * from  gather_bill
+        where  trade_no in
+        <foreach collection="tradeNoList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        and sup_cp_unit_name = #{supCpUnitId}
+    </select>
+
+    <select id="unInvoiceGatherBillPage"
+            resultType="com.wishare.finance.domains.bill.dto.UnInvoiceGatherBillDto">
+        SELECT
+            b.pay_time,
+            b.id as billId,
+            b.bill_no,
+            b.sys_source,
+            7 as bill_type,
+            b.statutory_body_id,
+            b.statutory_body_name,
+            GROUP_CONCAT( DISTINCT gd.cost_center_id ) AS cost_center_id,
+            GROUP_CONCAT( DISTINCT gd.cost_center_name ) AS cost_center_name,
+            GROUP_CONCAT( DISTINCT gd.cp_unit_name ) AS room_name,
+            GROUP_CONCAT( DISTINCT gd.cp_unit_id ) AS room_id,
+            GROUP_CONCAT( DISTINCT gd.payer_id ) AS payer_id,
+            GROUP_CONCAT( DISTINCT gd.payer_name ) AS payer_name,
+            GROUP_CONCAT( DISTINCT gd.pay_channel ) AS pay_channel,
+            GROUP_CONCAT( DISTINCT gd.charge_item_name ) AS charge_item_name,
+            b.total_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.deduction_amount,
+            b.start_time,
+            b.end_time
+        FROM
+            ${gatherBillName} b
+                INNER JOIN ${gatherDetailName} gd ON b.id = gd.gather_bill_id and gd.available = 0
+            ${ew.customSqlSegment}
+        GROUP BY
+            b.id
+    </select>
+
+</mapper>

@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.invoicereceipt.repository.mapper.InvoiceMapper">
+
+    <resultMap type="com.wishare.finance.domains.invoicereceipt.entity.invoicing.InvoiceE" id="InvoicingRecordMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="invoiceReceiptId" column="invoice_receipt_id" jdbcType="INTEGER"/>
+        <result property="invoiceTitleType" column="invoice_title_type" jdbcType="INTEGER"/>
+        <result property="buyerTaxNum" column="buyer_tax_num" jdbcType="VARCHAR"/>
+        <result property="buyerTel" column="buyer_tel" jdbcType="VARCHAR"/>
+        <result property="buyerAddress" column="buyer_address" jdbcType="VARCHAR"/>
+        <result property="buyerAccount" column="buyer_account" jdbcType="VARCHAR"/>
+        <result property="salerTaxNum" column="saler_tax_num" jdbcType="VARCHAR"/>
+        <result property="salerTel" column="saler_tel" jdbcType="VARCHAR"/>
+        <result property="salerAddress" column="saler_address" jdbcType="VARCHAR"/>
+        <result property="salerAccount" column="saler_account" jdbcType="VARCHAR"/>
+        <result property="invoiceCode" column="invoice_code" jdbcType="VARCHAR"/>
+        <result property="invoiceNo" column="invoice_no" jdbcType="VARCHAR"/>
+        <result property="invoiceSerialNum" column="invoice_serial_num" jdbcType="VARCHAR"/>
+        <result property="invoiceUrl" column="invoice_url" jdbcType="VARCHAR"/>
+        <result property="failReason" column="fail_reason" jdbcType="VARCHAR"/>
+        <result property="thridReturnParameter" column="thrid_return_parameter" jdbcType="VARCHAR"/>
+        <result property="invoiceDetails" column="invoice_details" jdbcType="VARCHAR"/>
+        <result property="pushMode" column="push_mode" jdbcType="INTEGER"/>
+        <result property="buyerPhone" column="buyer_phone" jdbcType="VARCHAR"/>
+        <result property="email" column="email" jdbcType="VARCHAR"/>
+        <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap type="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceDto" id="invoiceDtoMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="invoiceReceiptNo" column="invoice_receipt_no" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="invoiceType" column="invoice_type" jdbcType="INTEGER"/>
+        <result property="communityId" column="community_id" jdbcType="VARCHAR"/>
+        <result property="communityName" column="community_name" jdbcType="VARCHAR"/>
+        <result property="statutoryBodyId" column="statutory_body_id" jdbcType="VARCHAR"/>
+        <result property="statutoryBodyName" column="statutory_body_name" jdbcType="VARCHAR"/>
+        <result property="customerId" column="customer_id" jdbcType="VARCHAR"/>
+        <result property="customerName" column="customer_name" jdbcType="VARCHAR"/>
+        <result property="customerPhone" column="customer_phone" jdbcType="VARCHAR"/>
+        <result property="billingTime" column="billing_time" jdbcType="TIMESTAMP"/>
+        <result property="priceTaxAmount" column="price_tax_amount" jdbcType="INTEGER"/>
+        <result property="state" column="state" jdbcType="INTEGER"/>
+        <result property="clerk" column="clerk" jdbcType="VARCHAR"/>
+        <result property="sysSource" column="sys_source" jdbcType="INTEGER"/>
+        <result property="invoiceTitleType" column="invoice_title_type" jdbcType="INTEGER"/>
+        <result property="buyerTaxNum" column="buyer_tax_num" jdbcType="VARCHAR"/>
+        <result property="salerTaxNum" column="saler_tax_num" jdbcType="VARCHAR"/>
+        <result property="salerTel" column="saler_tel" jdbcType="VARCHAR"/>
+        <result property="salerAddress" column="saler_address" jdbcType="VARCHAR"/>
+        <result property="invoiceCode" column="invoice_code" jdbcType="VARCHAR"/>
+        <result property="invoiceNo" column="invoice_no" jdbcType="VARCHAR"/>
+        <result property="invoiceUrl" column="invoice_url" jdbcType="VARCHAR"/>
+        <result property="nuonuoUrl" column="nuonuo_url" jdbcType="VARCHAR"/>
+        <result property="failReason" column="fail_reason" jdbcType="VARCHAR"/>
+        <collection property="invoiceReceiptDetailVS"
+                    ofType="com.wishare.finance.domains.invoicereceipt.entity.invoicing.InvoiceReceiptDetailE">
+            <result property="id" column="id" jdbcType="INTEGER"/>
+            <result property="invoiceReceiptId" column="invoice_receipt_id" jdbcType="INTEGER"/>
+            <result property="goodsName" column="goods_name" jdbcType="VARCHAR"/>
+            <result property="num" column="num" jdbcType="VARCHAR"/>
+            <result property="taxRate" column="tax_rate" jdbcType="VARCHAR"/>
+            <result property="unit" column="unit" jdbcType="VARCHAR"/>
+            <result property="price" column="price" jdbcType="VARCHAR"/>
+            <result property="withTaxFlag" column="with_tax_flag" jdbcType="INTEGER"/>
+            <result property="billId" column="bill_id" jdbcType="INTEGER"/>
+            <result property="billNo" column="bill_no" jdbcType="VARCHAR"/>
+            <result property="billType" column="bill_type" jdbcType="INTEGER"/>
+            <result property="billStartTime" column="bill_start_time" jdbcType="TIMESTAMP"/>
+            <result property="billEndTime" column="bill_end_time" jdbcType="TIMESTAMP"/>
+            <result property="settleAmount" column="settle_amount" jdbcType="INTEGER"/>
+            <result property="invoiceAmount" column="invoice_amount" jdbcType="INTEGER"/>
+            <result property="roomId" column="room_id" jdbcType="VARCHAR"/>
+            <result property="roomName" column="room_name" jdbcType="VARCHAR"/>
+            <result property="chargeItemId" column="charge_item_id" jdbcType="INTEGER"/>
+            <result property="chargeItemName" column="charge_item_name" jdbcType="VARCHAR"/>
+            <result property="spectype" column="specType" jdbcType="VARCHAR"/>
+            <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+            <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+            <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+            <result property="creator" column="creator" jdbcType="VARCHAR"/>
+            <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+            <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+            <result property="operator" column="operator" jdbcType="VARCHAR"/>
+            <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+        </collection>
+    </resultMap>
+
+    <!--详细信息关联-->
+    <resultMap type="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceInfoDto" id="invoiceMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="invoiceType" column="invoice_type" jdbcType="INTEGER"/>
+        <result property="invoiceReceiptId" column="invoice_receipt_id" jdbcType="INTEGER"/>
+        <result property="blueInvoiceReceiptId" column="blue_invoice_receipt_id" jdbcType="INTEGER"/>
+        <result property="invoiceReceiptNo" column="invoice_receipt_no" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="billType" column="bill_type" jdbcType="INTEGER"/>
+        <result property="priceTaxAmount" column="price_tax_amount" jdbcType="INTEGER"/>
+        <result property="state" column="state" jdbcType="INTEGER"/>
+        <collection property="invoiceReceiptDetailES"
+                    ofType="com.wishare.finance.domains.invoicereceipt.entity.invoicing.InvoiceReceiptDetailE">
+            <result property="billId" column="bill_id" jdbcType="INTEGER"/>
+            <result property="invoiceAmount" column="invoice_amount" jdbcType="INTEGER"/>
+            <result property="taxRate" column="tax_rate" jdbcType="VARCHAR"/>
+            <result property="withTaxFlag" column="with_tax_flag" jdbcType="INTEGER"/>
+            <result property="chargeItemId" column="charge_item_id" jdbcType="INTEGER"/>
+            <result property="invoiceReceiptId" column="invoice_receipt_id" jdbcType="INTEGER"/>
+        </collection>
+    </resultMap>
+
+    <sql id="field">
+        id
+        , invoice_receipt_id, invoice_title_type, buyer_tax_num, buyer_tel, buyer_address, buyer_account, saler_tax_num, saler_tel, saler_address, saler_account, invoice_code, invoice_no, invoice_serial_num, invoice_url, fail_reason, thrid_return_parameter, invoice_details, push_mode, buyer_phone, email, deleted, tenant_id, creator_name, creator, gmt_create, operator_name, operator, gmt_modify
+    </sql>
+
+    <update id="updateRed">
+        UPDATE invoice_receipt ir
+            LEFT JOIN invoice i
+        ON ir.id = i.invoice_receipt_id
+            SET ir.state = #{state}
+        WHERE
+            i.invoice_code = #{invoiceCode}
+          AND invoice_no = #{invoiceNo}
+    </update>
+
+    <select id="queryPage" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceDto">
+        SELECT
+            DISTINCT
+               ir.id,
+               ir.invoice_receipt_no,
+               ir.community_id,
+               ir.community_name,
+               ir.customer_id,
+               ir.customer_name,
+               ir.customer_phone,
+               ir.price_tax_amount,
+               ir.billing_time,
+               ir.clerk,
+               ir.state,
+               ir.sys_source,
+               ir.source,
+               ir.statutory_body_id,
+               ir.statutory_body_name,
+               ir.type,
+               ir.inv_rec_unit_id,
+               ir.inv_rec_unit_name,
+               i.invoice_type,
+               i.invoice_code,
+               i.invoice_no,
+               i.invoice_url,
+               i.nuonuo_url,
+               i.fail_reason,
+               i.invoice_title_type,
+               i.buyer_tax_num,
+               i.saler_tax_num,
+               i.saler_tel,
+               i.invoice_serial_num,
+               i.saler_account,
+               ir.extend_field_two,
+               ir.extend_field_three
+        FROM invoice i
+                 LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+                 LEFT JOIN invoice_receipt_detail ird on ird.invoice_receipt_id = ir.id
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="statistics"
+            resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceStatisticsDto">
+        SELECT
+            COUNT(*) AS invoiceTotal,
+            SUM( price_tax_amount ) AS priceTaxAmountTotal
+        FROM
+            (
+                SELECT DISTINCT
+                    ir.id,
+                    ir.price_tax_amount
+                FROM
+                    invoice i
+                        LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+                        LEFT JOIN invoice_receipt_detail ird ON ird.invoice_receipt_id = ir.id
+                    ${ew.customSqlSegment}
+            ) a
+
+    </select>
+
+    <!--<select id="queryPage" resultMap="invoiceDtoMap">
+        SELECT ir.id,
+               ir.invoice_receipt_no,
+               ir.community_id,
+               ir.community_name,
+               ir.customer_id,
+               ir.customer_name,
+               ir.customer_phone,
+               ir.price_tax_amount,
+               ir.billing_time,
+               ir.clerk,
+               ir.state,
+               ir.sys_source,
+               ir.statutory_body_id,
+               ir.statutory_body_name,
+               ir.type,
+               i.invoice_type,
+               i.invoice_code,
+               i.invoice_no,
+               i.invoice_url,
+               i.nuonuo_url,
+               i.fail_reason,
+               i.invoice_title_type,
+               i.buyer_tax_num,
+               i.saler_tax_num,
+               i.saler_tel,
+               i.saler_account,
+               ird.id,
+               ird.invoice_receipt_id,
+               ird.goods_name,
+               ird.num,
+               ird.tax_rate,
+               ird.unit,
+               ird.price,
+               ird.with_tax_flag,
+               ird.bill_id,
+               ird.bill_no,
+               ird.bill_type,
+               ird.bill_start_time,
+               ird.bill_end_time,
+               ird.settle_amount,
+               ird.invoice_amount,
+               ird.room_id,
+               ird.room_name,
+               ird.charge_item_id,
+               ird.charge_item_name,
+               ird.specType,
+               ird.deleted,
+               ird.tenant_id,
+               ird.creator_name,
+               ird.creator,
+               ird.gmt_create,
+               ird.operator_name,
+               ird.operator,
+               ird.gmt_modify
+        FROM invoice i
+                 LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+                 LEFT JOIN invoice_receipt_detail ird  ON ird.invoice_receipt_id = i.invoice_receipt_id
+            ${ew.customSqlSegment}
+    </select>-->
+
+    <select id="listByBillIds" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.BillInvoiceDto">
+        SELECT distinct ir.id,
+        ir.state,
+        ir.sys_source,
+        ir.billing_time,
+        i.invoice_code,
+        i.invoice_no,
+        i.invoice_url,
+        i.nuonuo_url,
+        i.fail_reason,
+        i.invoice_title_type,
+        i.buyer_tax_num,
+        ir.clerk,
+        ir.customer_id,
+        ir.customer_name,
+        ir.customer_phone,
+        i.invoice_title_type,
+        i.invoice_type,
+        ir.price_tax_amount,
+        i.saler_tax_num,
+        i.saler_tel,
+        i.saler_account,
+        i.saler_address,
+        ir.type
+        FROM
+        invoice_receipt_detail ird
+        LEFT JOIN invoice i ON i.invoice_receipt_id = ird.invoice_receipt_id
+        LEFT JOIN invoice_receipt ir ON ir.id = ird.invoice_receipt_id
+        <where>
+            <if test="form.billIds != null and form.billIds.size() > 0">
+                and ird.bill_id in
+                <foreach collection="form.billIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="form.invoiceReceiptIds != null and form.invoiceReceiptIds.size() > 0">
+                and ir.id in
+                <foreach collection="form.invoiceReceiptIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        order by ird.gmt_create desc
+    </select>
+
+    <select id="getInvoiceByState"
+            resultType="com.wishare.finance.domains.invoicereceipt.entity.invoicing.InvoiceE">
+        SELECT
+        i.*
+        FROM
+        invoice i
+        LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+        <where>
+            <if test="invoieStates != null and invoieStates.size > 0">
+                and ir.state in
+                <foreach collection="invoieStates" open="(" close=")" separator="," item="item">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="beginDate != null">
+                and i.gmt_create > #{beginDate}
+            </if>
+        </where>
+    </select>
+
+
+
+    <!--获取发票详细信息-->
+    <select id="getInvoiceInfo" resultMap="invoiceMap">
+        SELECT
+        i.id,
+        i.invoice_type,
+        i.invoice_receipt_id,
+        i.blue_invoice_receipt_id,
+        i.invoice_code,
+        i.invoice_no,
+        ir.invoice_receipt_no,
+        ir.type,
+        ir.bill_type,
+        ir.price_tax_amount,
+        ir.state,
+        ird.bill_id,
+        ird.invoice_amount,
+        ird.tax_rate,
+        ird.with_tax_flag,
+        ird.charge_item_id,
+        ird.invoice_receipt_id
+        FROM
+        invoice i
+        LEFT JOIN invoice_receipt ir ON i.invoice_receipt_id = ir.id
+        LEFT JOIN invoice_receipt_detail ird ON i.invoice_receipt_id = ird.invoice_receipt_id
+        <where>
+            <if test="blueInvoiceReceiptId != null">
+                and i.blue_invoice_receipt_id = #{blueInvoiceReceiptId}
+            </if>
+            <if test="invoiceReceiptId != null">
+                and i.invoice_receipt_id = #{invoiceReceiptId}
+            </if>
+            <if test="billId != null">
+                  and ird.bill_id = #{billId}
+            </if>
+            <if test="invoiceReceiptState != null and invoiceReceiptState.size > 0">
+                and ir.state in
+                <foreach collection="invoiceReceiptState" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!--获取发票详细信息-->
+    <select id="getRedInvoiceInfoByBlueInvoiceReceiptId" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceAndReceiptDto">
+        SELECT
+        i.blue_invoice_receipt_id AS id,
+        sum( ir.price_tax_amount ) as redTaxAmount
+        FROM
+        invoice_receipt ir
+        LEFT JOIN invoice i ON i.invoice_receipt_id = ir.id
+        WHERE i.deleted = 0 and state = 2
+        <if test="blueInvoiceReceiptIdList != null and blueInvoiceReceiptIdList.size > 0">
+            and i.blue_invoice_receipt_id in
+            <foreach collection="blueInvoiceReceiptIdList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY
+        i.blue_invoice_receipt_id
+    </select>
+
+    <select id="queryInvoiceBillDetails" resultType="com.wishare.finance.domains.invoicereceipt.dto.InvoiceBillDetailDto">
+        select
+        ir.id,
+        ir.type,
+        ir.invoice_receipt_no as invoiceNo,
+        ird.invoice_amount,
+        ir.price_tax_amount as receiptAmount,
+        ird.bill_id,
+        ir.type as invoiceType,
+        ir.billing_time as invoiceTime,
+        ir.creator,
+        ir.creator_name
+        from invoice_receipt ir inner join invoice_receipt_detail ird on ir.id = ird.invoice_receipt_id
+        where ir.state in(2,5,8) and ird.bill_id in
+        <foreach collection="billIds" open="(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getByInvoiceId" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceDto">
+        SELECT
+            DISTINCT
+            ir.id,
+            ir.invoice_receipt_no,
+            ir.community_id,
+            ir.community_name,
+            ir.customer_id,
+            ir.customer_name,
+            ir.customer_phone,
+            ir.price_tax_amount,
+            ir.billing_time,
+            ir.clerk,
+            ir.state,
+            ir.sys_source,
+            ir.statutory_body_id,
+            ir.statutory_body_name,
+            ir.type,
+            ir.inv_rec_unit_id,
+            ir.inv_rec_unit_name,
+            i.invoice_type,
+            i.invoice_code,
+            i.invoice_no,
+            i.invoice_url,
+            i.nuonuo_url,
+            i.fail_reason,
+            i.invoice_title_type,
+            i.buyer_tax_num,
+            i.saler_tax_num,
+            i.saler_tel,
+            i.saler_account
+        FROM invoice i
+                 LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+           where ir.id = #{invoiceId}
+    </select>
+
+    <select id="getByInvoiceIdForMessage" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceAndDetailListDto">
+        SELECT
+            DISTINCT
+            ir.id,
+            i.invoice_receipt_id,
+            ir.invoice_receipt_no,
+            ir.community_id,
+            ir.community_name,
+            ir.customer_id,
+            ir.customer_name,
+            ir.customer_phone,
+            ir.price_tax_amount,
+            ir.billing_time,
+            ir.clerk,
+            ir.state,
+            ir.sys_source,
+            ir.statutory_body_id,
+            ir.statutory_body_name,
+            ir.type,
+            ir.inv_rec_unit_id,
+            ir.inv_rec_unit_name,
+            ir.tax_rate,
+            i.invoice_type,
+            i.invoice_code,
+            i.invoice_no,
+            i.invoice_url,
+            i.nuonuo_url,
+            i.fail_reason,
+            i.invoice_title_type,
+            i.buyer_tax_num,
+            i.saler_tax_num,
+            i.saler_tel,
+            i.saler_name,
+            i.saler_account
+        FROM invoice i
+                 LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+           where ir.id = #{invoiceId}
+    </select>
+
+    <select id="getByInvoiceIds" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceDto">
+        SELECT
+            DISTINCT
+            ir.id,
+            ir.invoice_receipt_no,
+            ir.community_id,
+            ir.community_name,
+            ir.customer_id,
+            ir.customer_name,
+            ir.customer_phone,
+            ir.price_tax_amount,
+            ir.billing_time,
+            ir.clerk,
+            ir.state,
+            ir.sys_source,
+            ir.statutory_body_id,
+            ir.statutory_body_name,
+            ir.type,
+            ir.inv_rec_unit_id,
+            ir.inv_rec_unit_name,
+            i.invoice_type,
+            i.invoice_code,
+            i.invoice_no,
+            i.invoice_url,
+            i.nuonuo_url,
+            i.fail_reason,
+            i.invoice_title_type,
+            i.buyer_tax_num,
+            i.saler_tax_num,
+            i.saler_tel,
+            i.saler_account
+        FROM invoice i
+                 LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+        where  ir.id in
+        <foreach collection="invoiceIds" open="(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="getInvoiceMessages"
+            resultType="com.wishare.finance.domains.invoicereceipt.dto.InvoiceMessageDto">
+        SELECT i.invoice_receipt_id, i.nuonuo_url, i.invoice_no, i.saler_tax_num, i.invoice_code
+        FROM  invoice i
+        WHERE i.invoice_receipt_id in
+        <foreach collection="invoiceReceiptIds" open="(" close=")" item="item" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="queryQuotaListByCommunityId"
+            resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceDto">
+        SELECT DISTINCT
+            ir.id,
+            ir.invoice_receipt_no,
+            ir.community_id,
+            ir.community_name,
+            ir.customer_id,
+            ir.customer_name,
+            ir.customer_phone,
+            ir.price_tax_amount,
+            ir.billing_time,
+            ir.clerk,
+            ir.state,
+            ir.sys_source,
+            ir.source,
+            ir.statutory_body_id,
+            ir.statutory_body_name,
+            ir.type,
+            ir.inv_rec_unit_id,
+            ir.inv_rec_unit_name,
+            i.invoice_type,
+            i.invoice_code,
+            i.invoice_no,
+            i.invoice_url,
+            i.nuonuo_url,
+            i.fail_reason,
+            i.invoice_title_type,
+            i.buyer_tax_num,
+            i.saler_tax_num,
+            i.saler_tel,
+            i.invoice_serial_num,
+            i.saler_account
+        FROM
+            invoice i
+                LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+                LEFT JOIN invoice_receipt_detail ird ON ird.invoice_receipt_id = ir.id
+        WHERE
+            (
+                        ir.inv_source = 1
+                    AND ir.community_id = #{communityId}
+                    AND ir.sys_source = 0
+                    AND ir.source = 2
+                    AND ir.claim_status = 0
+                    AND ir.type = 10
+                )
+    </select>
+
+    <select id="queryInvoiceByInvoiceNo"
+            resultType="com.wishare.finance.apps.model.invoice.invoice.dto.InvoiceDto">
+        SELECT DISTINCT ir.id,
+                        ir.invoice_receipt_no,
+                        ir.community_id,
+                        ir.community_name,
+                        ir.customer_id,
+                        ir.customer_name,
+                        ir.customer_phone,
+                        ir.price_tax_amount,
+                        ir.billing_time,
+                        ir.clerk,
+                        ir.state,
+                        ir.sys_source,
+                        ir.source,
+                        ir.statutory_body_id,
+                        ir.statutory_body_name,
+                        ir.type,
+                        ir.inv_rec_unit_id,
+                        ir.inv_rec_unit_name,
+                        i.invoice_type,
+                        i.invoice_code,
+                        i.invoice_no,
+                        i.invoice_url,
+                        i.nuonuo_url,
+                        i.fail_reason,
+                        i.invoice_title_type,
+                        i.buyer_tax_num,
+                        i.saler_tax_num,
+                        i.saler_tel,
+                        i.invoice_serial_num,
+                        i.saler_account
+        FROM invoice i
+                 LEFT JOIN invoice_receipt ir ON ir.id = i.invoice_receipt_id
+                 LEFT JOIN invoice_receipt_detail ird ON ird.invoice_receipt_id = ir.id
+        WHERE (
+                  ir.invoice_receipt_no = #{invoiceNo}
+                  ) limit 1
+    </select>
+
+</mapper>
+

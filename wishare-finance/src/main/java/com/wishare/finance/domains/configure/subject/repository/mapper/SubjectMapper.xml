@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.subject.repository.mapper.SubjectMapper">
+    <sql id="tableFields" >
+        st.id,
+        st.subject_code,
+        st.subject_name,
+        st.path,
+        st.leaf,
+        st.level,
+        st.category_id,
+        st.subject_system_id,
+        st.parent_id,
+        st.exist_tax,
+        st.disabled,
+        st.deleted,
+        st.cash_type,
+        st.auxiliary_count,
+        st.tenant_id,
+        st.creator_name,
+        st.creator,
+        st.gmt_create,
+        st.operator_name,
+        st.operator,
+        st.gmt_modify
+    </sql>
+    <update id="updateChildrenCashType">
+        update subject s set s.cash_type = #{cashType} where s.deleted = 0
+        and JSON_CONTAINS(s.`path`, JSON_ARRAY(
+        <foreach collection="paths" item="item" separator=",">
+           #{item}
+        </foreach>
+        ))
+    </update>
+
+    <select id="querySubjectByIdList" resultType="com.wishare.finance.domains.configure.subject.entity.SubjectE">
+        select
+        <include refid="tableFields" />
+        from
+        subject st
+        where st.deleted = 0
+        <if test="idList != null and idList.size > 0">
+            and (
+            <foreach collection="idList" item="item" separator=" or ">
+                JSON_CONTAINS(st.path, JSON_ARRAY(#{item}))
+            </foreach>
+            )
+        </if>
+    </select>
+
+    <select id="querySubjectWithCategoryNameByIdList" resultType="com.wishare.finance.domains.configure.subject.dto.SubjectD">
+        select
+        <include refid="tableFields" />
+        from
+        subject st
+        where st.deleted = 0
+        <if test="idList != null and idList.size > 0">
+            and (
+            <foreach collection="idList" item="item" separator=" or ">
+                JSON_CONTAINS(st.path, JSON_ARRAY(#{item}))
+            </foreach>
+            )
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        order by st.id desc
+    </select>
+
+    <select id="querySubjectByPage" resultType="com.wishare.finance.domains.configure.subject.dto.SubjectD">
+        select
+        <include refid="tableFields" />
+        from
+        subject st
+        where st.id IN (
+            SELECT DISTINCT
+            JSON_EXTRACT( path, '$[0]' )
+            FROM
+            subject
+            ${ew.customSqlSegment}
+            )
+        order by st.id desc
+    </select>
+
+    <select id="getFilterSubjectList" resultType="com.wishare.finance.domains.configure.subject.entity.SubjectE">
+        select
+        <include refid="tableFields" />
+        from
+        subject st
+        where st.deleted = 0 and st.tenant_id = #{tenantId}
+        <if test="filterId != null">
+            and (JSON_CONTAINS(st.path, JSON_ARRAY(#{filterId})))
+        </if>
+    </select>
+
+    <select id="getSubjectByChargeItemIdAndHeadSubjectId" resultType="com.wishare.finance.domains.configure.subject.entity.SubjectE">
+        select s.* from subject s, subject_map_unit_detail sm
+        where sm.subject_level_last_id = s.id and s.deleted = 0 and sm.deleted = 0
+          and sm.sub_map_type = 1 and sm.sub_map_unit_id = #{chargeItemId} and sm.subject_level_one_id = #{headSubjectId}
+        limit 1
+    </select>
+    <select id="selectSupSubjectByCode" resultType="com.wishare.finance.domains.configure.subject.entity.SubjectE">
+        select
+        <include refid="tableFields" />
+        from subject st where #{code} like CONCAT('', st.subject_code, '%') and st.subject_code &lt;&gt; #{code} order by st.subject_code desc limit 1
+    </select>
+    <select id="selectListFullByCodes" resultType="com.wishare.finance.domains.configure.subject.entity.SubjectE">
+        select
+          <include refid="tableFields"/>,
+          (select GROUP_CONCAT(sj.subject_name ORDER BY sj.subject_code separator '/')  from subject sj where JSON_CONTAINS(st.`path`, JSON_ARRAY(sj.id)) order by sj.subject_code) as fullName
+        from subject st where st.deleted = 0 and st.subject_code in
+        <foreach collection="subjectCodes" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getSubject" resultType="com.wishare.finance.domains.configure.subject.entity.SubjectE">
+        select s.*,
+               (select GROUP_CONCAT(sj.subject_name ORDER BY sj.subject_code separator '/')  from subject sj where JSON_CONTAINS(s.`path`, JSON_ARRAY(sj.id)) ORDER BY sj.subject_code) as fullName
+        from subject s where s.id = #{subjectId}
+    </select>
+
+    <select id="getAllAuxiliary" resultType="java.lang.String">
+        SELECT auxiliary_count
+        FROM `subject`
+        WHERE JSON_CONTAINS(path, JSON_ARRAY(#{subjectId})) AND deleted = 0
+    </select>
+
+</mapper>

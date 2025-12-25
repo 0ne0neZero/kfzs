@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.chargeitem.repository.mapper.TaxRateMapper">
+
+    <insert id="saveOrUpdateBatch">
+        insert into tax_rate (
+        id,
+        code,
+        rate,
+        tax_category_id,
+        creator,
+        creator_name,
+        gmt_create,
+        operator,
+        operator_name,
+        gmt_modify) values
+        <foreach collection="trs" separator="," item="item" open="" close="">
+            (
+            #{item.id},
+            #{item.code},
+            #{item.rate},
+            #{item.taxCategoryId},
+            #{item.creator},
+            #{item.creatorName},
+            #{item.gmtCreate},
+            #{item.operator},
+            #{item.operatorName},
+            #{item.gmtModify})
+        </foreach>
+        on duplicate key update
+        rate = values(rate),
+        operator = values(operator),
+        operator_name = values(operator_name),
+        gmt_modify = values(gmt_modify)
+    </insert>
+
+    <!--根据税率id获取税率详情-->
+    <select id="rateDetail" resultType="com.wishare.finance.domains.configure.chargeitem.dto.tax.TaxRateDetailD">
+        SELECT tr.id       AS taxRateId,
+               tr.rate,
+               tc.id       AS categoryId,
+               tc.`code`   AS categoryCode,
+               tc.`name`   AS categoryName,
+               tc.disabled AS categoryDisabled,
+               tr.tax_type
+        FROM tax_rate tr
+                 LEFT JOIN tax_category tc ON tr.tax_category_id = tc.id
+        where tc.deleted = 0
+          and tr.id = #{id}
+    </select>
+    <select id="selectByCodeAndName" resultType="com.wishare.finance.domains.configure.chargeitem.entity.TaxRateE">
+        select * from tax_rate tr where tr.code like concat('%', #{code}, '%') limit 500
+    </select>
+    <select id="selectByCategoryRate" resultType="com.wishare.finance.domains.configure.chargeitem.entity.TaxRateE">
+        select * from tax_rate tr WHERE tr.rate = #{rate} and  tr.tax_category_id in (select id from tax_category where code = #{categoryCode}) limit 1
+    </select>
+    <select id="BPMFilterTaxList" resultType="com.wishare.finance.apps.model.configure.chargeitem.vo.TaxRateV">
+        select id , code,rate, tax_category_id as taxCategoryId
+        from tax_rate tr
+        WHERE tr.tax_category_id in (select id
+                                     from tax_category
+                                     where code = #{taxCategoryCode})
+    </select>
+</mapper>
+

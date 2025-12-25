@@ -1,0 +1,69 @@
+package com.wishare.finance.domains.voucher.entity;
+
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+/**
+ * 凭证规则凭证模板关联表
+ *
+ * @author dxclay
+ * @since 2023-04-04
+ */
+@Setter
+@Getter
+@ApiModel("凭证规则凭证模板关联表")
+public class VoucherRuleTemplate {
+
+    @ApiModelProperty(value = "主键id")
+    private Long id;
+
+    @ApiModelProperty(value = "凭证规则id")
+    private Long voucherRuleId;
+
+    @ApiModelProperty(value = "关联业务id")
+    private Long voucherTemplateId;
+
+    @ApiModelProperty(value = "是否删除：0否，1是")
+    @TableLogic
+    private Integer deleted;
+
+    @ApiModelProperty(value = "租户id")
+    @TableField(fill = FieldFill.INSERT)
+    private String tenantId;
+
+    @ApiModelProperty(value = "创建人名称")
+    @TableField(fill = FieldFill.INSERT)
+    private String creatorName;
+
+    @ApiModelProperty(value = "创建人id")
+    @TableField(fill = FieldFill.INSERT)
+    private String creator;
+
+    @ApiModelProperty(value = "创建时间")
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime gmtCreate;
+
+    @ApiModelProperty(value = "操作人名称")
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private String operatorName;
+
+    @ApiModelProperty(value = "操作人id")
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private String operator;
+
+    @ApiModelProperty(value = "更新时间")
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime gmtModify;
+
+
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.repository.yuanyang.mapper.YyNccCustomerRelMapper">
+
+
+    <select id="getNccCustomerCode" resultType="java.lang.String">
+        SELECT ncc_customer_code FROM yy_ncc_customer_rel
+            WHERE credit_code = #{creditCode}
+    </select>
+    <select id="selectBySearch"
+            resultType="com.wishare.finance.domains.voucher.entity.yuanyang.YyNccCustomerRelE">
+            select * from yy_ncc_customer_rel
+                              ${ew.customSqlSegment}
+    </select>
+</mapper>

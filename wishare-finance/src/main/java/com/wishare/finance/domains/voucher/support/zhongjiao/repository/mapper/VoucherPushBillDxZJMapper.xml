@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.support.zhongjiao.repository.mapper.VoucherPushBillDxZJMapper">
+
+    <resultMap id="VoucherBillDxZJ" type="com.wishare.finance.domains.voucher.support.zhongjiao.entity.VoucherBillDxZJ">
+        <result column="id" property="id"/>
+        <result column="rule_id" property="ruleId" />
+        <result column="push_state" property="pushState" />
+        <result column="inference_state" property="inferenceState"/>
+        <result column="voucher_bill_no" property="voucherBillNo"/>
+        <result column="business_unit_name" property="businessUnitName"/>
+        <result column="cost_center_id" property="costCenterId" />
+        <result column="cost_center_name" property="costCenterName" />
+        <result column="total_amount" property="totalAmount" />
+        <result column="push_method" property="pushMethod" />
+        <result column="deleted" property="deleted" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="creator_name" property="creatorName" />
+        <result column="creator" property="creator" />
+        <result column="gmt_create" property="gmtCreate" />
+        <result column="operator_name" property="operatorName" />
+        <result column="operator" property="operator" />
+        <result column="gmt_modify" property="gmtModify" />
+        <result column="remark" property="remark" typeHandler="com.wishare.finance.infrastructure.support.JSONTypeHandler"/>
+        <result column="rule_name" property="ruleName" />
+        <result column="wander_about_state" property="wanderAboutState" />
+        <result column="finance_id" property="financeId" />
+        <result column="finance_no" property="financeNo" />
+        <result column="bill_event_type" property="billEventType" />
+        <result column="detail_number" property="detailNumber" typeHandler="com.wishare.finance.infrastructure.support.JSONTypeHandler"/>
+        <result column="upload" property="upload" />
+        <result column="upload_link" property="uploadLink" typeHandler="com.wishare.finance.domains.voucher.support.ListUploadLinkZJHandler"/>
+        <result column="upload_num" property="uploadNum" />
+        <result column="approve_state" property="approveState"/>
+        <result column="proc_inst_id" property="procInstId"/>
+        <result column="business_type" property="businessType"/>
+        <result column="business_type_id" property="businessTypeId"/>
+        <result column="business_type_name" property="businessTypeName"/>
+        <result column="receipt_remark" property="receiptRemark" />
+        <result column="gmt_expire" property="gmtExpire" />
+        <result column="pay_app_id" property="payAppId" />
+        <result column="community_id" property="communityId" />
+        <result column="community_name" property="communityName" />
+        <result column="external_department_code" property="externalDepartmentCode" />
+        <result column="calculation_method" property="calculationMethod" />
+    </resultMap>
+
+
+    <resultMap id="VoucherBillZJV2" type="com.wishare.finance.apps.pushbill.vo.VoucherBillZJDo2">
+        <id column="id" property="id"/>
+        <result column="rule_id" property="ruleId" />
+        <result column="push_state" property="pushState" />
+        <result column="inference_state" property="inferenceState"/>
+        <result column="voucher_bill_no" property="voucherBillNo"/>
+        <result column="business_unit_name" property="businessUnitName"/>
+        <result column="cost_center_id" property="costCenterId" />
+        <result column="cost_center_name" property="costCenterName" />
+        <result column="total_amount" property="totalAmount" />
+        <result column="push_method" property="pushMethod" />
+        <result column="deleted" property="deleted" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="creator_name" property="creatorName" />
+        <result column="creator" property="creator" />
+        <result column="gmt_create" property="gmtCreate" />
+        <result column="operator_name" property="operatorName" />
+        <result column="operator" property="operator" />
+        <result column="gmt_modify" property="gmtModify" />
+        <result column="remark" property="remark" typeHandler="com.wishare.finance.infrastructure.support.JSONTypeHandler"/>
+        <result column="rule_name" property="ruleName" />
+        <result column="wander_about_state" property="wanderAboutState" />
+        <result column="finance_id" property="financeId" />
+        <result column="finance_no" property="financeNo" />
+        <result column="bill_event_type" property="billEventType" />
+        <result column="detail_number" property="detailNumber" typeHandler="com.wishare.finance.infrastructure.support.JSONTypeHandler"/>
+        <result column="upload" property="upload" />
+        <result column="upload_link" property="uploadLink" typeHandler="com.wishare.finance.domains.voucher.support.ListUploadLinkZJHandler"/>
+        <result column="upload_num" property="uploadNum" />
+        <result column="approve_state" property="approveState"/>
+        <result column="proc_inst_id" property="procInstId"/>
+        <result column="business_type" property="businessType"/>
+        <result column="business_type_id" property="businessTypeId"/>
+        <result column="business_type_name" property="businessTypeName"/>
+        <result column="receipt_remark" property="receiptRemark" />
+        <result column="gmt_expire" property="gmtExpire" />
+        <result column="flow_record_simple_str" property="recordSimpleStr" />
+        <result column="flow_detail_simple_str" property="flowDetailSimpleStr" />
+    </resultMap>
+
+  <delete id="delete">
+      delete from voucher_bill_dx_zj where id = #{voucherBillId}
+  </delete>
+
+  <select id="selectBySearch"
+            resultMap="VoucherBillDxZJ">
+            select * from voucher_bill_dx_zj
+             ${ew.customSqlSegment}
+    </select>
+
+    <select id="selectBySearch2" resultMap="VoucherBillZJV2">
+        select vb.*,
+               group_concat(DISTINCT concat(fcr.id,' ',fcr.serial_number)) flow_record_simple_str,
+               group_concat(DISTINCT concat(fd.id,' ',fd.serial_number)) flow_detail_simple_str
+        from voucher_bill_dx_zj vb
+                 left join flow_claim_record fcr on fcr.voucher_bill_id = vb.id and fcr.deleted = 0
+                 left join flow_claim_detail fcd on fcr.id = fcd.flow_claim_record_id and fcd.deleted = 0
+                 left join flow_detail fd on fd.id = fcd.flow_id and fd.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="getMoney" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillZJMoneyV">
+        select sum(total_amount)/100 as money
+        from voucher_bill_dx_zj
+        ${ew.customSqlSegment}
+    </select>
+
+    <update id="updatePushStateByVoucherBIllNo">
+        UPDATE voucher_bill_dx_zj SET
+              push_state = #{pushState},
+              remark = #{remark}
+              WHERE voucher_bill_no = #{voucherBillNo}
+
+    </update>
+
+    <select id="queryByVoucherBillNo" resultMap="VoucherBillDxZJ">
+
+        select * from voucher_bill_dx_zj  WHERE voucher_bill_no = #{voucherBillNo}
+    </select>
+
+    <select id="selectByRecordId"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.entity.VoucherBillZJ">
+        select *
+        from voucher_bill_dx_zj
+        where deleted = 0
+        and JSON_CONTAINS(record_id_list, CONCAT('', #{recordId}, ''))
+        limit 1
+    </select>
+
+    <select id="selectAutoFileVo"
+            resultType="com.wishare.finance.apps.pushbill.vo.dx.vo.VoucherBillAutoFileZJVo">
+        select
+            ddz.id,
+            ddz.contract_id as contractId,
+            ci.name as chargeItemName,
+            ddz.tax_includ_amount as amount,
+            ddz.tax_exclud_amount as noTaxAmount,
+            ddz.tax_amount as taxAmount,
+            ddz.start_time as startTime,
+            ddz.end_time as endTime,
+            ddz.account_date as accountDate,
+            ddz.charge_item_id as chargeItemId
+        from voucher_bill_dx_zj vb
+        left join voucher_bill_detail_dx_zj ddz on vb.voucher_bill_no = ddz.voucher_bill_no and ddz.deleted = 0
+        left join charge_item ci on ci.id = ddz.charge_item_id
+        left join charge_item_business cib on cib.charge_item_id = ddz.charge_item_id and cib.deleted = 0
+            <if test="billEventType == 3">
+                and cib.document_code = '004'
+            </if>
+            <if test="billEventType == 5">
+                and cib.document_code = '004'
+            </if>
+        where vb.deleted = 0
+          and vb.voucher_bill_no = #{voucherBillNo}
+        order by contractId, accountDate asc
+    </select>
+
+    <!--根据条件查询报账单数据-->
+    <select id="getVoucherBillDxZJByQuery" resultMap="VoucherBillDxZJ">
+        select * from voucher_bill_dx_zj
+            where deleted = 0
+          and voucher_bill_no = #{voucherBillNo}
+    </select>
+    <!--根据结算单id查询报账单数据-->
+    <select id="getBillDxZjBySettlementId" resultMap="VoucherBillDxZJ">
+        select * from voucher_bill_dx_zj  WHERE settlement_id = #{settlementId} and bill_event_type = 4 and deleted = 0
+    </select>
+
+    <!--根据ID更改来自合同数据-->
+    <update id="updateBilDxZjFromContract">
+        UPDATE voucher_bill_dx_zj
+        SET gmt_modify = now()
+        <if test="otherBusinessReasons != null and otherBusinessReasons !=''">
+            ,receipt_remark = #{otherBusinessReasons}
+        </if>
+        <if test="externalDepartmentCode != null and externalDepartmentCode !=''">
+            ,external_department_code = #{externalDepartmentCode}
+        </if>
+        <if test="calculationMethod != null">
+            ,calculation_method = #{calculationMethod}
+        </if>
+        WHERE id = #{id}
+    </update>
+
+    <update id="deleteByVoucherBIllNo">
+        UPDATE  voucher_bill_dx_zj
+        SET deleted  = 1
+        WHERE voucher_bill_no = #{voucherBillNo}
+    </update>
+</mapper>

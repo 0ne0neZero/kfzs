@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.cashflow.repository.mapper.CashFlowMapper">
+
+    <resultMap id="CashFlowMap" type="com.wishare.finance.domains.configure.cashflow.entity.CashFlowE">
+        <result column="id" property="id" />
+        <result column="code" property="id" />
+        <result column="name" property="id" />
+        <result column="f_code" property="fCode" />
+        <result column="f_name" property="fName" />
+        <result column="path" property="path" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="item_type" property="itemType" />
+        <result column="creator" property="creator" />
+        <result column="creator_name" property="creatorName" />
+        <result column="gmt_create" property="gmtCreate" />
+        <result column="operator" property="operator" />
+        <result column="operator_name" property="operatorName" />
+        <result column="gmt_modify" property="gmtModify" />
+    </resultMap>
+
+    <insert id="saveOrUpdate">
+        insert into cash_flow (
+        id,
+        code,
+        name,
+        f_code,
+        f_name,
+        all_name,
+        item_type,
+        creator,
+        creator_name,
+        gmt_create,
+        operator,
+        operator_name,
+        gmt_modify) values
+        <foreach collection="cfs" separator="," item="item" open="" close="">
+            (
+            #{item.id},
+            #{item.code},
+            #{item.name},
+            #{item.fCode},
+            #{item.fName},
+            #{item.allName},
+            #{item.itemType},
+            #{item.creator},
+            #{item.creatorName},
+            #{item.gmtCreate},
+            #{item.operator},
+            #{item.operatorName},
+            #{item.gmtModify})
+        </foreach>
+        on duplicate key update
+        name = values(name),
+        f_code = values(f_code),
+        f_name = values(f_name),
+        all_name = values(all_name),
+        item_type = values(item_type),
+        operator = values(operator),
+        operator_name = values(operator_name),
+        gmt_modify = values(gmt_modify)
+    </insert>
+
+    <select id="listCashFlowBySubjectId" resultMap="CashFlowMap">
+        select cf.* from cash_flow cf, subject_cash_flow scf where scf.subject_id = #{subjectId} and cash_flow_id = cf.id and is_main = #{isMain}
+    </select>
+    <select id="selectSupByCode" resultMap="CashFlowMap" >
+        select * from cash_flow where #{code} like CONCAT('', code, '%') and code &lt;&gt; #{code} order by code desc limit 1
+    </select>
+
+    <select id="selectBySubjectId" resultType="com.wishare.finance.domains.configure.cashflow.entity.CashFlowE">
+        select cf.* from cash_flow cf left join subject_cash_flow scf on cf.id = scf.cash_flow_id
+        where scf.subject_id = #{subjectId} and cf.deleted = 0
+    </select>
+    <select id="selectBySubjectIds" resultType="com.wishare.finance.domains.configure.cashflow.entity.CashFlowE">
+        select cf.* from cash_flow cf left join subject_cash_flow scf on cf.id = scf.cash_flow_id
+        where scf.subject_id in
+          <foreach collection="subjectIds" open="(" close=")" item="item" separator=",">
+              #{item}
+          </foreach>
+          and cf.deleted = 0
+    </select>
+    <select id="selectDtoByCodeName" resultType="com.wishare.finance.domains.configure.cashflow.dto.CashFlowDto">
+        select
+            cf.id,
+            cf.code,
+            cf.f_code,
+            cf.f_name,
+            cf.name,
+            cf.`path`,
+            cf.item_type,
+            GROUP_CONCAT(cfp.name, '\\', IF(cf.f_code is null, '', cf.name)) as pathName
+        from
+            cash_flow cf
+        left join cash_flow cfp on json_contains(cf.`path`,json_array(cfp.id))
+        where 1=1
+            <if test="cfq.code != null and cfq.code != ''">
+                and cf.code like concat('%', #{cfq.code}, '%')
+            </if>
+            <if test="cfq.name != null and cfq.name != ''">
+                and cf.name like concat('%', #{cfq.name}, '%')
+            </if>
+            <if test="cfq.types != null and cfq.types.size > 0">
+               and cf.item_type in
+                <foreach collection="cfq.types" separator="," open="(" close=")" item="item">
+                    #{item}
+                </foreach>
+            </if>
+        GROUP by cf.id limit 500
+    </select>
+</mapper>

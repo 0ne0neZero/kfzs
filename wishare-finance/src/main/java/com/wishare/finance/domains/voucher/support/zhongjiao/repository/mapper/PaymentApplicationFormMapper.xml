@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.support.zhongjiao.repository.mapper.PaymentApplicationZJMapper">
+
+    <select id="selectBySearch" resultType="com.wishare.finance.domains.voucher.support.zhongjiao.entity.PaymentApplicationFormZJ">
+        select * from payment_application_form cc
+                          ${ew.customSqlSegment}
+                 order by cc.gmt_modify desc
+    </select>
+    <select id="getDetailById" resultType="com.wishare.finance.apps.pushbill.vo.PaymentApplicationFormZJV">
+        select
+            paf.id as id,
+            paf.contract_name as contractName,
+            paf.settlement_info as settlementInfo,
+            paf.conmaincode as conmaincode,
+            paf.expect_pay_date as expectPayDate,
+            paf.total_payment_amount as totalPaymentAmount,
+            paf.business_type as businessType,
+            paf.business_reasons as businessReasons,
+            paf.remarks,
+            paf.recipient_code as recipientCode,
+            paf.recipient_name as recipientName,
+            paf.account_code as accountCode,
+            paf.bank_account_number as bankAccountNumber,
+            paf.opening_bank as openingBank,
+            paf.unit_name as unitName,
+            paf.depart_name as departName,
+            paf.handled_by as handledBy,
+            paf.bill_date as billDate,
+            paf.org as org,
+            paf.attachment_num as attachmentNum,
+            paf.name_of_receiving_account nameOfReceivingAccount,
+            paf.cash_flow as cashFlow,
+            paf.cash_flow_name as cashFlowName,
+            paf.payment_method as paymentMethod,
+            paf.name_of_pay_account as nameOfPayAccount,
+            paf.pay_bank_account_number as payBankAccountNumber,
+            paf.pay_opening_bank as payOpeningBank,
+            paf.payment_method_for_bills as paymentMethodForBills,
+            paf.bills_numbers as billsNumbers,
+            paf.pay_desc as payDesc,
+            paf.transfer_remarks as transferRemarksWithFirstCheck
+
+            From payment_application_form paf
+
+            where paf.id = #{id} and paf.deleted = 0
+    </select>
+
+    <select id="selectByCertainSettlementId"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.entity.PaymentApplicationFormZJ">
+        select *
+        from payment_application_form
+        where deleted = 0
+        and approve_status = 6
+        and JSON_SEARCH(settlement_info, 'one', #{settlementId}, NULL, '$[*].settlementId') IS NOT NULL
+    </select>
+
+    <!--根据信息台ID获取数据-->
+    <select id="getDetailByBpmProcessId" resultType="com.wishare.finance.domains.voucher.support.zhongjiao.entity.PaymentApplicationFormZJ">
+        select * from payment_application_form
+        where (bpm_process_id = #{bpmProcessId} or bpm_process_id_fq = #{bpmProcessId})and deleted = 0
+    </select>
+</mapper>

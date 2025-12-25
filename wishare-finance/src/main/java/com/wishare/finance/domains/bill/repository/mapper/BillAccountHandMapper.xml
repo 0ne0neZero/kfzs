@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.BillAccountHandMapper">
+
+    <resultMap id="BillAccountHandMap" type="com.wishare.finance.domains.bill.entity.BillAccountHand">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="billId" column="bill_id" jdbcType="INTEGER"/>
+        <result property="billNo" column="bill_no" jdbcType="VARCHAR"/>
+        <result property="statutoryBodyId" column="statutory_body_id" jdbcType="INTEGER"/>
+        <result property="statutoryBodyName" column="statutory_body_name" jdbcType="VARCHAR"/>
+        <result property="costCenterId" column="cost_center_id" jdbcType="INTEGER"/>
+        <result property="costCenterName" column="cost_center_name" jdbcType="VARCHAR"/>
+        <result property="sbAccountId" column="sb_account_id" jdbcType="INTEGER"/>
+        <result property="chargeItemId" column="charge_item_id" jdbcType="INTEGER"/>
+        <result property="chargeItemName" column="charge_item_name" jdbcType="VARCHAR"/>
+        <result property="chargeItemType" column="charge_item_type" jdbcType="INTEGER"/>
+        <result property="cpOrgId" column="cp_org_id" jdbcType="VARCHAR"/>
+        <result property="cpOrgName" column="cp_org_name" jdbcType="VARCHAR"/>
+        <result property="supCpUnitId" column="sup_cp_unit_id" jdbcType="VARCHAR"/>
+        <result property="supCpUnitName" column="sup_cp_unit_name" jdbcType="VARCHAR"/>
+        <result property="cpUnitId" column="cp_unit_id" jdbcType="VARCHAR"/>
+        <result property="cpUnitName" column="cp_unit_name" jdbcType="VARCHAR"/>
+        <result property="startTime" column="start_time" jdbcType="TIMESTAMP"/>
+        <result property="endTime" column="end_time" jdbcType="TIMESTAMP"/>
+        <result property="taxRateId" column="tax_rate_id" jdbcType="INTEGER"/>
+        <result property="taxRate" column="tax_rate" jdbcType="NUMERIC"/>
+        <result property="billType" column="bill_type" jdbcType="INTEGER"/>
+        <result property="outBusNo" column="out_bus_no" jdbcType="VARCHAR"/>
+        <result property="outBillNo" column="out_bill_no" jdbcType="VARCHAR"/>
+        <result property="outBusId" column="out_bus_id" jdbcType="VARCHAR"/>
+        <result property="currency" column="currency" jdbcType="VARCHAR"/>
+        <result property="totalAmount" column="total_amount" jdbcType="INTEGER"/>
+        <result property="payableAmount" column="payable_amount" jdbcType="INTEGER"/>
+        <result property="payAmount" column="pay_amount" jdbcType="INTEGER"/>
+        <result property="payTime" column="pay_time" jdbcType="TIMESTAMP"/>
+        <result property="taxAmount" column="tax_amount" jdbcType="INTEGER"/>
+        <result property="customerType" column="customer_type" jdbcType="INTEGER"/>
+        <result property="customerLabel" column="customer_label" jdbcType="INTEGER"/>
+        <result property="customerId" column="customer_id" jdbcType="VARCHAR"/>
+        <result property="customerName" column="customer_name" jdbcType="VARCHAR"/>
+        <result property="invoiceNos" column="invoice_nos" jdbcType="VARCHAR" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="invoiceAmount" column="invoice_amount" jdbcType="INTEGER"/>
+        <result property="invoiceTotalAmount" column="invoice_total_amount" jdbcType="INTEGER"/>
+        <result property="invoiceTypes" column="invoice_types" jdbcType="VARCHAR" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="invoiceTime" column="invoice_time" jdbcType="TIMESTAMP"/>
+        <result property="onAccount" column="on_account" jdbcType="INTEGER"/>
+        <result property="accountHanded" column="account_handed" jdbcType="INTEGER"/>
+        <result property="handTime" column="hand_time" jdbcType="TIMESTAMP"/>
+        <result property="payWays" column="pay_ways" jdbcType="VARCHAR" typeHandler="com.wishare.finance.domains.bill.support.PayWayJSONListTypeHandler"/>
+        <result property="sysSource" column="sys_source" jdbcType="INTEGER"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="HandAccountCondition">
+        and (on_account = 1 or (pay_amount = invoice_amount and invoice_amount > 0))
+    </sql>
+
+    <update id="updateOfHandAccount">
+        update
+            bill_account_hand bah
+        set bah.account_handed = case when bah.pay_amount = bah.total_amount then 2 else 1 end
+        ${ew.customSqlSegment}
+          and bah.account_handed != 2
+          and (bah.pay_amount > 0 or bah.invoice_amount > 0)
+          and (bah.on_account = 1 or bah.pay_amount = bah.invoice_amount)
+    </update>
+
+    <update id="updateRecBillOfHandAccount">
+        update ${receivableBillName} rb
+        set rb.account_handed = case when rb.settle_state = 2 then 2 else 1 end
+        where rb.id in (
+          select bill_id from ${billAccountHandName} bah
+            ${ew.customSqlSegment}
+          and bah.account_handed != 2
+          and (bah.pay_amount > 0 or bah.invoice_amount > 0)
+          and (bah.on_account = 1 or bah.pay_amount = bah.invoice_amount))
+            and rb.sup_cp_unit_id = #{supCpUnitId}
+    </update>
+
+    <update id="updateAdvBillOfHandAccount">
+        update advance_bill ab
+        set ab.account_handed = case when ab.settle_state = 2 then 2 else 1 end
+        where ab.id in (
+          select bill_id from ${billAccountHandName} bah
+            ${ew.customSqlSegment}
+          and bah.account_handed != 2
+          and (bah.pay_amount > 0 or bah.invoice_amount > 0)
+          and (bah.on_account = 1 or bah.pay_amount = bah.invoice_amount))
+    </update>
+
+    <select id="queryPageBySearch" resultMap="BillAccountHandMap">
+        select *
+        from bill_account_hand bah ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryTotal" resultType="com.wishare.finance.domains.bill.dto.AccountHandTotalDto">
+        select count(distinct cp_unit_id) as cpUnitCount,
+               sum(total_amount) as total_amount,
+               sum(pay_amount) as pay_amount,
+               sum(invoice_amount) as invoice_amount,
+               sum(invoice_total_amount) as invoice_total_amount
+        from bill_account_hand bah ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryHandAccountCount" resultType="com.wishare.finance.domains.bill.dto.AccountHandCountDto">
+        select count(1) as handCount, bill_type
+        from
+            bill_account_hand bah
+        ${ew.customSqlSegment}
+          and  bah.account_handed != 2
+          and (bah.pay_amount > 0 or bah.invoice_amount > 0)
+          and (bah.on_account = 1 or bah.pay_amount = bah.invoice_amount)
+          group by bill_type
+    </select>
+
+    <select id="getHandAccountBillIdPage" resultType="java.lang.String">
+        select bah.bill_id from bill_account_hand bah
+            ${ew.customSqlSegment}
+          and bah.account_handed != 2
+          and (bah.pay_amount > 0 or bah.invoice_amount > 0)
+          and (bah.on_account = 1 or bah.pay_amount = bah.invoice_amount)
+    </select>
+    <select id="queryAllCommunityIdList" resultType="java.lang.String">
+      SELECT
+        distinct bah.sup_cp_unit_id as supCpUnitId
+      FROM bill_account_hand bah
+    </select>
+    <select id="queryNoInvoiceInfoList" resultMap="BillAccountHandMap">
+        SELECT
+         bah.*
+        FROM bill_account_hand bah
+        left join receivable_bill rb
+        on bah.bill_no = rb.bill_no and rb.sup_cp_unit_id = #{supCpUnitId}
+        where bah.state = 0
+        and bah.invoice_amount = 0
+        and rb.invoice_state IN (2, 3)
+          and bah.sup_cp_unit_id = #{supCpUnitId}
+    </select>
+</mapper>

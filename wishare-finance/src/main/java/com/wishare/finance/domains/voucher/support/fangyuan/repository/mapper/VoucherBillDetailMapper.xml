@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.support.fangyuan.repository.mapper.VoucherBillDetailMapper">
+    <delete id="deleteBatch">
+        delete from voucher_bill_detail
+        where id in
+        <foreach collection="ids" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+
+    <select id="selectBySearch"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.entity.VoucherPushBillDetail">
+            select * from voucher_bill_detail
+             ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="queryVoucherPushBillDetailInfo"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.entity.VoucherPushBillDetail">
+        select * from voucher_bill_detail
+            where bill_event_type = 1
+            and deleted = 0
+        <if test="billIdList != null and billIdList.size > 0">
+        AND bill_id IN(
+        <foreach collection="billIdList" separator="," item="item">
+            #{item}
+        </foreach>
+        )
+        </if>
+    </select>
+
+    <select id="queryMoney" resultType="com.wishare.finance.apps.pushbill.vo.VoucherBillDetailMoneyV">
+        select sum(tax_includ_amount)/100 as taxIncludAmount,
+               sum(tax_exclud_amount)/100 as taxExcludAmount
+        from voucher_bill_detail
+        ${ew.customSqlSegment}
+    </select>
+</mapper>

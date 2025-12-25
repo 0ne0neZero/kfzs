@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.accountbook.repository.mapper.AccountBookMapper">
+
+    <resultMap  type="com.wishare.finance.domains.configure.accountbook.entity.AccountBookE" id="AccountBookMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="code" column="code" jdbcType="VARCHAR"/>
+        <result property="disabled" column="disabled" jdbcType="INTEGER"/>
+        <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="sysSource" column="sys_source" jdbcType="VARCHAR" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="remark" column="remark" jdbcType="VARCHAR"/>
+        <result property="isGeneralLedger" column="is_general_ledger" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <select id="queryPage" resultMap="AccountBookMap">
+        SELECT
+            ab.*
+        FROM
+            account_book ab
+                left join account_book_group abg ON abg.account_book_id = ab.id
+                where ab.deleted=0
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                  AND
+            </if>
+            ${ew.sqlSegment}
+            </if>
+        group by ab.id
+    </select>
+
+    <select id="queryList" resultMap="AccountBookMap">
+        SELECT
+        ab.*
+        FROM
+        account_book ab
+        left join account_book_group abg ON abg.account_book_id = ab.id
+        where ab.deleted = 0
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        group by ab.id
+    </select>
+
+    <select id="listInfo" resultType="com.wishare.finance.apps.model.configure.accountbook.dto.AccountbookDTO">
+        SELECT
+        ab.id,
+        ab.statutory_body_id,
+        ab.statutory_body_name,
+        ab.voucher_sys,
+        ab.`code`,
+        ab.`name`,
+        ab.remark,
+        ab.is_general_ledger,
+        abg.cost_center,
+        abg.charge_item
+        FROM
+        account_book ab
+        LEFT JOIN account_book_group abg ON ab.id = abg.account_book_id
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="selectByChargeItemAndCostCenter" resultType="com.wishare.finance.domains.configure.accountbook.entity.AccountBookE">
+        SELECT ab.* FROM `account_book_group` abg, account_book ab
+        where abg.account_book_id = ab.id
+          and JSON_CONTAINS(charge_item ->> '$[*].chargeItemId', JSON_ARRAY(#{chargeItemId}), '$')
+          and JSON_CONTAINS(cost_center ->> '$[*].costCenterId', JSON_ARRAY(#{costCenterId}), '$')
+          and ab.disabled = 0 and ab. deleted = 0 and abg.deleted = 0
+        limit 1
+    </select>
+
+    <select id="selectListByCostAndChargeItem" resultMap="AccountBookMap">
+        SELECT DISTINCT ab.* FROM `account_book_group` abg, account_book ab
+        where abg.account_book_id = ab.id
+            AND (JSON_CONTAINS(abg.charge_item,JSON_OBJECT('chargeItemId',#{chargeItemId})) or abg.charge_item like '%[]')
+            AND (JSON_CONTAINS(abg.cost_center,JSON_OBJECT('costCenterId',#{costCenterId})) or abg.cost_center like '%[]')
+            AND (JSON_CONTAINS(abg.statutory_body,JSON_OBJECT('statutoryBodyId',#{statutoryBodyId})) or abg.statutory_body like '%[]')
+            and ab.disabled = 0 and ab. deleted = 0 and abg.deleted = 0
+    </select>
+
+    <select id="selectListByCostChargeStatutory" resultMap="AccountBookMap">
+        SELECT DISTINCT ab.* FROM account_book_group abg, account_book ab
+        where abg.account_book_id = ab.id
+          and (JSON_CONTAINS(abg.charge_item->>'$[*].chargeItemId', JSON_ARRAY(#{chargeItemId}) ,'$') AND JSON_CONTAINS(abg.cost_center->>'$[*].costCenterId', JSON_ARRAY(#{costCenterId}),'$'))
+          and ab.statutory_body_id = #{statutoryBodyId}
+          and ab.disabled = 0 and ab. deleted = 0 and abg.deleted = 0
+    </select>
+    <select id="getIdByBusinessUnits" resultType="java.lang.Long">
+        select id from account_book where deleted=0 and statutory_body_id in
+        <foreach collection="list" item="itemId" open="(" separator="," close=")">
+            #{itemId}
+        </foreach>
+    </select>
+    <select id="getStatutoryBodyIdByBookId" resultType="java.lang.Long">
+        select statutory_body_id from account_book where id = #{bookId} and deleted=0
+    </select>
+
+
+</mapper>

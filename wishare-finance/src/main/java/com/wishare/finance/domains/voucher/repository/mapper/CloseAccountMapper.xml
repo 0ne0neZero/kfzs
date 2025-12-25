@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.repository.mapper.CloseAccountMapper">
+
+  <insert id="saveBatchCloseAccounts">
+    insert into close_account(id, account_book_id, account_book_code, account_book_name,
+                              accounting_period, states, tenant_id, gmt_create, creator_name,
+                              creator, operator, operator_name, gmt_modify)
+    values
+        <foreach collection="closeAccounts" separator="," item="item">
+          (#{item.id}, #{item.accountBookId}, #{item.accountBookCode}, #{item.accountBookName},
+           #{item.accountingPeriod}, #{item.states}, #{item.tenantId}, #{item.gmtCreate},
+           #{item.creatorName},#{item.creator}, #{item.operator}, #{item.operatorName}, #{item.gmtModify})
+        </foreach>
+  </insert>
+
+
+  <select id="selectPageBySearch"
+           resultType="com.wishare.finance.domains.voucher.entity.CloseAccount">
+            SELECT
+                *
+            FROM close_account
+            ${ew.customSqlSegment}
+            order by gmt_modify desc
+   </select>
+
+</mapper>

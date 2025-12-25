@@ -1,0 +1,52 @@
+package com.wishare.finance.apps.model.bill.fo;
+
+import com.wishare.starter.beans.PageF;
+import com.wishare.tools.starter.fo.search.SearchF;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+import java.util.List;
+
+/**
+ * 统计账单合计数据
+ * @Author dxclay
+ * @Date 2022/8/26
+ * @Version 1.0
+ */
+@Setter
+@Getter
+@ApiModel("统计账单金额合计数据")
+public class StatisticsBillAmountF {
+
+    @ApiModelProperty(value = "账单类型（1:应收账单，2:预收账单，3:临时收费账单）", required = true)
+//    @NotNull(message = "账单类型不能为空")
+    private Integer billType;
+
+    @Valid
+    @ApiModelProperty(value = "检索条件（二选一条件，账单id列表为空时使用， 两个条件都不为空时默认使用账单id列表）")
+    private PageF<SearchF<?>> query;
+
+    @Valid
+    @ApiModelProperty(value = "账单id列表（二选一条件，账单id列表不为空时使用）")
+    private List<Long> billIds;
+
+    @ApiModelProperty(value = "账单审核状态（0初始审核，1变更审核）")
+    private Integer billState;
+
+    @ApiModelProperty(value = "是否统计无效账单(0否，1是)")
+    private Integer billInvalid;
+
+    @ApiModelProperty("是否统计退款单（0否，1是）")
+    private Integer billRefund;
+
+    @ApiModelProperty(value = "上级收费单元id")
+    private String supCpUnitId;
+
+    @ApiModelProperty(value = "上级收费单元id List")
+    private List<String> supCpUnitIdList;
+}

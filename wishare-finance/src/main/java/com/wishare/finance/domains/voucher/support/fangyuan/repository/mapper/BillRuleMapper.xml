@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.support.fangyuan.repository.mapper.BillRuleMapper">
+
+    <resultMap id="BillRule" type="com.wishare.finance.domains.voucher.support.fangyuan.entity.BillRule">
+        <result column="id" property="id" />
+        <result column="rule_name" property="ruleName" />
+        <result column="event_type" property="eventType" />
+        <result column="scope_application" property="scopeApplication" typeHandler="com.wishare.finance.domains.voucher.support.ListPushBillCommunityHandler"/>
+        <result column="conditions" property="conditions" typeHandler="com.wishare.finance.domains.voucher.support.ListPushBillTemplateConditionHandler"/>
+        <result column="schedule_rule" property="scheduleRule" typeHandler="com.wishare.finance.infrastructure.support.JSONTypeHandler"/>
+        <result column="summary_requirements" property="summaryRequirements" />
+        <result column="amount_value" property="amountValue" />
+        <result column="amount_plus_minus" property="amountPlusMinus" />
+        <result column="push_mode" property="pushMode" />
+        <result column="execute_state" property="executeState" />
+        <result column="deleted" property="deleted" />
+        <result column="tenant_id" property="tenantId" />
+        <result column="creator_name" property="creatorName" />
+        <result column="creator" property="creator" />
+        <result column="gmt_create" property="gmtCreate" />
+        <result column="operator_name" property="operatorName" />
+        <result column="operator" property="operator" />
+        <result column="gmt_modify" property="gmtModify" />
+    </resultMap>
+
+
+    <select id="selectPageBySearch" resultMap="BillRule">
+        select * from voucher_bill_rule ${ew.customSqlSegment} order by gmt_modify desc
+    </select>
+
+    <select id="selectBySearch" resultMap="BillRule">
+        select * from voucher_bill_rule ${ew.customSqlSegment} order by gmt_modify desc
+    </select>
+</mapper>

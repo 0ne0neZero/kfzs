@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.mdm.repository.mapper.Mdm97Mapper">
+
+    <resultMap id="bankAccountMap" type="com.wishare.finance.apps.pushbill.vo.BankAccountV">
+        <id property="id" column="id" />
+        <result property="bankNameOfChina" column="bank_name_of_china" />
+        <result property="ACCOUNTNO" column="account_no" />
+        <result property="ACCOUNTNAME_CHS" column="account_name_chs" />
+        <result property="accountStatus" column="account_status" />
+    </resultMap>
+
+    <insert id="batchInsert">
+        insert into mdm97 (id, parent_id, authorized_unit, started_status, last_modified_time)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id},#{item.parentId},#{item.authorizedUnit},#{item.startedStatus},#{item.lastModifiedTime})
+        </foreach>
+    </insert>
+
+    <select id="selectValidBankByOid" resultMap="bankAccountMap">
+        select m73.id as id,
+               m73.bank_name_of_china as bank_name_of_china,
+               m73.account_no as account_no,
+               m73.account_name_chs as account_name_chs,
+               m73.account_status as account_status
+        from mdm97 m97
+                 left join mdm73 m73 on m73.id = m97.parent_id
+        where m73.account_status = '2'
+          and m97.authorized_unit = #{oid}
+    </select>
+</mapper>

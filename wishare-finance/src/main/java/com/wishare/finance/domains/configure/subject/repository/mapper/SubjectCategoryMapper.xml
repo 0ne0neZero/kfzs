@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.subject.repository.mapper.SubjectCategoryMapper">
+
+    <sql id="tableFields" >
+        id,
+        category_code,
+        category_name,
+        level,
+        parent_id,
+        path,
+        leaf,
+        pertain_id,
+        tenant_id,
+        deleted,
+        creator_name,
+        creator,
+        gmt_create,
+        operator_name,
+        operator,
+        gmt_modify
+    </sql>
+
+    <select id="queryChildSubjectCategoryById" resultType="com.wishare.finance.domains.configure.subject.entity.SubjectCategoryE">
+        select
+        <include refid="tableFields" />
+        from
+        subject_category
+        where deleted = 0
+        <if test="idList != null and idList.size > 0">
+            and (
+            <foreach collection="idList" item="item" separator=" or ">
+                JSON_CONTAINS(path, JSON_ARRAY(#{item}))
+            </foreach>
+            )
+        </if>
+    </select>
+
+    <select id="countAll" resultType="java.lang.Long">
+        SELECT COUNT( * )
+        FROM subject_category
+        where 1 = 1
+        <if test="parentId != null">
+            and parent_id = #{parentId}
+        </if>
+    </select>
+
+</mapper>

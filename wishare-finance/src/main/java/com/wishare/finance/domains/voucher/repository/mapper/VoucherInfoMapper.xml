@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.repository.mapper.VoucherInfoMapper">
+
+    <resultMap id="Voucher" type="com.wishare.finance.domains.voucher.entity.Voucher">
+        <result column="id" property="id"/>
+        <result column="voucher_no" property="voucherNo"/>
+        <result column="sync_system_voucher_no" property="syncSystemVoucherNo"/>
+        <result column="made_type" property="madeType"/>
+        <result column="voucher_type" property="voucherType"/>
+        <result column="account_book_id" property="accountBookId"/>
+        <result column="account_book_code" property="accountBookCode"/>
+        <result column="account_book_name" property="accountBookName"/>
+        <result column="statutory_body_id" property="statutoryBodyId"/>
+        <result column="statutory_body_code" property="statutoryBodyCode"/>
+        <result column="statutory_body_name" property="statutoryBodyName"/>
+        <result column="cost_centers" property="costCenters" typeHandler="com.wishare.finance.domains.voucher.support.ListVoucherCostCenterTypeHandler"/>
+        <result column="amount" property="amount"/>
+        <result column="state" property="state"/>
+        <result column="details" property="details" typeHandler="com.wishare.finance.domains.voucher.support.ListVoucherDetailTypeHandler"/>
+        <result column="fiscal_period" property="fiscalPeriod"/>
+        <result column="bookkeeping_date" property="bookkeepingDate"/>
+        <result column="voucher_rule_record_id" property="voucherRuleRecordId"/>
+        <result column="even_type" property="evenType"/>
+        <result column="maker_id" property="makerId"/>
+        <result column="maker_name" property="makerName"/>
+        <result column="voucher_source" property="voucherSource"/>
+        <result column="error_reason" property="errorReason"/>
+        <result column="sync_system" property="syncSystem"/>
+        <result column="sync_time" property="syncTime"/>
+        <result column="tenant_id" property="tenantId"/>
+        <result column="deleted" property="deleted"/>
+        <result column="creator" property="creator"/>
+        <result column="creator_name" property="creatorName"/>
+        <result column="gmt_create" property="gmtCreate"/>
+        <result column="operator" property="operator"/>
+        <result column="operator_name" property="operatorName"/>
+        <result column="gmt_modify" property="gmtModify"/>
+        <result column="cost_center_id" property="costCenterId"/>
+        <result column="cost_center_name" property="costCenterName"/>
+        <result column="even_value" property="evenValue"/>
+        <result column="pay_channel_value" property="payChannelValue"/>
+
+        <collection property="businessBills" column="{voucherId = id,bookId=account_book_id}" ofType="com.wishare.finance.domains.voucher.entity.VoucherBusinessDetail"
+                    javaType="ArrayList" select="getVoucherBillDetail">
+            <result column="business_bill_id" property="businessBillId"/>
+            <result column="business_bill_type" property="businessBillType"/>
+            <result column="business_bill_no" property="businessBillNo"/>
+            <result column="sup_cp_unit_id" property="supCpUnitId"/>
+            <result column="pay_channel" property="payChannel"/>
+        </collection>
+    </resultMap>
+
+    <update id="deleteByIds">
+        UPDATE
+            voucher_info
+        SET
+            deleted = 1
+        WHERE
+            id IN
+        <if test="ids != null and ids.size > 0">
+            <foreach collection="ids" separator="," item="item" open="(" close=")">
+                #{item}
+            </foreach>
+
+        </if>
+    </update>
+
+    <update id="deleteBusinessDetailByIds">
+        UPDATE
+            voucher_business_detail
+        SET
+            deleted = 1
+        WHERE
+        account_book_id=#{accountBookId} and
+        voucher_id IN
+        <if test="voucherIds != null and voucherIds.size > 0">
+            <foreach collection="voucherIds" separator="," item="item" open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </update>
+
+    <select id="getVoucherBillDetail" resultType="com.wishare.finance.domains.voucher.entity.VoucherBusinessDetail">
+        select DISTINCT(business_bill_id),
+        business_bill_type,
+        business_bill_no,
+        sup_cp_unit_id
+        from voucher_business_detail
+        where voucher_id = #{voucherId} and account_book_id=#{bookId}
+    </select>
+
+
+    <select id="selectBySearch" resultMap="Voucher">
+        select DISTINCT
+            vi.* from voucher_info vi
+            ${ew.customSqlSegment}
+    </select>
+    <select id="staticVoucherAmount" resultType="java.lang.Long">
+        select sum(amount) as amount from voucher_info vi
+                          ${ew.customSqlSegment}
+    </select>
+
+    <select id="staticVoucherAmountByTableName" resultType="java.lang.Long">
+        select sum(amount) as amount from voucher_info vi
+                                              LEFT JOIN ${tableName} vbd ON vbd.voucher_id = vi.id
+            AND ( vbd.deleted IS NULL OR vbd.deleted = 0 )
+            ${ew.customSqlSegment}
+    </select>
+    <select id="selectListByBusinessId" resultType="com.wishare.finance.domains.voucher.entity.Voucher">
+        select *
+        from voucher_info vi
+        where vi.deleted = 0 and vi.id in (
+            select vbd.voucher_id from voucher_business_detail vbd where vbd.business_bill_id = #{businessId} and vbd.business_bill_type = #{businessType})
+    </select>
+    <select id="selectBusinessDetailByVouchIds" resultType="java.lang.Integer">
+        SELECT
+            count(1)
+        FROM
+            voucher_business_detail
+        WHERE
+            deleted = 0
+        AND
+        account_book_id=#{accountBookId} and
+        voucher_id IN
+            <if test="voucherIds != null and voucherIds.size > 0">
+                <foreach collection="voucherIds" separator="," item="item" open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+    </select>
+    <select id="autoPushList" resultType="java.lang.Long">
+        select id from voucher_info where deleted=0 and voucher_rule_record_id = #{recordId}
+    </select>
+    <select id="selectDetailsBySearch" resultMap="Voucher">
+        SELECT
+            DISTINCT
+            vi.*
+        FROM
+            voucher_info vi
+                LEFT JOIN ${tableName} vbd ON vbd.voucher_id = vi.id
+                AND ( vbd.deleted IS NULL OR vbd.deleted = 0 )
+
+            ${ew.customSqlSegment}
+    </select>
+
+</mapper>

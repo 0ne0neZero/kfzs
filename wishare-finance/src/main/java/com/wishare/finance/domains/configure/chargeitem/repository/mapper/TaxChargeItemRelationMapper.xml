@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.chargeitem.repository.mapper.TaxChargeItemRelationMapper">
+
+    <select id="queryChargeByTaxItemGoodsIdList" resultType="com.wishare.finance.domains.configure.chargeitem.dto.taxitem.TaxChargeItemRelationD">
+        SELECT
+        tcir.id,
+        tcir.tax_item_id,
+        tcir.charge_item_id,
+        ci.name,
+        ci.code,
+        ci.type,
+        tcir.tax_item_goods_id,
+        ti.name taxItemName,
+        ti.code taxItemCode
+        FROM tax_charge_item_relation tcir
+        LEFT JOIN charge_item ci ON ci.id = tcir.charge_item_id
+        LEFT JOIN tax_item ti on ti.id=tcir.tax_item_id
+        where tcir.deleted = 0
+        <if test="taxItemIdList != null and taxItemIdList.size > 0">
+            and tcir.tax_item_goods_id in
+            <foreach collection="taxItemIdList" item="item" open="(" separator="," close=" )">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+</mapper>
+

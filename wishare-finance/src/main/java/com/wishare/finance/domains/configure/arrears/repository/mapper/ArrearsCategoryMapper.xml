@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.arrears.repository.mapper.ArrearsCategoryMapper">
+    <select id="searchComponent"
+            resultType="com.wishare.finance.apps.model.configure.arrearsCategory.vo.SearchV">
+        SELECT
+            id as value, arrears_category_name as label
+        FROM arrears_category
+        where 1=1
+        <if test="searchKey != null and searchKey != ''">
+            and `arrears_category_name` LIKE CONCAT('%', #{searchKey},'%')
+        </if>
+    </select>
+</mapper>

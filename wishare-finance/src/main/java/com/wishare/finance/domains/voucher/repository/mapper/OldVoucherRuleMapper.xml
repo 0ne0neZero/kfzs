@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.voucher.repository.mapper.OldVoucherRuleMapper">
+
+  <resultMap id="VoucherRuleMap" type="com.wishare.finance.apps.model.voucher.dto.VoucherRuleDTO">
+    <result property="id" column="id" jdbcType="INTEGER"/>
+    <result property="chargeItemId" column="charge_item_id" jdbcType="INTEGER"/>
+    <result property="eventType" column="event_type" jdbcType="INTEGER"/>
+    <result property="ruleName" column="rule_name" jdbcType="VARCHAR"/>
+    <result property="conditions" column="conditions" jdbcType="VARCHAR"/>
+    <result property="ruleRemark" column="rule_remark" jdbcType="VARCHAR"/>
+    <result property="entries" column="entries" jdbcType="VARCHAR"/>
+    <result property="sortNum" column="sort_num" jdbcType="INTEGER"/>
+    <result property="executeType" column="execute_type" jdbcType="INTEGER"/>
+    <result property="executeTime" column="execute_time" jdbcType="VARCHAR"/>
+    <result property="disabled" column="disabled" jdbcType="INTEGER"/>
+    <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+    <result property="red" column="red" jdbcType="INTEGER"/>
+    <result property="taxIncluded" column="tax_included" jdbcType="INTEGER"/>
+    <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+    <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+    <result property="creator" column="creator" jdbcType="VARCHAR"/>
+    <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+    <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+    <result property="operator" column="operator" jdbcType="VARCHAR"/>
+    <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+  </resultMap>
+
+  <!--分页查询账簿列表-->
+  <select id="queryPage" resultType="com.wishare.finance.domains.voucher.entity.VoucherRuleE">
+    SELECT
+      vr.id,
+      vr.charge_item_id,
+      vr.event_type,
+      vr.rule_name,
+      vr.conditions,
+      vr.rule_remark,
+      vr.entries,
+      vr.sort_num,
+      vr.execute_type,
+      vr.execute_time,
+      vr.disabled,
+      vr.deleted,
+      vr.red,
+      vr.tax_included,
+      vr.tenant_id,
+      vr.creator_name,
+      vr.creator,
+      vr.gmt_create,
+      vr.operator_name,
+      vr.operator,
+      vr.gmt_modify
+    FROM
+      voucher_rule vr
+      ${ew.customSqlSegment}
+  </select>
+
+  <update id="updateSortNumBySort" >
+    update voucher_rule set sort_num = sort_num - 1
+    where event_type = #{eventType} and sort_num between #{beforeSortNum} and #{sortNum}
+  </update>
+
+  <update id="updateSortNumBySortBigger" >
+    update voucher_rule set sort_num = sort_num + 1
+    where event_type = #{eventType} and sort_num between #{sortNum} and #{beforeSortNum}
+  </update>
+
+  <select id="selectListByWrapper" resultType="com.wishare.finance.domains.voucher.entity.VoucherRuleE">
+    select id, rule_name, event_type, sort_num, disabled from voucher_rule
+    ${ew.customSqlSegment}
+  </select>
+</mapper>

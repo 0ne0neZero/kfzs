@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.reconciliation.repository.mapper.ReconciliationYinlianMapper">
+    <select id="getReconciliationYinlianEByFileName" resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationYinlianE">
+        select * from    reconciliation_yinlian where  deleted = 0
+        and file_name = #{fileName}
+        limit 1
+    </select>
+    
+    
+
+    <select id="pageRecord" resultType="com.wishare.finance.domains.reconciliation.dto.ChannelFlowClaimRecordDto">
+        select
+            ry.seq_id as tradeNo,
+            ry.trade_date as payTime,
+            gb.statutory_body_id ,
+            gb.statutory_body_name,
+            gb.sup_cp_unit_id as communityId,
+            gb.sup_cp_unit_name  as communityName,
+            ry.trade_amount as channelTradeAmount,
+            ry.commission as commission,
+            gb.mc_reconcile_state as mcReconciliationState,
+            gb.mc_reconcile_state as flowState,
+            ry.trade_channel as payChannel,
+            "通联" as payWay,
+            gb.sys_source,
+            ry.mid as mchNo
+            from  reconciliation_yinlian  ry left join ${shareTableName} gb on ry.seq_id = gb.trade_no
+            ${ew.customSqlSegment}
+    </select>
+
+
+
+    <select id="pageRecordForYY" resultType="com.wishare.finance.domains.reconciliation.dto.ChannelFlowClaimRecordDto">
+        select
+            ry.search_reference_no as tradeNo,
+            gb.bill_no as billNo,
+            CONCAT(ry.clear_date,ry.trade_date) as payTime,
+            gb.statutory_body_id ,
+            gb.statutory_body_name,
+            gb.sup_cp_unit_id as communityId,
+            gb.sup_cp_unit_name  as communityName,
+            ry.trade_amount as channelTradeAmount,
+            ry.commission as commission,
+            gb.mc_reconcile_state as mcReconciliationState,
+            gb.mc_reconcile_state as flowState,
+            "" as payChannel,
+            "银联" as payWay,
+            gb.sys_source,
+            ry.mid as mchNo
+        from  reconciliation_yinlian  ry
+            left join
+              ${shareTableName} gb  on ry.search_reference_no = gb.bank_flow_no
+
+            ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="getReconciliationYinlianBySeqId" resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationYinlianE">
+        select * from
+        reconciliation_yinlian
+        where  deleted = 0
+        and seq_id  in
+        <foreach collection="seqList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        limit 1
+    </select>
+
+    <select id="getReconciliationYinlianByRefNo" resultType="com.wishare.finance.domains.reconciliation.entity.ReconciliationYinlianE">
+        select * from
+        reconciliation_yinlian
+        where  deleted = 0
+        and search_reference_no  in
+        <foreach collection="seqList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        limit 1
+    </select>
+
+
+    <select id="getStatistics" resultType="com.wishare.finance.apps.model.reconciliation.vo.ChannelFlowClaimStatisticsV">
+        select
+            IFNULL( sum(trade_amount), 0) as flowClaimTotal,
+            IFNULL( sum(commission), 0) as commission
+        from  reconciliation_yinlian  ry left join
+              ${shareTableName} gb on ry.seq_id = gb.trade_no
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="getYYStatistics" resultType="com.wishare.finance.apps.model.reconciliation.vo.ChannelFlowClaimStatisticsV">
+        select
+            IFNULL( sum(trade_amount), 0) as flowClaimTotal,
+            IFNULL( sum(commission), 0) as commission
+        from  reconciliation_yinlian  ry
+        left join
+              ${shareTableName} gb  on ry.search_reference_no = gb.bank_flow_no
+            ${ew.customSqlSegment}
+    </select>
+    <select id="pageRecordMap"
+            resultType="com.wishare.finance.domains.reconciliation.dto.ChannelFlowClaimRecordDto">
+
+        select ry.seq_id as tradeNo,
+        group_concat(rd.bill_no) billNo,
+        rd.reconcile_time reconcileTime
+        from reconciliation_yinlian ry
+        left join reconciliation_detail rd on rd.channel_seq_id = ry.seq_id and rd.deleted = 0
+        where ry.seq_id in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        group by rd.reconciliation_id
+
+    </select>
+    <select id="pageRecordMapYY"
+            resultType="com.wishare.finance.domains.reconciliation.dto.ChannelFlowClaimRecordDto">
+        select
+            ry.search_reference_no as tradeNo,
+            group_concat(rd.bill_no) billNo,
+            rd.reconcile_time reconcileTime
+        from reconciliation_yinlian ry
+        left join reconciliation_detail rd on rd.channel_seq_id = ry.search_reference_no and rd.deleted = 0
+        where ry.search_reference_no in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        group by rd.reconciliation_id
+    </select>
+
+
+</mapper>

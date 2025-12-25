@@ -1,0 +1,8 @@
+#logging:
+#  config: classpath:logback-spring.xml
+#
+spring:
+  profiles:
+    include: "local,msg,shardingjdbc"
+  main:
+    allow-circular-references: true

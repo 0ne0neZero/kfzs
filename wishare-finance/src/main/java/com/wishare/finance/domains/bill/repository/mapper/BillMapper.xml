@@ -1,0 +1,1004 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.BillMapper">
+    <sql id="bill_fields">
+        b.id,
+        b.community_id,
+        b.community_name,
+        b.charge_item_id,
+        b.charge_item_name,
+        b.room_id,
+        b.room_name,
+        b.payer_type,
+        b.payee_type,
+        b.start_time,
+        b.end_time,
+        b.bill_no,
+        b.bill_method,
+        b.charging_area,
+        b.unit_price,
+        b.out_bill_no,
+        b.out_bus_no,
+        b.out_bus_id,
+        b.description,
+        b.currency,
+        b.total_amount,
+        b.receivable_amount,
+        b.deductible_amount,
+        b.overdue_amount,
+        b.discount_amount,
+        b.settle_amount,
+        b.refund_amount,
+        b.carried_amount,
+        b.invoice_amount,
+        b.payee_id,
+        b.payee_name,
+        b.payer_id,
+        b.payer_name,
+        b.invoice_type,
+        b.payer_label,
+        b.attach_params,
+        b.source,
+        b.state,
+        b.on_account,
+        b.settle_state,
+        b.refund_state,
+        b.verify_state,
+        b.approved_state,
+        b.carried_state,
+        b.invoice_state,
+        b.account_handed,
+        b.separated,
+        b.reversed,
+        b.adjusted,
+        b.tenant_id,
+        b.creator,
+        b.creator_name,
+        b.gmt_create,
+        b.operator,
+        b.operator_name,
+        b.gmt_modify,
+        b.ext_field1,
+        b.ext_field2,
+        b.ext_field3,
+        b.ext_field4,
+        b.ext_field5
+    </sql>
+
+    <select id="listByGroup" resultType="com.wishare.finance.domains.bill.dto.BillGroupDto">
+        SELECT
+        group_concat( a.id ) AS billIds,
+        group_concat( a.bill_type ) AS billTypes,
+        group_concat(DISTINCT a.charge_item_id ) AS chargeItemIds,
+        group_concat(DISTINCT a.charge_item_name ) AS chargeItemnAME,
+        a.room_id,
+        a.room_name,
+        a.community_id,
+        a.community_name,
+        a.account_year,
+        a.account_date,
+        a.account_quarter,
+        a.account_part_year,
+        min(a.start_time) as startTime,
+        max(a.end_time) as endTime,
+        SUM(a.settle_amount - a.refund_amount - a.carried_amount ) AS actualPayAmount,
+        SUM(a.receivable_amount + a.overdue_amount + a.refund_amount + a.carried_amount - a.settle_amount) AS actualUnpayAmount
+        FROM
+        (
+        SELECT
+        bill_type,
+        id,
+        room_id,
+        room_name,
+        charge_item_id,
+        charge_item_name,
+        start_time,
+        end_time,
+        community_id,
+        community_name,
+        total_amount,
+        refund_amount,
+        carried_amount,
+        receivable_amount,
+        overdue_amount,
+        settle_amount,
+        account_year,
+        account_date,
+        QUARTER(account_date)AS account_quarter,
+        FLOOR(DATE_FORMAT(account_date,'%m')/7)AS account_part_year
+        FROM
+        ${receivableBillName} b
+        ${ew.customSqlSegment}
+        UNION ALL
+        SELECT
+        2 AS bill_type,
+        id,
+        room_id,
+        room_name,
+        charge_item_id,
+        charge_item_name,
+        start_time,
+        end_time,
+        community_id,
+        community_name,
+        total_amount,
+        refund_amount,
+        carried_amount,
+        receivable_amount,
+        overdue_amount,
+        settle_amount,
+        account_year,
+        account_date,
+        QUARTER(account_date)AS account_quarter,
+        FLOOR(DATE_FORMAT(account_date,'%m')/7)AS account_part_year
+        FROM
+        advance_bill b
+        ${ew.customSqlSegment}
+        ) a
+        <if test="ruleValue != null and ruleValue != ''">
+            GROUP BY ${ruleValue}
+        </if>
+    </select>
+
+    <select id="billListGroup" resultType="com.wishare.finance.domains.bill.dto.BillGroupDto">
+        SELECT
+        group_concat( a.id ) AS billIds,
+        group_concat( a.bill_type ) AS billTypes,
+        group_concat(DISTINCT a.charge_item_id ) AS chargeItemIds,
+        group_concat(DISTINCT a.charge_item_name ) AS chargeItemnAME,
+        a.room_id,
+        a.room_name,
+        a.community_id,
+        a.community_name,
+        a.account_year,
+        a.account_date,
+        a.account_quarter,
+        a.account_part_year,
+        min(a.start_time) as startTime,
+        max(a.end_time) as endTime,
+        SUM(a.settle_amount - a.refund_amount - a.carried_amount ) AS actualPayAmount,
+        SUM(a.receivable_amount + a.overdue_amount - a.discount_amount + a.refund_amount + a.carried_amount - a.settle_amount) AS actualUnpayAmount
+        FROM
+        (
+        SELECT
+        bill_type,
+        id,
+        room_id,
+        room_name,
+        charge_item_id,
+        charge_item_name,
+        start_time,
+        end_time,
+        community_id,
+        community_name,
+        total_amount,
+        refund_amount,
+        carried_amount,
+        receivable_amount,
+        discount_amount,
+        overdue_amount,
+        settle_amount,
+        account_year,
+        account_date,
+        QUARTER(account_date)AS account_quarter,
+        FLOOR(DATE_FORMAT(account_date,'%m')/7)AS account_part_year
+        FROM
+        ${receivableBillName} b
+        ${ew.customSqlSegment}
+        ) a
+        <if test="ruleValue != null and ruleValue != ''">
+            GROUP BY ${ruleValue}
+        </if>
+    </select>
+
+    <select id="pageWithGroup" resultType="com.wishare.finance.domains.bill.dto.BillGroupDto">
+        SELECT
+            group_concat( a.id ) AS billIds,
+            group_concat( a.bill_type ) AS billTypes,
+            a.charge_item_id,
+            a.charge_item_name,
+            a.room_id,
+            a.room_name,
+            a.community_id,
+            a.community_name,
+            min(a.start_time) as startTime,
+            max(a.end_time) as endTime,
+            SUM(a.settle_amount - a.refund_amount - a.carried_amount ) AS actualPayAmount,
+            SUM(a.receivable_amount + a.overdue_amount - a.discount_amount + a.refund_amount + a.carried_amount - a.settle_amount) AS actualUnpayAmount
+        FROM
+            (
+                SELECT
+                    bill_type,
+                    id,
+                    room_id,
+                    room_name,
+                    charge_item_id,
+                    charge_item_name,
+                    start_time,
+                    end_time,
+                    community_id,
+                    community_name,
+                    total_amount,
+                    refund_amount,
+                    carried_amount,
+                    receivable_amount,
+                    overdue_amount,
+                    discount_amount,
+                    settle_amount
+                FROM
+                    ${receivableBillName} b
+                    ${ew.customSqlSegment}
+                UNION ALL
+                SELECT
+                    2 AS bill_type,
+                    id,
+                    room_id,
+                    room_name,
+                    charge_item_id,
+                    charge_item_name,
+                    start_time,
+                    end_time,
+                    community_id,
+                    community_name,
+                    total_amount,
+                    refund_amount,
+                    carried_amount,
+                    receivable_amount,
+                    overdue_amount,
+                    discount_amount,
+                    settle_amount
+                FROM
+                    advance_bill b
+                    ${ew.customSqlSegment}
+            ) a
+        GROUP BY
+            a.charge_item_id,
+            a.room_id
+    </select>
+
+
+    <select id="countBill" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        from (
+             SELECT bill_type,
+                    id,
+                    room_id,
+                    room_name,
+                    charge_item_id,
+                    charge_item_name,
+                    start_time,
+                    end_time
+             FROM ${receivableBillName} b
+                 ${ew.customSqlSegment}
+             ) a
+    </select>
+
+    <select id="queryPage" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+            <include refid="bill_fields"/>,
+            bill_type
+        FROM
+            ${receivableBillName} b left join ${gatherDetailName} bs ON b.id = bs.rec_bill_id
+            ${ew.customSqlSegment}
+        UNION ALL
+        SELECT
+            <include refid="bill_fields"/>,
+            2 AS bill_type
+        FROM
+            advance_bill b left join ${gatherDetailName} bs ON b.id = bs.gather_bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryList" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+        <include refid="bill_fields"/>,
+        b.statutory_body_id,
+        b.bill_type
+        FROM
+        ${receivableBillName} b <!--left join ${gatherDetailName} bs ON b.id = bs.rec_bill_id-->
+        ${ew.customSqlSegment}
+        UNION ALL
+        SELECT
+        <include refid="bill_fields"/>,
+        b.statutory_body_id,
+        2 AS bill_type
+        FROM
+        advance_bill b <!--left join gather_detail bs ON b.id = bs.gather_bill_id-->
+        ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="invalidChargePageForReceivableBill" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+            b.bill_type,
+            b.id,
+            b.bill_no,
+            b.statutory_body_name,
+            b.cost_center_name,
+            b.charge_item_name,
+            b.cp_unit_name,
+            b.total_amount,
+            b.receivable_amount,
+            b.settle_amount,
+            b.reverse_amount,
+            b.start_time,
+            b.end_time,
+            b.payer_id,
+            b.payer_name,
+            b.sys_source,
+            b.gmt_modify,
+            b.state,
+            b.carried_state,
+            b.refund_state,
+            b.reversed,
+            b.sup_cp_unit_id,
+            b.ext_field6,
+            b.operator_name,
+            b.receivable_date
+        FROM
+            receivable_bill b
+            ${ew.customSqlSegment}
+        order by gmt_modify desc,id desc
+    </select>
+
+    <select id="invalidChargePageForGatherBill" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+            7 AS billType,
+            b.id,
+            b.bill_no,
+            b.statutory_body_name,
+            GROUP_CONCAT( DISTINCT gd.cost_center_name ) AS cost_center_name,
+            GROUP_CONCAT( DISTINCT gd.charge_item_name ) AS charge_item_name,
+            GROUP_CONCAT( DISTINCT gd.cp_unit_name ) AS cp_unit_name,
+            b.total_amount,
+            b.total_amount AS receivable_amount,
+            b.total_amount AS settle_amount,
+            b.start_time,
+            b.end_time,
+            b.payer_id,
+            b.payer_name,
+            b.sys_source,
+            b.gmt_modify,
+            b.state,
+            b.carried_state,
+            b.refund_state,
+            b.reversed,
+            b.sup_cp_unit_id,
+            b.ext_field6,
+            b.operator_name
+        FROM
+            ${gatherBillTableName} b
+                inner JOIN ${gatherDetailTableName} gd ON b.id = gd.gather_bill_id
+            ${ew.customSqlSegment}
+        order by gmt_modify,id desc
+    </select>
+
+    <select id="invalidChargePageForAdvanceBill" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+            2 AS billType,
+            b.id,
+            b.bill_no,
+            b.statutory_body_name,
+            b.cost_center_name,
+            b.charge_item_name,
+            b.cp_unit_name,
+            b.total_amount,
+            b.receivable_amount,
+            b.settle_amount,
+            b.reverse_amount,
+            b.start_time,
+            b.end_time,
+            b.payer_id,
+            b.payer_name,
+            b.sys_source,
+            b.gmt_modify,
+            b.state,
+            b.carried_state,
+            b.refund_state,
+            b.reversed,
+            b.sup_cp_unit_id,
+            b.ext_field6,
+            b.operator_name,
+            b.sup_cp_unit_name
+        FROM
+            advance_bill b
+            ${ew.customSqlSegment}
+        order by gmt_modify desc,id desc
+    </select>
+
+    <select id="invalidPayPageForPayableBill" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+            4 AS billType,
+            b.id,
+            b.bill_no,
+            b.statutory_body_name,
+            b.cost_center_name,
+            b.charge_item_name,
+            b.cp_unit_name,
+            b.total_amount,
+            b.receivable_amount,
+            b.settle_amount,
+            b.start_time,
+            b.end_time,
+            b.payer_id,
+            b.payer_name,
+            b.sys_source,
+            b.gmt_modify,
+            b.state,
+            b.carried_state,
+            b.refund_state,
+            b.reversed
+        FROM
+            payable_bill b
+            ${ew.customSqlSegment}
+        order by id desc
+    </select>
+    <select id="invalidPayPageForPayBill" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+            6 AS billType,
+            b.id,
+            b.bill_no,
+            b.statutory_body_name,
+            GROUP_CONCAT( DISTINCT pd.cost_center_name ) AS cost_center_name,
+            GROUP_CONCAT( DISTINCT pd.charge_item_name ) AS charge_item_name,
+            GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS cp_unit_name,
+            b.total_amount,
+            b.total_amount AS receivable_amount,
+            b.total_amount AS settle_amount,
+            b.start_time,
+            b.end_time,
+            b.payer_id,
+            b.payer_name,
+            b.sys_source,
+            b.gmt_modify,
+            b.state,
+            b.carried_state,
+            b.refund_state,
+            b.reversed
+        FROM
+            pay_bill b
+                LEFT JOIN pay_detail pd ON b.id = pd.pay_bill_id
+            ${ew.customSqlSegment}
+        order by id desc
+    </select>
+
+    <select id="invalidPayStatisticsForPayableBill" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        select count(id)              as billTotal,
+               sum(total_amount)      as amountTotal,
+               sum(receivable_amount) as receivableAmountTotal,
+               sum(settle_amount)     as settleAmountTotal
+        from payable_bill b
+            ${ew.customSqlSegment}
+
+    </select>
+
+    <select id="invalidPayStatisticsForPayBill" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        SELECT
+            count( a.id ) AS billTotal,
+            sum( a.amountTotal ) AS amountTotal,
+            sum( a.receivableAmountTotal ) AS receivableAmountTotal,
+            sum( a.settleAmountTotal ) AS settleAmountTotal
+        FROM
+            (SELECT
+                    b.id,
+                    b.total_amount AS amountTotal,
+                    b.total_amount AS receivableAmountTotal,
+                    b.total_amount AS settleAmountTotal
+                FROM
+                    pay_bill b
+                    LEFT JOIN pay_detail pd ON b.id = pd.pay_bill_id
+                    ${ew.customSqlSegment}
+            ) a
+    </select>
+
+    <select id="invalidChargeStatisticsForReceivableBill" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        select count(id)              as billTotal,
+               sum(total_amount)      as amountTotal,
+               sum(receivable_amount) as receivableAmountTotal,
+               sum(settle_amount)     as settleAmountTotal
+        from receivable_bill b
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="invalidChargeStatisticsForGatherBill" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        SELECT
+            count( a.bcount ) AS billTotal,
+            SUM( a.bta ) AS amountTotal,
+            SUM( a.bta ) AS receivableAmountTotal,
+            SUM( a.bta ) AS settleAmountTotal
+            from (
+                SELECT
+                    count( 1 ) AS bcount,
+                    b.total_amount AS bta
+                FROM
+                    ${gatherBillName} b
+                        INNER JOIN ${gatherDetailName} gd ON b.id = gd.gather_bill_id and gd.available = 0
+                    ${ew.customSqlSegment}
+                GROUP BY
+                    b.id
+            ) a
+
+    </select>
+
+    <select id="invalidChargeStatisticsForAdvanceBill" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        select count(id)              as billTotal,
+        sum(total_amount)      as amountTotal,
+        sum(receivable_amount) as receivableAmountTotal,
+        sum(settle_amount)     as settleAmountTotal
+        from advance_bill b
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="flowContractAmount" resultType="com.wishare.finance.domains.bill.dto.FlowContractBillStatisticsDto">
+        select
+        COUNT(*) AS billTotal,
+        IFNULL(SUM(total_amount), 0) AS billAmountTotal
+        FROM (
+        SELECT
+        "5" AS billType,
+        b.id,
+        b.bill_no,
+        b.statutory_body_name,
+        GROUP_CONCAT( DISTINCT pd.sup_cp_unit_name ) AS sup_cp_unit_name,
+        GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS cp_unit_name,
+        GROUP_CONCAT( DISTINCT pd.cost_center_name ) AS cost_center_name,
+        GROUP_CONCAT( DISTINCT pd.charge_item_name ) AS charge_item_name,
+        b.total_amount,
+        b.pay_time,
+        b.sys_source,
+        b.payee_name as customerName,
+        b.state,
+        b.carried_state,
+        b.refund_state,
+        b.reversed
+        FROM
+        pay_bill b
+        LEFT JOIN pay_detail pd ON b.id = pd.pay_bill_id
+        left join flow_claim_detail fcd on fcd.invoice_id = b.id and fcd.sys_source = 2 and fcd.state = 0
+        WHERE
+        b.pay_type = 1
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        UNION ALL
+        SELECT
+        "7" AS billType,
+        b.id,
+        b.bill_no,
+        b.statutory_body_name,
+        GROUP_CONCAT( DISTINCT gd.sup_cp_unit_name ) AS sup_cp_unit_name,
+        GROUP_CONCAT( DISTINCT gd.cp_unit_name ) AS cp_unit_name,
+        GROUP_CONCAT( DISTINCT gd.cost_center_name ) AS cost_center_name,
+        GROUP_CONCAT( DISTINCT gd.charge_item_name ) AS charge_item_name,
+        b.total_amount,
+        b.pay_time,
+        b.sys_source,
+        b.payer_name as customerName,
+        b.state,
+        b.carried_state,
+        b.refund_state,
+        b.reversed
+        FROM
+        ${gatherBillName} b
+        LEFT JOIN ${gatherDetailName} gd ON b.id = gd.gather_bill_id
+        left join flow_claim_detail fcd on fcd.invoice_id = b.id and fcd.sys_source = 2 and fcd.state = 0
+        ${ew.customSqlSegment}
+        ) a
+    </select>
+
+
+    <select id="flowZjIdList" resultType="com.wishare.finance.domains.bill.dto.FlowBillPageDto">
+        SELECT 	b.id as billId,
+                  "7" AS billType,
+                  b.bill_no,
+                  b.statutory_body_name,
+                  group_concat(pd.id) as gatherDetailIds,
+                  GROUP_CONCAT( DISTINCT pd.sup_cp_unit_name ) AS sup_cp_unit_name,
+                  GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS cp_unit_name,
+                  pd.cost_center_id,
+                  GROUP_CONCAT( DISTINCT pd.cost_center_name ) AS cost_center_name,
+                  GROUP_CONCAT( DISTINCT pd.charge_item_name ) AS charge_item_name,
+                  sum(pd.pay_amount) as total_amount,
+                  b.pay_time,
+                  b.sys_source,
+                  b.payer_name AS customerName,
+                  b.state,
+                  b.carried_state,
+                  b.refund_state,
+                  b.reversed,
+                  GROUP_CONCAT(DISTINCT  pd.pay_channel) as pay_channel
+        FROM ${gatherDetailName} pd  LEFT JOIN ${gatherBillName} b ON b.id = pd.gather_bill_id
+           where
+        <if test="idList != null and idList.size() > 0">
+            pd.id in
+            <foreach collection="idList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+
+            AND NOT EXISTS (
+             SELECT 1 FROM ${gatherDetailName} pd
+            WHERE b.id = pd.gather_bill_id
+            AND pd.available = 1 )
+
+        GROUP BY pd.pay_way, pd.pay_channel, pd.gather_bill_no
+    </select>
+
+
+    <select id="flowPageZJ" resultType="com.wishare.finance.domains.bill.dto.FlowBillPageDto">
+        SELECT 	b.id as billId,
+                  "7" AS billType,
+                  b.bill_no,
+                  b.statutory_body_name,
+                  group_concat(pd.id) as gatherDetailIds,
+                  GROUP_CONCAT( DISTINCT pd.sup_cp_unit_name ) AS sup_cp_unit_name,
+                  GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS cp_unit_name,
+                  pd.cost_center_id,
+                  GROUP_CONCAT( DISTINCT pd.cost_center_name ) AS cost_center_name,
+                  GROUP_CONCAT( DISTINCT pd.charge_item_name ) AS charge_item_name,
+                  sum(pd.pay_amount - pd.refund_amount) as total_amount,
+                  b.pay_time,
+                  b.sys_source,
+                  b.payer_name AS customerName,
+                  b.state,
+                  b.carried_state,
+                  b.refund_state,
+                  b.reversed,
+                  GROUP_CONCAT(DISTINCT  pd.pay_channel) as pay_channel
+        FROM ${gatherDetailName} pd  LEFT JOIN ${gatherBillName} b ON b.id = pd.gather_bill_id
+        left join  flow_claim_gather_detail  fcgd on   fcgd.gather_detail_id = pd.id and fcgd.deleted = 0
+            ${ew.customSqlSegment}
+            AND NOT EXISTS (
+             SELECT 1 FROM ${gatherDetailName} pd
+              WHERE b.id = pd.gather_bill_id
+              AND pd.available = 1 )
+        GROUP BY pd.pay_way, pd.pay_channel, pd.gather_bill_no
+    </select>
+
+
+
+
+    <select id="flowContractPage" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+            "5" AS billType,
+            b.id,
+            b.bill_no,
+            b.statutory_body_name,
+            GROUP_CONCAT( DISTINCT pd.sup_cp_unit_name ) AS sup_cp_unit_name,
+            GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS cp_unit_name,
+            pd.cost_center_id,
+            GROUP_CONCAT( DISTINCT pd.cost_center_name ) AS cost_center_name,
+            GROUP_CONCAT( DISTINCT pd.charge_item_name ) AS charge_item_name,
+            b.total_amount,
+            b.pay_time,
+            b.sys_source,
+            b.payer_name as customerName,
+            b.state,
+            b.carried_state,
+            b.refund_state,
+            b.reversed,
+            b.pay_channel
+        FROM
+            pay_bill b
+                LEFT JOIN pay_detail pd ON b.id = pd.pay_bill_id
+                left join flow_claim_detail fcd on fcd.invoice_id = b.id and fcd.claim_type = 2 and fcd.state = 0
+        WHERE
+            b.pay_type = 1
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    AND
+                </if>
+                ${ew.sqlSegment}
+                GROUP BY
+                b.id
+            </if>
+        UNION ALL
+        SELECT
+            "7" AS billType,
+            b.id,
+            b.bill_no,
+            b.statutory_body_name,
+            GROUP_CONCAT( DISTINCT pd.sup_cp_unit_name ) AS sup_cp_unit_name,
+            GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS cp_unit_name,
+            pd.cost_center_id,
+            GROUP_CONCAT( DISTINCT pd.cost_center_name ) AS cost_center_name,
+            GROUP_CONCAT( DISTINCT pd.charge_item_name ) AS charge_item_name,
+            b.total_amount,
+            b.pay_time,
+            b.sys_source,
+            b.payer_name as customerName,
+            b.state,
+            b.carried_state,
+            b.refund_state,
+            b.reversed,
+            b.pay_channel
+        FROM
+        ${gatherBillName} b
+                LEFT JOIN ${gatherDetailName} pd ON b.id = pd.gather_bill_id
+                left join flow_claim_detail fcd on fcd.invoice_id = b.id and fcd.claim_type = 2 and fcd.state = 0
+    ${ew.customSqlSegment}
+     and NOT EXISTS (
+        SELECT 1
+        FROM ${gatherDetailName} pd
+        WHERE b.id = pd.gather_bill_id AND pd.available = 1
+        )
+        GROUP BY
+        b.id
+        order by pay_time, id desc
+</select>
+    <select id="channelFlowClaim" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+            "7" AS billType,
+            b.id,
+            b.bill_no,
+            b.statutory_body_name,
+            GROUP_CONCAT( DISTINCT pd.sup_cp_unit_name ) AS sup_cp_unit_name,
+            GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS cp_unit_name,
+            GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS room_name,
+            pd.cost_center_id,
+            GROUP_CONCAT( DISTINCT pd.cost_center_name ) AS cost_center_name,
+            GROUP_CONCAT( DISTINCT pd.charge_item_name ) AS charge_item_name,
+            b.total_amount,
+            b.pay_time,
+            b.sys_source,
+            b.payer_name as customerName,
+            b.state,
+            b.carried_state,
+            b.refund_state,
+            b.reversed,
+            b.pay_channel
+        FROM
+            ${gatherBillName} b
+                LEFT JOIN ${gatherDetailName} pd ON b.id = pd.gather_bill_id   and pd.available = 0
+                left join flow_claim_detail fcd on fcd.invoice_id = b.id and fcd.claim_type = 2 and fcd.state = 0
+            ${ew.customSqlSegment}
+         and NOT EXISTS (
+            SELECT 1
+                FROM ${gatherDetailName} pd
+                    WHERE b.id = pd.gather_bill_id AND pd.available = 1
+                    )
+            GROUP BY
+                b.id
+        order by pay_time, id desc
+    </select>
+    <select id="flowContractIdList" resultType="com.wishare.finance.domains.bill.dto.AllBillPageDto">
+        SELECT
+        "5" AS billType,
+        b.id,
+        b.bill_no,
+        b.statutory_body_name,
+        GROUP_CONCAT( DISTINCT pd.sup_cp_unit_name ) AS sup_cp_unit_name,
+        GROUP_CONCAT( DISTINCT pd.cp_unit_name ) AS cp_unit_name,
+        GROUP_CONCAT( DISTINCT pd.cost_center_name ) AS cost_center_name,
+        GROUP_CONCAT( DISTINCT pd.charge_item_name ) AS charge_item_name,
+        b.total_amount,
+        b.pay_time,
+        b.sys_source,
+        b.payee_name as customerName,
+        b.payee_name,
+        b.state,
+        b.carried_state,
+        b.refund_state,
+        b.reversed
+        FROM
+        pay_bill b
+        LEFT JOIN pay_detail pd ON b.id = pd.pay_bill_id
+        WHERE b.deleted = 0
+        <if test="idList != null and idList.size() > 0">
+            and b.id in
+            <foreach collection="idList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        group by b.id
+        UNION ALL
+        SELECT
+        "7" AS billType,
+        b.id,
+        b.bill_no,
+        b.statutory_body_name,
+        GROUP_CONCAT( DISTINCT gd.sup_cp_unit_name ) AS sup_cp_unit_name,
+        GROUP_CONCAT( DISTINCT gd.cp_unit_name ) AS cp_unit_name,
+        GROUP_CONCAT( DISTINCT gd.cost_center_name ) AS cost_center_name,
+        GROUP_CONCAT( DISTINCT gd.charge_item_name ) AS charge_item_name,
+        b.total_amount,
+        b.pay_time,
+        b.sys_source,
+        b.payer_name as customerName,
+        b.payee_name,
+        b.state,
+        b.carried_state,
+        b.refund_state,
+        b.reversed
+        FROM
+        ${gatherBillName} b
+        LEFT JOIN ${gatherDetailName} gd ON b.id = gd.gather_bill_id
+        WHERE b.deleted = 0
+        <if test="idList != null and idList.size() > 0">
+            and b.id in
+            <foreach collection="idList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        group by b.id
+        order by id desc
+    </select>
+
+    <select id="queryChargeBillByGroup" resultType="com.wishare.finance.domains.bill.dto.ChargeBillGroupDto">
+        SELECT
+            GROUP_CONCAT( DISTINCT ( b.settle_state ) ) AS settleStates,
+            GROUP_CONCAT( b.id ) AS billIds,
+            GROUP_CONCAT( DISTINCT(b.statutory_body_id) ) AS statutoryBodyIds,
+            GROUP_CONCAT( DISTINCT ( b.room_id ) ) AS roomIds,
+            GROUP_CONCAT( DISTINCT ( b.room_name ) ) AS roomNames,
+            GROUP_CONCAT( DISTINCT ( b.community_id ) ) AS communityIds,
+            GROUP_CONCAT( DISTINCT ( b.community_name ) ) AS communityNames,
+            MIN( b.start_time ) AS start_time,
+            MAX( b.end_time ) AS end_time,
+            DATE_FORMAT( b.end_time, '%Y' ) YEAR,
+            b.charge_item_id,
+            b.charge_item_name,
+            SUM( b.receivable_amount ) AS receivable_amount,
+            SUM( b.deductible_amount ) AS deductible_amount,
+            SUM( b.overdue_amount ) AS overdue_amount,
+            SUM( b.discount_amount ) AS discount_amount,
+            SUM( b.settle_amount ) AS settle_amount,
+            SUM( b.refund_amount ) AS refund_amount,
+            SUM( b.carried_amount ) AS carried_amount ,
+            b.gmt_create
+        FROM
+            ${table} b
+            ${ew.customSqlSegment}
+        UNION ALL
+        SELECT
+            GROUP_CONCAT( DISTINCT ( b.settle_state ) ) AS settleStates,
+            GROUP_CONCAT( b.id ) AS billIds,
+            GROUP_CONCAT( DISTINCT(b.statutory_body_id) ) AS statutoryBodyIds,
+            GROUP_CONCAT( DISTINCT ( b.room_id ) ) AS roomIds,
+            GROUP_CONCAT( DISTINCT ( b.room_name ) ) AS roomNames,
+            GROUP_CONCAT( DISTINCT ( b.community_id ) ) AS communityIds,
+            GROUP_CONCAT( DISTINCT ( b.community_name ) ) AS communityNames,
+            MIN( b.start_time ) AS start_time,
+            MAX( b.end_time ) AS end_time,
+            DATE_FORMAT( b.end_time, '%Y' ) YEAR,
+            b.charge_item_id,
+            b.charge_item_name,
+            SUM( b.receivable_amount ) AS receivable_amount,
+            SUM( b.deductible_amount ) AS deductible_amount,
+            SUM( b.overdue_amount ) AS overdue_amount,
+            SUM( b.discount_amount ) AS discount_amount,
+            SUM( b.settle_amount ) AS settle_amount,
+            SUM( b.refund_amount ) AS refund_amount,
+            SUM( b.carried_amount ) AS carried_amount ,
+            b.gmt_create
+        FROM
+            advance_bill b
+            ${ew.customSqlSegment}
+        ORDER BY settleStates ASC,start_time,gmt_create
+    </select>
+    <select id="statisticsChargeBillByGroup" resultType="com.wishare.finance.domains.bill.dto.ChargeBillGroupStatisticsDto">
+        SELECT
+            SUM( temp.billNum ) AS billNum,
+            SUM( temp.receivable_amount ) AS receivable_amount,
+            SUM( temp.deductible_amount ) AS deductible_amount,
+            SUM( temp.overdue_amount ) AS overdue_amount,
+            SUM( temp.discount_amount ) AS discount_amount,
+            SUM( temp.settle_amount ) AS settle_amount,
+            SUM( temp.refund_amount ) AS refund_amount,
+            SUM( temp.carried_amount ) AS carried_amount
+        FROM
+            (
+                SELECT
+                    COUNT( b.id ) AS billNum,
+                    SUM( b.receivable_amount ) AS receivable_amount,
+                    SUM( b.deductible_amount ) AS deductible_amount,
+                    SUM( b.overdue_amount ) AS overdue_amount,
+                    SUM( b.discount_amount ) AS discount_amount,
+                    SUM( b.settle_amount ) AS settle_amount,
+                    SUM( b.refund_amount ) AS refund_amount,
+                    SUM( b.carried_amount ) AS carried_amount
+                FROM
+                    ${table} b
+                    ${ew.customSqlSegment}
+                UNION ALL
+                SELECT
+                    COUNT( b.id ) AS billNum,
+                    SUM( b.receivable_amount ) AS receivable_amount,
+                    SUM( b.deductible_amount ) AS deductible_amount,
+                    SUM( b.overdue_amount ) AS overdue_amount,
+                    SUM( b.discount_amount ) AS discount_amount,
+                    SUM( b.settle_amount ) AS settle_amount,
+                    SUM( b.refund_amount ) AS refund_amount,
+                    SUM( b.carried_amount ) AS carried_amount
+                FROM
+                    advance_bill b
+                    ${ew.customSqlSegment}
+            ) temp
+    </select>
+    <select id="getReceiptAmount" resultType="com.wishare.finance.domains.bill.dto.ReceiptAmountDto">
+        select gather_bill_id AS gatherBillId,
+               sum(pay_amount) as noCheckAmount
+        from ${gatherDetailName}
+        where deleted=0 and pay_channel in ('CARRYOVER','DEPOSIT_CARRYOVER')
+        and gather_bill_id in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        group by gather_bill_id
+    </select>
+    <select id="getChargePayBillGroup" resultType="com.wishare.finance.domains.bill.dto.AllBillGroupDto">
+        SELECT
+        a.id,
+        a.bill_type AS billType,
+        a.charge_item_id,
+        a.charge_item_name,
+        a.room_id,
+        a.room_name,
+        a.community_id,
+        a.community_name,
+        a.start_time as startTime,
+        a.end_time as endTime,
+        a.settle_amount - a.refund_amount - a.carried_amount AS actualPayAmount,
+        a.receivable_amount + a.overdue_amount - a.discount_amount + a.refund_amount + a.carried_amount -
+        a.settle_amount AS actualUnpayAmount
+        FROM
+        (
+        SELECT
+        bill_type,
+        id,
+        room_id,
+        room_name,
+        charge_item_id,
+        charge_item_name,
+        start_time,
+        end_time,
+        community_id,
+        community_name,
+        total_amount,
+        refund_amount,
+        carried_amount,
+        receivable_amount,
+        overdue_amount,
+        discount_amount,
+        settle_amount
+        FROM
+        ${receivableBillName}
+        <if test="idList != null and idList.size() > 0">
+            WHERE id in
+            <foreach collection="idList" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+        UNION ALL
+        SELECT
+        2 AS bill_type,
+        id,
+        room_id,
+        room_name,
+        charge_item_id,
+        charge_item_name,
+        start_time,
+        end_time,
+        community_id,
+        community_name,
+        total_amount,
+        refund_amount,
+        carried_amount,
+        receivable_amount,
+        overdue_amount,
+        discount_amount,
+        settle_amount
+        FROM
+        advance_bill b
+        <if test="idList != null and idList.size() > 0">
+            WHERE id in
+            <foreach collection="idList" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+        ) a
+    </select>
+</mapper>

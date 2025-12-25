@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.BillPrepayInfoMapper">
+
+    <select id="queryPageBySearch" resultType="com.wishare.finance.domains.bill.entity.BillPrepayInfoE">
+        select b.*
+        from bill_prepay_info b
+            ${ew.customSqlSegment}
+        ORDER BY b.id DESC
+    </select>
+</mapper>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.BillCarryoverMapper">
+
+    <resultMap id="BillCarryoverMap" type="com.wishare.finance.domains.bill.entity.BillCarryoverE">
+        <result property="id" column="id"/>
+        <result property="billType" column="bill_type"/>
+        <result property="carriedBillId" column="carried_bill_id"/>
+        <result property="carriedBillNo" column="carried_bill_no"/>
+        <result property="carryoverAmount" column="carryover_amount"/>
+        <result property="carryoverType" column="carryover_type"/>
+        <result property="billApproveId" column="bill_approve_id"/>
+        <result property="approveTime" column="approve_time"/>
+        <result property="carryoverTime" column="carryover_time"/>
+        <result property="carryoverDetail" column="carryover_detail" typeHandler="com.wishare.finance.domains.bill.support.ListCarryoverDetailTypeHandler"/>
+        <result property="advanceCarried" column="advance_carried"/>
+        <result property="advanceBillId" column="advanceBillId"/>
+        <result property="advanceBillNo" column="advanceBillNo"/>
+        <result property="fileUrl" column="fileUrl" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="remark" column="remark"/>
+        <result property="state" column="state"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+
+    <select id="queryPageBySearch" resultMap="BillCarryoverMap">
+        select b.*
+        from bill_carryover b
+            ${ew.customSqlSegment}
+        ORDER BY b.approve_time DESC
+    </select>
+
+
+    <select id="getBillIdByList"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.room_id,
+            b.room_name,
+            b.customer_id as customId,
+            b.customer_name as customName,
+            b.payer_id,
+            b.payer_name,
+            b.payee_id,
+            b.payee_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.business_unit_id,
+            b.bill_cost_type,
+            b.sb_account_id,
+            b.account_date,
+            - bc.carryover_amount as carriedAmount,
+            b.pay_infos  as payChannel,
+            bc.id as billCarryoverId
+
+        FROM bill_carryover bc
+        LEFT JOIN receivable_bill b on b.id = bc.carried_bill_id
+        LEFT JOIN  voucher_bill_detail vbd on bc.id = vbd.bill_carryover_id
+				WHERE
+				    bc.deleted = 0
+				and bc.state = 2
+				and
+				JSON_CONTAINS(
+						carryover_detail,
+					JSON_OBJECT(
+					'targetBillId',#{billId}))
+                and b.sup_cp_unit_id = #{supCpUnitId}
+                and  vbd.bill_carryover_id is null
+    </select>
+</mapper>

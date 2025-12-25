@@ -1,0 +1,3080 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.ReceivableBillMapper">
+
+    <sql id="receivable_bill_fields">
+        b.id,
+        b.statutory_body_id,
+        b.cost_center_id,
+        b.cost_center_name,
+        b.statutory_body_name,
+        b.community_id,
+        b.community_name,
+        b.charge_item_id,
+        b.charge_item_name,
+        b.sup_cp_unit_id,
+        b.sup_cp_unit_name,
+        b.bill_method,
+        b.charging_area,
+        b.unit_price,
+        b.room_id,
+        b.room_name,
+        b.payer_type,
+        b.payee_type,
+        b.overdue_state,
+        b.start_time,
+        b.end_time,
+        b.charge_time,
+        b.tax_rate_id,
+        b.tax_rate,
+        b.bill_no,
+        b.out_bill_no,
+        b.out_bus_no,
+        b.out_bus_id,
+        b.description,
+        b.currency,
+        b.total_amount,
+        b.receivable_amount,
+        b.deductible_amount,
+        b.overdue_amount,
+        b.discount_amount,
+        b.settle_amount,
+        b.refund_amount,
+        b.carried_amount,
+        b.invoice_amount,
+        b.payee_id,
+        b.payee_name,
+        b.payer_id,
+        b.payer_name,
+        b.invoice_type,
+        b.payer_label,
+        b.attach_params,
+        b.source,
+        b.state,
+        b.on_account,
+        b.settle_state,
+        b.refund_state,
+        b.verify_state,
+        b.approved_state,
+        b.carried_state,
+        b.invoice_state,
+        b.account_handed,
+        b.separated,
+        b.reversed,
+        b.adjusted,
+        b.tenant_id,
+        b.deleted,
+        b.creator,
+        b.creator_name,
+        b.gmt_create,
+        b.operator,
+        b.operator_name,
+        b.gmt_modify,
+        b.ext_field1,
+        b.ext_field2,
+        b.ext_field3,
+        b.ext_field4,
+        b.ext_field5,
+        b.pay_infos
+    </sql>
+
+    <update id="updateInvoiceState" parameterType="java.util.List">
+        <foreach collection="billEList" item="item" index="index" open="" close="" separator=";">
+            update receivable_bill
+            <set>
+                <if test="item.invoiceState != null">
+                    invoice_state =#{item.invoiceState},
+                </if>
+                <if test="item.invoiceAmount != null">
+                    invoice_amount =#{item.invoiceAmount},
+                </if>
+            </set>
+            where id = #{item.id}
+        </foreach>
+    </update>
+
+    <select id="pageWithGroup" resultType="com.wishare.finance.domains.bill.dto.ReceivableBillGroupDto">
+        <include refid="pageWithGroupSql" />
+    </select>
+
+    <sql id="pageWithGroupSql">
+        select <include refid="com.wishare.finance.domains.bill.repository.mapper.ReceivableBillMapper.pageWithGroupFieldSql" />
+        <choose>
+            <when test="_parameter.containsKey('tblName') and tblName != null and tblName.length > 0">
+                from ${tblName} b
+            </when>
+            <otherwise>
+                from receivable_bill b
+            </otherwise>
+        </choose>
+            ${ew.customSqlSegment}
+    </sql>
+
+    <sql id="pageWithGroupFieldSql">
+        group_concat(b.id) as billIds,
+        b.statutory_body_id,
+        b.statutory_body_name,
+        b.community_id,
+        b.community_name,
+        b.charge_item_id,
+        b.charge_item_name,
+        b.bill_method,
+        b.room_id,
+        b.room_name,
+        b.payer_type,
+        b.payee_type,
+        min(b.start_time) as start_time,
+        max(b.end_time) as end_time,
+        b.currency,
+        sum(b.total_amount) as total_amount,
+        sum(b.receivable_amount) as receivable_amount,
+        sum(b.deductible_amount) as deductible_amount,
+        sum(b.overdue_amount) as overdue_amount,
+        sum(b.discount_amount) as discount_amount,
+        sum(b.settle_amount) as settle_amount,
+        sum(b.refund_amount) as refund_amount,
+        b.source,
+        b.carried_state,
+        b.receivable_date,
+        DATE_FORMAT(b.start_time,'%Y') as bill_year
+    </sql>
+
+    <select id="pageWithGroupCount" resultType="java.lang.Integer">
+        select count(1) from (
+            select
+                count(1)
+            from receivable_bill b
+                ${ew.customSqlSegment}
+        )Total
+    </select>
+
+    <select id="pageWithGroupByApprove" resultType="com.wishare.finance.domains.bill.dto.ReceivableBillGroupDto">
+        <include refid="pageWithGroupByApproveSql" />
+    </select>
+
+    <sql id="pageWithGroupByApproveSql">
+        select <include refid="com.wishare.finance.domains.bill.repository.mapper.ReceivableBillMapper.pageWithGroupFieldSql" />, IFNULL(ba.operate_type, 0) as operate_type
+        <choose>
+            <when test="_parameter.containsKey('tblName') and tblName != null and tblName.length > 0">
+                from ${tblName} b
+            </when>
+            <otherwise>
+                from receivable_bill b
+            </otherwise>
+        </choose>
+        left join bill_approve ba on ba.bill_id  = b.id and ba.approved_state in (0,1)
+        ${ew.customSqlSegment}
+    </sql>
+
+    <select id="initBillIds" resultType="java.lang.Long">
+        select
+            b.id
+        from receivable_bill b
+            ${ew.customSqlSegment}
+    </select>
+
+
+
+    <select id="approvePageWithGroup" resultType="com.wishare.finance.domains.bill.dto.ReceivableBillGroupDto">
+        select
+            group_concat(b.id) as billIds,
+            DATE_FORMAT(b.start_time,'%Y') as bill_year
+        from receivable_bill b
+                 left join bill_approve ba on ba.bill_id  = b.id and ba.approved_state in (0,1)
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="pageWithGroupByApproveCount" resultType="java.lang.Integer">
+        select count(1) from(
+            select
+                count(1)
+            from receivable_bill b
+                     left join bill_approve ba on ba.bill_id  = b.id and ba.approved_state in (0,1)
+                ${ew.customSqlSegment}
+        )Total
+    </select>
+
+    <select id="getPageWithApprove" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select
+            b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id, b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id, b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name, b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id, b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount, b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type, b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated, b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name, b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4, b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10
+
+        from receivable_bill b
+            left join bill_approve ba on ba.bill_id  = b.id
+            ${ew.customSqlSegment}
+    </select>
+
+    <!--根据检索条件统计账单退款金额总数-->
+    <select id="statisticsBillRefund" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        SELECT
+            SUM( br.refund_amount ) AS refundAmountTotal,
+            count( DISTINCT b.room_id ) AS roomTotal,
+            count( DISTINCT b.id ) AS billTotal,
+            SUM( b.total_amount ) AS amountTotal,
+            SUM( b.receivable_amount ) AS receivableAmountTotal,
+            SUM( b.settle_amount ) AS settleAmountTotal
+        FROM
+            bill_refund br
+                LEFT JOIN receivable_bill b ON  b.id = br.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="statisticsBillRefund2" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        SELECT
+            SUM(  a.total_amount ) AS amountTotal,
+            SUM(  a.receivable_amount ) AS receivableAmountTotal,
+            SUM(  a.settle_amount ) AS settleAmountTotal,
+            SUM(a.settle_amount - a.refund_amount - a.carried_amount ) AS actualPayAmountTotal
+        FROM
+            (
+                SELECT
+                    b.id AS id,
+                    b.total_amount AS total_amount,
+                    b.settle_amount AS settle_amount,
+                    b.receivable_amount AS receivable_amount,
+                    b.refund_amount AS refund_amount,
+                    b.carried_amount As carried_amount
+                FROM
+                    bill_refund br
+                        LEFT JOIN receivable_bill b ON  b.id = br.bill_id
+                    ${ew.customSqlSegment}
+            ) AS a
+    </select>
+
+
+    <!--催缴欠缴账单统计-->
+    <select id="call" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        select
+            count( 1 ) AS billTotal,
+            count( DISTINCT b.room_id ) AS roomTotal,
+            sum( b.total_amount ) AS amountTotal,
+            sum( b.receivable_amount ) AS receivableAmountTotal,
+            sum( b.deductible_amount ) AS deductibleAmountTotal,
+            SUM( b.settle_amount ) AS settleAmountTotal,
+            SUM( b.discount_amount ) AS discountAmountTotal,
+            SUM( b.overdue_amount ) AS overdueAmountTotal,
+            SUM( b.refund_amount ) AS refundAmountTotal,
+            SUM( b.carried_amount ) AS carriedAmountTotal
+        from receivable_bill b
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="getByIdsNoTenant" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        SELECT
+        id,
+        bill_no,
+        out_bill_no,
+        out_bus_no,
+        description,
+        currency,
+        type_bill_id,
+        total_amount,
+        receivable_amount,
+        deductible_amount,
+        overdue_amount,
+        discount_amount,
+        settle_amount,
+        refund_amount,
+        carried_amount,
+        invoice_amount,
+        payee_id,
+        payee_name,
+        payer_id,
+        payer_name,
+        invoice_type,
+        payer_label,
+        attach_params,
+        source,
+        state,
+        on_account,
+        settle_state,
+        refund_state,
+        verify_state,
+        approved_state,
+        carried_state,
+        invoice_state,
+        account_handed,
+        separated,
+        reversed,
+        adjusted,
+        tenant_id,
+        deleted,
+        creator,
+        creator_name,
+        gmt_create,
+        operator,
+        operator_name,
+        gmt_modify
+        FROM
+        receivable_bill
+        <where>
+            and deleted = 0 and bill_type = 1
+            <if test="billIds != null and billIds.size() > 0">
+                and id in
+                <foreach collection="billIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="supCpUnitId != null and supCpUnitId != ''">
+                and sup_cp_unit_id = #{supCpUnitId}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryTotal" resultType="com.wishare.finance.domains.bill.dto.ReceivableBillTotalDto">
+        select
+            count(1) as billTotal,
+            count(DISTINCT b.room_id) as roomTotal,
+            sum(b.total_amount) as amountTotal,
+            sum(b.receivable_amount) as receivableAmountTotal,
+            sum(b.deductible_amount) as deductibleAmountTotal,
+            SUM(b.settle_amount) as settleAmountTotal,
+            SUM(b.discount_amount) as discountAmountTotal,
+            SUM(b.overdue_amount) AS overdueAmountTotal,
+            SUM(b.refund_amount ) AS refundAmountTotal,
+            SUM(b.carried_amount ) AS carriedAmountTotal,
+            SUM(b.settle_amount - b.refund_amount - b.carried_amount - b.reverse_amount) AS actualPayAmountTotal
+        from receivable_bill b
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryApproveInfoTotal" resultType="com.wishare.finance.domains.bill.dto.ReceivableBillTotalDto">
+        select
+            count(1) as billTotal,
+            count(DISTINCT b.room_id) as roomTotal,
+            sum(b.total_amount) as amountTotal,
+            sum(b.receivable_amount) as receivableAmountTotal,
+            sum(b.deductible_amount) as deductibleAmountTotal,
+            SUM(b.settle_amount) as settleAmountTotal,
+            SUM(b.discount_amount) as discountAmountTotal,
+            SUM(b.overdue_amount) AS overdueAmountTotal,
+            SUM(b.refund_amount ) AS refundAmountTotal,
+            SUM(b.carried_amount ) AS carriedAmountTotal,
+            SUM(b.settle_amount - b.refund_amount - b.carried_amount - b.reverse_amount) AS actualPayAmountTotal
+        <if test="tblName != null and tblName.length > 0">
+            , b.overdue
+            from ${tblName} b
+        </if>
+        <if test="tblName == null or tblName.length == 0">
+            from receivable_bill b
+        </if>
+        left join ${tblName2} ba on b.id = ba.bill_id
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryApproveTotal" resultType="com.wishare.finance.domains.bill.dto.BillApproveTotalDto">
+        select
+        count(distinct b.id) as total,
+        b.approved_state,
+        IFNULL(ba.operate_type, 0) as operateType
+        from receivable_bill b left join bill_approve ba on ba.bill_id = b.id and ba.approved_state in (0,1)
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryApproveTotalNew" resultType="com.wishare.finance.domains.bill.dto.BillApproveTotalDto">
+        select
+            count(distinct b.id) as total,
+            b.approved_state,
+            IFNULL(ba.operate_type, 0) as operateType,
+            b.bill_type as type
+        from receivable_bill b left join bill_approve ba on ba.bill_id = b.id and ba.approved_state in (0,1)
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryApproveBillTotal" resultType="com.wishare.finance.domains.bill.dto.BillApproveTotalNewDto">
+        select
+            count(1) as total,
+            b.is_init as isInit,
+            b.bill_type as billType
+        from ${tableName} b
+            ${ew.customSqlSegment}
+        group by
+            b.bill_type ,
+            b.is_init
+    </select>
+    <select id="queryApproveUnionBillTotal" resultType="com.wishare.finance.domains.bill.dto.BillApproveTotalNewDto">
+        select
+            count(1) as total,
+            b.is_init as isInit,
+            b.bill_type as billType
+        from ${tableName} b
+                 left join ${tblName2} ba on b.id = ba.bill_id
+            ${ew.customSqlSegment}
+        group by
+            b.bill_type ,
+            b.is_init
+    </select>
+    <update id="updateSignByRoomIds" >
+        update ${tableName}
+        set is_sign = #{sign}
+        where
+        deleted = 0 and room_id in
+        <foreach collection="roomIds" open="(" close=")" separator="," item="item" index="index">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="queryDiscountTotal" resultType="com.wishare.finance.domains.bill.dto.BillDiscountTotalDto">
+        select
+        sum(b.total_amount) as total_amount,
+        sum(b.discount_amount) as discount_amount,
+        sum(b.settle_amount) as settle_amount,
+        sum(b.discount_amount) as discount_amount
+        from receivable_bill b
+        where
+        b.deleted =0
+        and b.room_id = #{query.roomId}
+        and b.charge_item_id = #{query.chargeItemId}
+        and b.charge_item_id = #{query.chargeItemId}
+        and b.deleted = 0
+        and b.approved_state = 2
+        and b.state != 2
+        and bill_type = 1
+    </select>
+
+    <select id="queryBillByPage" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        <include refid="queryBillSql"></include>
+    </select>
+
+
+    <select id="queryBillCountByPage" resultType="java.lang.Integer">
+        select
+            count(*)
+        from receivable_bill b
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="customerQueryBillCountByPage" resultType="java.lang.Integer">
+        select
+            count(*)
+        from ${tblName} b
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="customerQueryBillByPage" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select
+            b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id,
+            b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id,
+            b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name,
+            b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name,
+            b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id,
+            b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount,
+            b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount,
+            b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type,
+            b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state,
+            b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated,
+            b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name,
+            b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4,
+            b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10, b.is_exact, b.pay_infos as pay_str, b.payer_phone,b.receivable_date, b.overdue,b.is_sign
+            from ${tblName} b
+            ${ew.customSqlSegment}
+            limit #{offset}, #{pageSize}
+    </select>
+
+    <sql id="queryBillSql">
+        select
+            b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id,
+            b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id,
+            b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name,
+            b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name,
+            b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id,
+            b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount,
+            b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount,b.reverse_amount,
+            b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type,
+            b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state,
+            b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated,
+            b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name,
+            b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4,
+            b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10, b.is_exact, b.pay_infos as pay_str, b.payer_phone,b.receivable_date,b.is_sign,b.freeze_type,b.contract_no,
+            b.contract_name,b.provision_status,b.receipt_confirmation_status
+        <if test="tblName != null and tblName.length > 0">
+            , b.overdue
+            from ${tblName} b
+        </if>
+        <if test="tblName == null or tblName.length == 0">
+            from receivable_bill b
+        </if>
+        ${ew.customSqlSegment}
+    </sql>
+
+    <select id="listByInitialBill" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select
+        <include refid="receivable_bill_fields"/>
+        from receivable_bill b left JOIN bill_approve ba on b.id = ba.bill_id
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="listBillHand" resultType="com.wishare.finance.apps.model.bill.vo.BillHandV">
+        SELECT
+        id,
+        state,
+        on_account,
+        settle_state,
+        account_handed,
+        settle_amount,
+        carried_amount,
+        refund_amount
+        FROM
+        receivable_bill
+        <where>
+            and deleted = 0 and bill_type = 1
+            <if test="billIds != null and billIds.size() > 0">
+                and id in
+                <foreach collection="billIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="supCpUnitId != null and supCpUnitId != ''">
+                and sup_cp_unit_id = #{supCpUnitId}
+            </if>
+        </where>
+    </select>
+
+    <select id="queryBillReviewTotal" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        select
+            count(1) as billTotal,
+            count(DISTINCT b.room_id) as roomTotal,
+            sum(b.total_amount) as amountTotal,
+            sum(b.receivable_amount) as receivableAmountTotal,
+            sum(b.deductible_amount) as deductibleAmountTotal,
+            SUM(b.settle_amount) as settleAmountTotal,
+            SUM(b.discount_amount) as discountAmountTotal,
+            SUM(b.overdue_amount) AS overdueAmountTotal,
+            SUM(b.refund_amount ) AS refundAmountTotal,
+            SUM(b.carried_amount ) AS carriedAmountTotal,
+            SUM(b.settle_amount - b.refund_amount - b.carried_amount - b.reverse_amount) AS actualPayAmountTotal
+        from receivable_bill b left JOIN bill_approve ba on b.id = ba.bill_id and ba.approved_state in (0,1)
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryBillInferenceByPage" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+        select * from receivable_bill b ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryBillByPageNoTenantLine" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select
+        <include refid="receivable_bill_fields"/>
+        from receivable_bill b
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryAdjustBillInferenceByPage" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+        select ba.adjust_amount as receivable_amount, ba.id as concatId, b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id, b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id, b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name, b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id, b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount, b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type, b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated, b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name, b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4, b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10
+
+        from receivable_bill b inner join bill_adjust ba on b.id = ba.bill_id and ba.state = 2 and ba.inference_state = 0 ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryOffBillInferenceByPage" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+        select b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id, b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id, b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name, b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id, b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount, b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type, b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated, b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name, b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4, b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10
+        from receivable_bill b inner join bill_inference bi on b.id = bi.bill_id and bi.bill_type = 1 ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryCloseBillInferenceByPage" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+        select b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id, b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id, b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name, b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id, b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount, b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type, b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated, b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name, b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4, b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10
+        from receivable_bill b inner join bill_inference bi on b.id = bi.bill_id and bi.bill_type = 1 and bi.event_type = 1 ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryAccrualBillInferenceByPage" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+      select b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id, b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id, b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name, b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id, b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount, b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type, b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated, b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name, b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4, b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10
+      from receivable_bill b ${ew.customSqlSegment} and b.id not in (select bill_id from bill_inference bi where bi.bill_type = 1 and bi.event_type = 1)
+    </select>
+
+    <select id="listByIdsNotTenantId" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select * from receivable_bill
+        where deleted = 0 and bill_type = 1
+        and sup_cp_unit_id = #{supCpUnitId}
+        <if test="billIdList != null and billIdList.size() > 0">
+            and id in
+            <foreach collection="billIdList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="listBillsByIdsNotTenantId" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select * from receivable_bill
+        where deleted = 0
+          and sup_cp_unit_id = #{supCpUnitId}
+        <if test="billIdList != null and billIdList.size() > 0">
+            and id in
+            <foreach collection="billIdList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="roomBills" resultType="com.wishare.finance.domains.bill.dto.RoomBillTotalDto">
+        SELECT
+            b.room_id,
+            b.room_name,
+            sum( b.total_amount ) AS receivableAmountTotal,
+            sum( b.discount_amount + b.deductible_amount ) AS deductAmountTotal
+        FROM
+            receivable_bill b
+        WHERE
+            room_id IS NOT NULL
+            <if test="roomIdList != null and roomIdList.size() > 0">
+                and b.room_id in
+                <foreach collection="roomIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            AND b.state != 2
+            AND b.approved_state = 2
+            AND b.deleted = 0
+            and bill_type = 1
+            and b.sup_cp_unit_id = #{supCpUnitId}
+        GROUP BY
+            b.room_id
+    </select>
+
+    <select id="roomChargeBills" resultType="com.wishare.finance.domains.bill.dto.RoomBillTotalDto">
+        SELECT
+            b.room_id,
+            b.room_name,
+            IFNULL(sum( b.discount_amount + b.deductible_amount ),0) AS chargeItemDeductAmountTotal
+        FROM
+            receivable_bill b
+        WHERE
+            room_id IS NOT NULL
+            <if test="roomIdList != null and roomIdList.size() > 0">
+                and b.room_id in
+                <foreach collection="roomIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="chargeItemIdList != null and chargeItemIdList.size() > 0">
+                and b.charge_item_id in
+                <foreach collection="chargeItemIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="currentYear">
+                AND date_format( b.start_time, '%Y' ) = date_format( now(), '%Y' )
+                AND date_format( b.end_time, '%Y' ) = date_format(now(),'%Y')
+            </if>
+            AND b.state != 2
+            AND b.approved_state = 2
+            AND b.deleted = 0
+            and bill_type = 1
+            and b.sup_cp_unit_id = #{supCpUnitId}
+            GROUP BY b.room_id
+    </select>
+
+    <select id="receivableRooms" resultType="com.wishare.finance.domains.bill.dto.ReceivableRoomsDto">
+        SELECT
+            b.community_id as communityId,
+            b.community_name as communityName,
+            b.room_id as roomId,
+            b.room_name as roomName,
+            group_concat( DISTINCT b.charge_item_id ) AS chargeItemId,
+            group_concat( DISTINCT b.charge_item_name ) AS chargeItemName,
+            sum( b.receivable_amount + b.overdue_amount + b.refund_amount + b.carried_amount - b.settle_amount ) AS totalAmount,
+            b.payer_id AS targetObjId,
+            b.payer_name AS targetObjName,
+            b.jump_state as jumpState
+        FROM
+            receivable_bill b FORCE INDEX (idx_3)
+        WHERE
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    ${ew.sqlSegment}
+                </if>
+            </if>
+    </select>
+
+    <select id="receivableRoomsCount" resultType="java.lang.Integer">
+        SELECT count(1) FROM (
+            SELECT
+            count(1)
+            FROM
+            receivable_bill b FORCE INDEX (idx_3)
+            WHERE
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    ${ew.sqlSegment}
+                </if>
+            </if>
+        ) TOTAL
+    </select>
+
+
+
+    <select id="queryCanAdvanceRooms" resultType="com.wishare.finance.domains.bill.dto.ReceivableRoomsDto">
+        <!--最外层不嵌套SELECT * from，limit会很慢-->
+
+        SELECT
+            b.community_id as communityId,
+            b.community_name as communityName,
+            b.room_id as roomId,
+            b.room_name as roomName,
+            b.payer_id AS targetObjId,
+            b.payer_name AS targetObjName
+        from receivable_bill b
+        where
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                ${ew.sqlSegment}
+            </if>
+        </if>
+          and room_id not in (
+            select room_id
+            from receivable_bill b
+            where
+                <if test="ew1 != null">
+                    <if test="ew1.nonEmptyOfWhere">
+                        ${ew1.sqlSegment}
+                    </if>
+
+                </if>
+        group by b.room_id
+            )
+        and b.tenant_id = #{tenantId}
+        group by room_id
+    </select>
+
+
+    <select id="receivableBills" resultType="com.wishare.finance.domains.bill.dto.ReceivableBillsDto">
+        SELECT
+            b.id as id,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.room_id,
+            b.room_name,
+            b.currency,
+            b.total_amount as totalAmount,
+            b.receivable_amount as receivableAmount,
+            b.deductible_amount as deductibleAmount,
+            b.discount_amount as discountAmount,
+            b.carried_amount AS carriedAmount,
+            b.refund_amount AS refundAmount,
+            b.settle_amount AS settleAmount,
+            start_time as startTime,
+            end_time as endTime,
+            b.jump_state as jumpState,
+            b.payer_type as payerType,
+            b.payer_label as payerLabel
+        FROM
+        receivable_bill b
+        WHERE b.deleted = 0 
+        <!--and b.bill_type = 1-->
+        <if test="communityId != null and communityId != ''">
+            and b.community_id = #{communityId}
+            and b.sup_cp_unit_id = #{communityId}
+        </if>
+        <if test="roomId != null and roomId != ''">
+            and b.room_id = #{roomId}
+        </if>
+        AND b.approved_state = 2
+        AND b.state != 2
+        AND b.reversed = 0
+        and b.refund_state in (0,1,2)
+        and b.bill_label is null
+        and b.carried_state in (0,1)
+        <if test="payState != null and payState.size() > 0">
+            and b.settle_state in
+            <foreach collection="payState" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="targetObjIds != null and targetObjIds.size() > 0">
+            and b.payer_id in
+            <foreach collection="targetObjIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="chargeItemIds != null and chargeItemIds.size() > 0">
+            and b.charge_item_id in
+            <foreach collection="chargeItemIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="roomIds != null and roomIds.size() > 0">
+            and b.room_id in
+            <foreach collection="roomIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        AND b.bill_label is Null
+    </select>
+
+    <select id="queryExportData" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select
+            b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id, b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id, b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name, b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id, b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount, b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type, b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated, b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name, b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4, b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10
+
+        from receivable_bill b
+            ${ew.customSqlSegment}
+    </select>
+    <select id="pageByWrapper" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select
+            b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id, b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id, b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name, b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id, b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount, b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type, b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated, b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name, b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4, b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10
+
+        from receivable_bill b
+            ${ew.customSqlSegment}
+    </select>
+    <select id="selectListByQuery" resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        select
+            b.id as businessBillId,
+            b.bill_no as businessBillNo,
+            b.id AS sceneId,
+            #{sceneType} AS sceneType,
+            b.statutory_body_id,
+            b.statutory_body_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            #{businessBillType} as businessBillType,
+            b.total_amount,
+            b.receivable_amount,
+            b.deductible_amount,
+            b.discount_amount,
+            b.settle_amount as actualPayAmount ,
+            b.tax_amount,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.account_year,
+            b.account_date,
+            b.sup_cp_unit_id,
+            b.sup_cp_unit_name,
+            b.cp_unit_id,
+            b.cp_unit_name,
+            IFNULL(b.payer_id,b.customer_id) as customerId,
+            IFNULL(b.payer_name,b.customer_name) as customerName,
+            IFNULL(b.payer_type,b.customer_type) as customerType,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_id,
+            b.business_code,
+            b.business_name,
+            b.business_unit_id,
+            b.settle_state
+        from
+            receivable_bill b
+            left join ${tableName} vbd on vbd.scene_id = b.id and vbd.scene_type = #{sceneType} AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="queryMaxEndTime" resultType="com.wishare.finance.apps.model.bill.vo.ReceivableMaxEndTimeV">
+        select
+            max(rb.end_time) as end_time,
+            rb.total_amount as totalAmount,
+            rb.room_id as roomId
+        from receivable_bill rb
+        where rb.sup_cp_unit_id = #{param.supCpUnitId}
+        <if test="param.cpUnitId != null and param.cpUnitId != ''">
+            and rb.cp_unit_id = #{param.cpUnitId}
+        </if>
+          and rb.charge_item_id = #{param.chargeItemId}
+          and rb.state in (0, 1)
+          and rb.carried_state != 3
+          and rb.deleted = 0
+          and rb.reversed = 0
+          and rb.bill_label is null
+          and rb.refund_state != 3
+          and rb.overdue = 0
+        <if test="param.billType != null">
+            and rb.bill_type = #{param.billType}
+        </if>
+        <if test="param.roomIdList != null and param.roomIdList.size > 0">
+            and rb.room_id in
+            <foreach collection="param.roomIdList" item="item" open="(" separator="," close=" )">
+                #{item}
+            </foreach>
+        </if>
+        GROUP BY room_id
+    </select>
+
+
+    <select id="queryIntervalBill" resultType="com.wishare.finance.apps.model.bill.vo.ReceivableIntervalBillV">
+        select
+        rb.end_time,
+        rb.start_time,
+        rb.room_id as roomId
+        from receivable_bill rb
+        where rb.sup_cp_unit_id = #{param.supCpUnitId}
+        and rb.charge_item_id = #{param.chargeItemId}
+        and rb.state in (0, 1)
+        and rb.carried_state != 3
+        and rb.overdue = 0
+        and rb.deleted = 0
+        and rb.reversed = 0
+        and rb.bill_label is null
+        and rb.refund_state != 3
+        <if test="param.billType != null">
+            and rb.bill_type = #{param.billType}
+        </if>
+        and rb.start_time <![CDATA[ >= ]]> #{param.startTime}
+        and rb.end_time <![CDATA[ <= ]]> #{param.endTime}
+        <if test="param.roomId != null">
+            and rb.room_id = #{param.roomId}
+        </if>
+        <if test="param.roomIds != null and param.roomIds.size > 0">
+            and rb.room_id in
+            <foreach collection="param.roomIds" item="item" open="(" separator="," close=" )">
+                #{item}
+            </foreach>
+        </if>
+        order by rb.start_time
+        -- 查询优化,提前终止
+        <if test="param.limitSize != null">
+            limit #{param.limitSize}
+        </if>
+    </select>
+
+
+
+
+
+
+
+    <select id="reducedListByQuery" resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT
+            b.id AS businessBillId,
+            b.bill_no AS businessBillNo,
+            ba.id as sceneId,
+            #{sceneType} as sceneType,
+            b.statutory_body_id,
+            b.statutory_body_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            #{businessBillType} AS businessBillType,
+            b.total_amount,
+            b.receivable_amount,
+            ABS(ROUND(ba.adjust_amount)) AS deductible_amount,
+            ABS(ROUND(ba.adjust_amount)) AS discount_amount,
+            ba.adjust_amount AS actualPayAmount,
+            b.tax_amount,
+            b.tax_rate_id,
+            b.account_year,
+            b.account_date,
+            b.sup_cp_unit_id,
+            b.sup_cp_unit_name,
+            b.cp_unit_id,
+            b.cp_unit_name,
+            IFNULL(b.payer_id,b.customer_id) as customerId,
+            IFNULL(b.payer_name,b.customer_name) as customerName,
+            IFNULL(b.payer_type,b.customer_type) as customerType,
+            b.sb_account_id,
+            b.sys_source,
+            b.business_code,
+            b.business_name,
+            b.business_unit_id
+        FROM bill_adjust AS ba
+        inner JOIN ${tableName} vbd2 on  ba.bill_id=vbd2.business_bill_id  and vbd2.scene_type = 1  and vbd2.deleted=0 and ba.adjust_time > vbd2.gmt_create
+        LEFT JOIN ${tableName} AS vbd ON ba.id = vbd.scene_id AND vbd.scene_type = #{sceneType} AND (vbd.deleted is null or vbd.deleted = 0)
+        LEFT JOIN receivable_bill AS b ON ba.bill_id = b.id
+        ${ew.customSqlSegment}
+    </select>
+    <select id="receivableListByQuery"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT
+                    b.id AS businessBillId,
+                    b.bill_no AS businessBillNo,
+                    b.statutory_body_id,
+                    b.statutory_body_name,
+                    b.cost_center_id,
+                    b.cost_center_name,
+                    b.charge_item_id,
+                    b.charge_item_name,
+                    b.bill_type  AS businessBillType,
+                    b.total_amount,
+                    b.receivable_amount,
+                    b.deductible_amount,
+                    b.discount_amount,
+                    ba.adjust_amount AS actualPayAmount,
+                    ba.adjust_amount AS adjustAmount,
+                    b.tax_amount,
+                    b.tax_rate_id,
+                    b.account_year,
+                    b.account_date,
+                    b.sup_cp_unit_id,
+                    b.sup_cp_unit_name,
+                    b.cp_unit_id,
+                    b.cp_unit_name,
+                    IFNULL(b.payer_id,b.customer_id) as customerId,
+                    IFNULL(b.payer_name,b.customer_name) as customerName,
+                    IFNULL(b.payer_type,b.customer_type) as customerType,
+                    b.sb_account_id,
+                    b.sys_source,
+                    vbd.id,
+                    ba.id as sceneId,
+                    4  as sceneType,
+                    b.business_code,
+                    b.business_name,
+                    b.business_unit_id,
+                    ba.original_payer_type,ba.original_payer_id,ba.payer_type,ba.payer_id
+        FROM bill_adjust AS ba
+                 LEFT JOIN receivable_bill AS b ON ba.bill_id = b.id
+                left join charge_item ci on b.charge_item_id = ci.id
+            <if test="change">
+                inner join ${tableName} AS vbd2 ON ba.bill_id = vbd2.business_bill_id  and vbd2.scene_type =1 and ba.adjust_time > vbd2.gmt_create
+            </if>
+                 LEFT JOIN ${tableName} AS vbd ON ba.id = vbd.scene_id AND vbd.scene_type = 4 AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+    <select id="queryCancellationBillList"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+
+            select
+            b.id  as businessBillId
+
+        from
+            receivable_bill b
+                inner JOIN ${tableName} vbd2 on vbd2.business_bill_id = b.id and vbd2.scene_type = 1  and vbd2.deleted=0
+                LEFT JOIN ${tableName} vbd on vbd.business_bill_id = b.id and vbd.scene_type = #{sceneType} AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+
+<!--  businessBillType=3   -->
+    <select id="queryCancellationSen"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+
+        select
+            b.id           as businessBillId
+        from
+    gather_detail gd
+        INNER JOIN receivable_bill AS b ON gd.rec_bill_id = b.id
+        inner JOIN ${tableName} vbd2 on vbd2.scene_id = gd.id and vbd2.scene_type = 1  and vbd2.deleted=0
+        LEFT JOIN ${tableName} vbd on vbd.scene_id = gd.id and vbd.scene_type = 6 AND (vbd.deleted is null or vbd.deleted = 0)
+    ${ew.customSqlSegment}
+    </select>
+
+    <select id="listVoucherInvoiceReceiptBillByQuery" resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT b.statutory_body_id,
+               b.statutory_body_name,
+               b.cost_center_id,
+               b.cost_center_name,
+               b.charge_item_id,
+               b.charge_item_name,
+               b.id AS sceneId,
+               #{sceneType}              as sceneType,
+               #{businessBillType}                as businessBillType,
+               b.price_tax_amount AS totalAmount,
+               b.price_tax_amount AS actualPayAmount,
+               b.tax_rate_id,
+               b.tax_rate,
+               b.customer_id,
+               b.customer_name,
+               b.sys_source,
+               b.business_unit_id
+        FROM   invoice_receipt b
+                  LEFT JOIN ${tableName} vbd on vbd.scene_id = b.id and vbd.scene_type =  #{sceneType} AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="listVoucherRefundBillByQuery"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT b.id              as businessBillId,
+               b.bill_no         as businessBillNo,
+               b.statutory_body_id,
+               b.statutory_body_name,
+               b.cost_center_id,
+               b.cost_center_name,
+               b.charge_item_id,
+               b.charge_item_name,
+               br.id AS sceneId,
+               #{sceneType}            as sceneType,
+               #{businessBillType}                as businessBillType,
+               b.total_amount,
+               br.refund_amount as receivable_amount,
+               b.discount_amount,
+               b.receivable_amount as actualPayAmount,
+               b.tax_amount,
+               b.tax_rate_id,
+               b.tax_rate,
+               b.account_year,
+               b.account_date,
+               b.sup_cp_unit_id,
+               b.sup_cp_unit_name,
+               b.cp_unit_id,
+               b.cp_unit_name,
+               b.sb_account_id,
+               b.sys_source,
+               IFNULL(b.payer_id,b.customer_id) as customerId,
+               IFNULL(b.payer_name,b.customer_name) as customerName,
+               IFNULL(b.payer_type,b.customer_type) as customerType,
+               br.refund_amount as refundAmount,
+               b.business_code,
+               b.business_name,
+               b.business_unit_id
+        FROM
+            bill_refund br
+                INNER JOIN receivable_bill b ON b.id = br.bill_id AND br.state = 2 and br.refund_amount > 0 and br.bill_type = #{businessBillType}
+                LEFT JOIN ${tableName} vbd ON vbd.scene_id = br.id AND vbd.scene_type = #{sceneType} AND (vbd.deleted is null or vbd.deleted = 0)
+            ${ew.customSqlSegment}
+    </select>
+    
+    <update id="updateInferenceState">
+        UPDATE receivable_bill
+        SET inference_state = #{inferenceState}
+        WHERE sup_cp_unit_id = #{supCpUnitId}
+        AND id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+    <update id="updateBillCostType">
+        UPDATE receivable_bill
+        SET bill_cost_type = #{billCostType}
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <!-- 临时账单-应收计提 -->
+    <select id="tempBillListByQuery" resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        select
+            b.id as businessBillId,
+            b.bill_no as businessBillNo,
+            gd.id AS sceneId,
+            #{sceneType} AS sceneType,
+            b.statutory_body_id,
+            b.statutory_body_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            #{businessBillType} as businessBillType,
+            b.total_amount,
+            gd.pay_amount as receivable_amount,
+            b.deductible_amount,
+            b.discount_amount,
+            gd.pay_amount as actualPayAmount,
+            b.tax_amount,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.account_year,
+            b.account_date,
+            b.sup_cp_unit_id,
+            b.sup_cp_unit_name,
+            b.cp_unit_id,
+            b.cp_unit_name,
+
+            IFNULL(b.payer_id,b.customer_id) as customerId,
+            IFNULL(b.payer_name,b.customer_name) as customerName,
+            IFNULL(b.payer_type,b.customer_type) as customerType,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_id,
+            b.business_code,
+            b.business_name,
+            b.business_unit_id,
+            b.settle_state
+        from gather_detail AS gd
+        INNER JOIN receivable_bill AS b ON gd.rec_bill_id = b.id
+        left join ${tableName} vbd on vbd.scene_id = gd.id and vbd.scene_type = #{sceneType} AND (vbd.deleted is null or vbd.deleted = 0)
+        ${ew.customSqlSegment}
+    </select>
+    <select id="listPushReceivableBillByQuery"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+        select b.id as billId,
+               b.bill_no,
+               b.bill_type,
+               b.community_id,
+               b.community_name,
+               b.charge_item_id,
+               b.charge_item_name,
+               b.cost_center_id,
+               b.cost_center_name,
+               b.account_date,
+               b.customer_id as customId,
+               b.customer_name as customName,
+               b.payee_id,
+               b.payee_name,
+               b.payer_id,
+               b.payer_name,
+               b.invoice_state,
+               b.inference_state,
+               b.tax_rate_id,
+               b.tax_rate,
+               b.receivable_amount as taxExcludAmount,
+               b.tax_amount,
+               b.bill_cost_type,
+               b.business_unit_id,
+               b.room_id,
+               b.overdue_amount,
+               b.discount_amount,
+               b.refund_amount,
+               b.carried_amount,
+               b.settle_amount,
+               b.receivable_amount,
+               b.sb_account_id,
+               b.room_name,
+               ird.invoice_receipt_id as invoiceId
+        from receivable_bill b
+        left join invoice_receipt_detail ird ON ird.bill_no = b.bill_no
+        left join invoice i ON i.invoice_receipt_id = ird.invoice_receipt_id
+        left join invoice_receipt ir ON ir.id = i.invoice_receipt_id
+        left join voucher_bill_detail vbd on vbd.bill_id = b.id and vbd.invoice_id = ird.invoice_receipt_id
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="getReceivableCarryDownBillList"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.room_id,
+            b.room_name,
+            b.customer_id as customId,
+            b.customer_name as customName,
+            b.payer_id,
+            b.payer_name,
+            b.payee_id,
+            b.payee_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.business_unit_id,
+            b.bill_cost_type,
+            b.sb_account_id,
+            b.account_date,
+            b.sup_cp_unit_id,
+            gd.pay_amount as carriedAmount,
+            gd.carried_bill_pay_channel as payChannel,
+            gd.pay_channel as payChannelCarryover,
+            gd.pay_way,
+            gd.id as gatherDetailId,
+            gd.id as sceneId
+        FROM receivable_bill b
+        LEFT JOIN gather_detail gd on b.id = gd.rec_bill_id
+        LEFT JOIN voucher_bill_detail vbd on vbd.scene_id = gd.id and vbd.bill_event_type = 6
+        ${ew.customSqlSegment}
+    </select>
+    <select id="getCollectionTransferReceivableBillList"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.room_id,
+            b.room_name,
+            b.customer_id as customId,
+            b.customer_name as customName,
+            b.payer_id,
+            b.payer_name,
+            b.payee_id,
+            b.payee_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.business_unit_id,
+            b.bill_cost_type,
+            b.sb_account_id,
+            b.account_date,
+            b.sup_cp_unit_id,
+            gd.pay_amount as carriedAmount,
+            gd.carried_bill_pay_channel as payChannel,
+            gd.pay_channel as payChannelCarryover,
+            gd.pay_way,
+            gd.id as gatherDetailId,
+            gd.id as sceneId
+        FROM receivable_bill b
+                 LEFT JOIN gather_detail gd on b.id = gd.rec_bill_id
+                 LEFT JOIN voucher_bill_detail vbd on vbd.scene_id = gd.id and vbd.bill_event_type = 5
+            ${ew.customSqlSegment}
+    </select>
+    <select id="getCollectionTransferBillQuery"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+        SELECT b.id as billId,
+               b.bill_no,
+               b.bill_type,
+               b.community_id,
+               b.community_name,
+               b.charge_item_id,
+               b.charge_item_name,
+               b.cost_center_id,
+               b.cost_center_name,
+               b.account_date,
+               b.customer_id as customId,
+               b.customer_name as customName,
+               b.payee_id,
+               b.payee_name,
+               b.payer_id,
+               b.payer_name,
+               b.invoice_state,
+               b.tax_rate_id,
+               b.tax_rate,
+               b.bill_cost_type,
+               b.business_unit_id,
+               b.room_id,
+               b.sb_account_id,
+               b.room_name,
+               bc.carryover_type ,
+               b.pay_infos as payInfos,
+               bc.id as billCarryoverId
+        FROM `bill_carryover` as bc
+        inner join receivable_bill as b on  bc.carried_bill_id=b.id
+        left join voucher_bill_detail vb on bc.id = vb.bill_carryover_id
+            ${ew.customSqlSegment}
+    </select>
+
+    <update id="updateSbAccountId">
+        UPDATE receivable_bill SET sb_account_id = #{sbAccountId}
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and  sup_cp_unit_id = #{supCpUnitId}
+    </update>
+
+    <select id="arrearsProvisionBillList"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+         SELECT
+            b.id AS billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.receivable_amount,
+            b.sb_account_id,
+            b.room_name,
+            b.id as sceneId
+        FROM
+            receivable_bill b
+        LEFT JOIN voucher_bill_detail vbd on b.id = vbd.scene_id and vbd.bill_event_type = 3
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="badBillConfirmBilList"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+
+        SELECT
+            b.id AS billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.receivable_amount,
+            -ba.actual_lost_amount AS taxIncludAmount,
+            b.tax_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.receivable_amount,
+            b.sb_account_id,
+            b.room_name,
+            ba.id AS sceneId,
+            ba.gmt_create baCreate,
+            vbd.gmt_create vbdCreate
+        FROM
+	        receivable_bill b
+	    LEFT JOIN bill_adjust ba ON b.id = ba.bill_id
+	    LEFT JOIN voucher_bill_detail vbd on ba.id = vbd.scene_id and vbd.bill_event_type = 4
+            ${ew.customSqlSegment}
+--         GROUP BY
+--             ba.bill_id,
+--             ba.adjust_type
+    </select>
+
+
+    <update id="updateBatchApprovedStateById">
+        UPDATE receivable_bill
+        SET approved_state = #{approvedState}
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+
+    <select id="jumpRecordPage" resultType="com.wishare.finance.domains.bill.dto.JumpRecordDto">
+        SELECT
+            GROUP_CONCAT( bj.bill_id ) as bills,
+            bj.state,
+            bj.reason,
+            bj.operator_name as operatorName,
+            bj.sup_cp_unit_id as communityId,
+            DATE_FORMAT(bj.gmt_create,'%Y-%m-%d') as createDate
+        FROM
+            `bill_jump` bj
+                INNER JOIN receivable_bill b ON bj.bill_id = b.id
+            ${ew.customSqlSegment}
+        GROUP BY
+            bj.out_jump_no
+    </select>
+    <select id="queryTotalMoney"
+            resultType="com.wishare.finance.apps.model.bill.vo.ReceivableAndTemporaryBillTotalV">
+        select
+               sum(total_amount) as amountTotal,
+               sum(receivable_amount) as receivable_amount,
+               sum(tax_amount) as tax_amount,
+               sum(overdue_amount) as overdue_amount,
+               sum(deductible_amount) as deductible_amount,
+               sum(discount_amount) as discount_amount,
+               sum(settle_amount) as settle_amount,
+               sum(refund_amount) as refund_amount,
+               sum(carried_amount) as carried_amount,
+               sum(preferential_amount) as preferential_amount,
+               sum(deduction_amount) as deduction_amount,
+               sum(invoice_amount) as invoice_amount
+        from receivable_bill b ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryTotalMoneyInfo"
+      resultType="com.wishare.finance.apps.model.bill.vo.ReceivableAndTemporaryBillTotalV">
+        select
+            count(1) as numTotal,
+            sum(total_amount) as amountTotal,
+            sum(receivable_amount) as receivable_amount,
+            sum(tax_amount) as tax_amount,
+            sum(overdue_amount) as overdue_amount,
+            sum(deductible_amount) as deductible_amount,
+            sum(discount_amount) as discount_amount,
+            sum(settle_amount) as settle_amount,
+            sum(refund_amount) as refund_amount,
+            sum(carried_amount) as carried_amount,
+            sum(preferential_amount) as preferential_amount,
+            sum(deduction_amount) as deduction_amount,
+            sum(invoice_amount) as invoice_amount,
+            MAX(gmt_modify) as maxGmtModify
+        from receivable_bill b
+        WHERE id IN
+        <foreach collection="billIds" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        <if test="!condition">
+            and b.sup_cp_unit_id = #{communityId}
+            and b.carried_state != 3
+            and b.settle_state in (0,1)
+            and b.refund_state != 3
+            and b.approved_state = 2
+            and b.state = 0
+            and b.reversed = 0
+            and b.bill_label is null
+        </if>
+        <if test="cutTime != null">
+            and b.gmt_modify > #{cutTime}
+        </if>
+    </select>
+
+    <select id="getRoomIds" resultType="java.lang.Long">
+        SELECT
+            room_id
+        FROM receivable_bill
+                 ${ew.customSqlSegment}
+        group by room_id
+    </select>
+
+    <select id="getReceivableBillIds" resultType="java.lang.Long">
+        SELECT
+            id
+        FROM receivable_bill
+                 ${ew.customSqlSegment}
+    </select>
+
+
+     <select id="reconciliationVerificationBillList"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+        SELECT
+            b.id as billId,
+            gd.id AS sceneId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            gd.pay_amount AS taxIncludAmount,-- 收款金额
+            gb.trade_no AS bankSerialNumber,-- 银行流水号
+            b.tax_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            gd.pay_channel,
+            gd.pay_time,
+            ry.payment_code AS bankAccount,-- 银行账号
+            b.sb_account_id,
+            b.room_name,
+            b.overdue,
+            ry.commission,
+            rd.reconciliation_id as reconciliationId,
+            rd.id as reconciliationDetailId,
+            gd.cp_org_name as gatherBillNc,
+            gb.bill_no as gatherBillNo,
+            gb.reconcile_state as reconcileState,
+            gb.mc_reconcile_state as mcReconcileState,
+            (select `name` from cash_flow WHERE id = (select subject_level_last_id from subject_map_unit_detail where sub_map_unit_id = b.charge_item_id and map_type = 2 and deleted = 0)) as cashFlowItem
+        FROM
+	    receivable_bill b
+        LEFT JOIN gather_detail gd ON gd.rec_bill_id = b.id
+        LEFT JOIN gather_bill gb ON gb.id = gd.gather_bill_id
+        LEFT JOIN reconciliation_detail rd ON gb.id = rd.bill_id and rd.deleted = 0
+        LEFT JOIN reconciliation_yinlian ry ON gb.trade_no = ry.seq_id
+        LEFT JOIN voucher_bill_detail vbd ON gd.id = vbd.scene_id and vbd.bill_event_type = 1
+         ${ew.customSqlSegment}
+        order by gb.id
+    </select>
+
+    <select id="getByChargeNcId" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select *
+        from receivable_bill
+        where out_bus_id = #{chargeNcId}
+            and sup_cp_unit_id = #{communityId}
+            and deleted = 0
+        order by overdue
+    </select>
+    <select id="revenueRecognitionBillList"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBill">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_type,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.receivable_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.payment_id as subjectExtId,
+            cib.payment_name as subjectName
+        from
+            receivable_bill b
+           LEFT JOIN voucher_bill_detail_zj vbdz ON vbdz.bill_id = b.id  and  vbdz.bill_event_type = 1
+           left join  charge_item ci  on  ci.id = b.charge_item_id
+           left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = "023" and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="revenueRecognitionBillListForSettlement"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBillForSettlement">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.contract_no,
+            b.contract_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payee_type,
+            b.payer_id,
+            b.payer_name,
+            b.payer_type,
+            b.invoice_state,
+            b.tax_rate_id,
+            0 as taxRate,
+            0 as taxAmount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.ext_field9 as receivableAmount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.ext_field7 as settlementId,
+            null as taxRateStr,
+
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.payment_id as subjectExtId,
+            cib.payment_name as subjectName
+        from
+            receivable_bill b
+                LEFT JOIN voucher_bill_detail_dx_zj vbdz ON vbdz.bill_id = b.id and vbdz.bill_event_type = 3
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = '004' and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="revenueRecognitionBillListForSettlementOnReverse"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBillForSettlement">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.contract_no,
+            b.contract_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            0 as taxRate,
+            0 as taxAmount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            -b.ext_field9 as receivableAmount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.ext_field7 as settlementId,
+            null as taxRateStr,
+
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.payment_id as subjectExtId,
+            cib.payment_name as subjectName
+        from
+            receivable_bill b
+                LEFT JOIN voucher_bill_detail_dx_zj vbdz ON vbdz.bill_id = b.id and vbdz.bill_event_type = 7
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = '004' and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="reverseBillList"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBill">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_type,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.receivable_amount  * -1 as receivableAmount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.payment_id as subjectExtId,
+            cib.payment_name as subjectName
+        from
+            receivable_bill b
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = "023" and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="billAdjustBillListOnOldPayer"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBill">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            ba.original_payer_id as payerId,
+            ba.original_payer_name as payerName,
+            ba.original_payer_type as payerType,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            -ba.bill_amount as receivableAmount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            ba.id as sceneId,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.payment_id as subjectExtId,
+            cib.payment_name as subjectName
+        from
+            receivable_bill b
+                left join  bill_adjust ba on b.id = ba.bill_id
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = "023" and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="billAdjustBillListOnNewPayer"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBill">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            ba.payer_id as payerId,
+            ba.payer_name as payerName,
+            ba.payer_type as payerType,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            ba.bill_amount+ba.adjust_amount as receivableAmount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            ba.id as sceneId,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.payment_id as subjectExtId,
+            cib.payment_name as subjectName
+        from
+            receivable_bill b
+                left join  bill_adjust ba on b.id = ba.bill_id
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = "023" and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="billAdjustBillList"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBill">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_type,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            ba.adjust_amount as receivableAmount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            ba.id as sceneId,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.payment_id as subjectExtId,
+            cib.payment_name as subjectName
+        from
+            receivable_bill b
+                left join  bill_adjust ba on b.id = ba.bill_id
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = "023" and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="voidInvoiceReceivableBillByQuery"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+        select b.id as billId,
+               b.bill_no,
+               b.bill_type,
+               b.community_id,
+               b.community_name,
+               b.charge_item_id,
+               b.charge_item_name,
+               b.cost_center_id,
+               b.cost_center_name,
+               b.account_date,
+               b.customer_id as customId,
+               b.customer_name as customName,
+               b.payee_id,
+               b.payee_name,
+               b.payer_id,
+               b.payer_name,
+               b.invoice_state,
+               b.inference_state,
+               b.tax_rate_id,
+               b.tax_rate,
+               ird.invoice_amount as taxIncludAmount,
+               b.tax_amount,
+               b.bill_cost_type,
+               b.business_unit_id,
+               b.room_id,
+               b.overdue_amount,
+               b.discount_amount,
+               b.refund_amount,
+               b.carried_amount,
+               b.settle_amount,
+               b.receivable_amount,
+               b.sb_account_id,
+               b.room_name,
+               ir.state,
+               ird.invoice_receipt_id as invoiceId
+        from receivable_bill  b
+        left join invoice_receipt_detail ird ON ird.bill_no = b.bill_no
+        left join invoice_receipt ir ON ird.invoice_receipt_id = ir.id
+        left join voucher_bill_detail vb on b.id = vb.bill_id and ird.invoice_receipt_id= vb.invoice_id
+        ${ew.customSqlSegment}
+    </select>
+    <select id="getReceivableCarryDownTwoBillList"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+
+         SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.room_id,
+            b.room_name,
+            b.customer_id as customId,
+            b.customer_name as customName,
+            b.payer_id,
+            b.payer_name,
+            b.payee_id,
+            b.payee_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.business_unit_id,
+            b.bill_cost_type,
+            b.sb_account_id,
+            b.account_date,
+            b.sup_cp_unit_id,
+            gd.pay_amount as carriedAmount,
+            gd.carried_bill_pay_channel as payChannel,
+            gd.pay_channel as payChannelCarryover,
+            gd.pay_way,
+            gd.id as gatherDetailId,
+            gd.id as sceneId,
+            gd.gmt_create
+        FROM receivable_bill b
+        LEFT JOIN gather_detail gd on b.id = gd.rec_bill_id
+        LEFT JOIN voucher_bill_detail vbd on vbd.scene_id = gd.id and vbd.bill_event_type = 8
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="callGroupByRoomAndItem" resultType="com.wishare.finance.domains.bill.dto.BillTotalDto">
+        select b.charge_item_id,
+               b.room_id,
+               count(1)                 AS billTotal,
+               sum(b.total_amount)      AS amountTotal,
+               sum(b.receivable_amount) AS receivableAmountTotal,
+               sum(b.deductible_amount) AS deductibleAmountTotal,
+               SUM(b.settle_amount)     AS settleAmountTotal,
+               SUM(b.discount_amount)   AS discountAmountTotal,
+               SUM(b.overdue_amount)    AS overdueAmountTotal,
+               SUM(b.refund_amount)     AS refundAmountTotal,
+               SUM(b.carried_amount)    AS carriedAmountTotal
+        from receivable_bill b
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="getPaymentAdjustmentReversedBusinessBills"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+        SELECT
+            b.id AS billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            br.reverse_amount as taxIncludAmount,
+            b.sb_account_id,
+            b.room_name,
+            br.id as sceneId,
+            1 as sceneType
+        FROM
+            receivable_bill b
+                INNER JOIN voucher_bill_detail vbd on b.id = vbd.bill_id and vbd.bill_event_type = 1
+                INNER join bill_reverse br on b.id = br.bill_id
+                LEFT JOIN voucher_bill_detail vbdd on br.id = vbdd.scene_id and vbdd.bill_event_type = 7 and vbdd.scene_type = 1
+            ${ew.customSqlSegment}
+        group by br.id
+    </select>
+
+    <select id="getPaymentAdjustmentInvalidBusinessBills"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+        SELECT
+            b.id AS billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.receivable_amount,
+            b.sb_account_id,
+            b.room_name,
+            b.id as sceneId,
+            2 as sceneType
+        FROM
+            receivable_bill b
+                INNER JOIN voucher_bill_detail vbd on b.id = vbd.bill_id and vbd.bill_event_type = 3
+                LEFT JOIN voucher_bill_detail vbdd on b.id = vbdd.scene_id and vbdd.bill_event_type = 7 and vbdd.scene_type = 2
+            ${ew.customSqlSegment}
+        group by b.id
+    </select>
+
+    <update id="deleteBillById" parameterType="java.util.List">
+        update receivable_bill
+        SET deleted = 1
+        where out_bus_id in
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">
+            #{item.outBusId}
+        </foreach>
+        and sup_cp_unit_id = #{communityId}
+    </update>
+
+    <update id="batchUpdateGatherBillById" parameterType="java.util.List">
+        <foreach collection="list" item="item" index="index" separator=";">
+            update gather_bill
+            SET
+            <if test="item.statutoryBodyId != null">
+                statutory_body_id = #{item.statutoryBodyId},
+            </if>
+            <if test="item.statutoryBodyName != null">
+                statutory_body_name = #{item.statutoryBodyName},
+            </if>
+            <if test="item.startTime != null">
+                start_time = #{item.startTime},
+            </if>
+            <if test="item.endTime != null">
+                end_time = #{item.endTime},
+            </if>
+            <if test="item.totalAmount != null">
+                total_amount = #{item.totalAmount},
+            </if>
+            gmt_modify = NOW()
+            WHERE id = #{item.id}
+            and sup_cp_unit_id = #{item.supCpUnitId}
+        </foreach>
+    </update>
+
+    <update id="batchUnFreezeBillByIds" >
+        update ${tableName} b
+        set state = 0
+        where
+        id in
+        <foreach collection="ids" open="(" close=")" separator="," item="item" index="index">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="batchFreezeBillByIds" >
+        update ${tableName} b
+        set state = 1 , freeze_type = #{type}
+        where
+        id in
+        <foreach collection="ids" open="(" close=")" separator="," item="item" index="index">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="getPageNotApprove" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        <include refid="com.wishare.finance.domains.bill.repository.mapper.ReceivableBillMapper.getPageNotApproveSql" />
+    </select>
+
+    <select id="countPageNotApprove" resultType="java.lang.Long">
+        select count(*) from (<include refid="com.wishare.finance.domains.bill.repository.mapper.ReceivableBillMapper.getPageNotApproveSql" />) t
+    </select>
+
+    <sql id="getPageNotApproveSql">
+        select
+            b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id, b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id, b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name, b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name, b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id, b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount, b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount, b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type, b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state, b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated, b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name, b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4, b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10
+
+        <choose>
+            <when test="_parameter.containsKey('tblName') and tblName != null and tblName.length > 0">
+                from ${tblName} b
+            </when>
+            <otherwise>
+                from receivable_bill b
+            </otherwise>
+        </choose>
+                 left join bill_approve ba on ba.bill_id  = b.id and ba.approved_state in (0,1)
+            ${ew.customSqlSegment}
+    </sql>
+
+
+
+    <select id="getVoucherBillDetail"
+            resultType="com.wishare.finance.domains.voucher.support.fangyuan.strategy.core.PushBusinessBill">
+        SELECT
+            b.id AS billId,
+            b.bill_no,
+            b.bill_type,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.receivable_amount,
+            b.tax_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.receivable_amount,
+            b.sb_account_id,
+            b.room_name
+        FROM
+            receivable_bill b
+                LEFT JOIN voucher_bill_detail vbd ON b.id = vbd.bill_id
+            ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="getBillOverdueDetail"
+            resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select
+        b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id,
+        b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id,
+        b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name,
+        b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id,
+        b.room_name,
+        b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time,
+        b.tax_rate_id,
+        b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount,
+        b.receivable_amount,
+        b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount,
+        b.carried_amount, b.invoice_amount,
+        b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label,
+        b.contact_name, b.contact_phone, b.customer_type,
+        b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state,
+        b.on_account, b.settle_state, b.refund_state, b.verify_state,
+        b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed,
+        b.inference_state, b.bill_cost_type, b.separated,
+        b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year,
+        b.account_date, b.remark, b.business_code, b.business_name,
+        b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify,
+        b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4,
+        b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10, b.is_exact, b.pay_infos as
+        pay_str,
+        b.payer_phone,b.receivable_date , b.ref_bill_id, b.overdue
+        from charge_overdue co
+            inner join  receivable_bill b on co.bill_id = b.id
+        where
+        b.state IN (
+        0, 1
+        )
+        AND b.reversed =0
+        AND b.deleted = 0
+        AND b.overdue = 1
+        and b.sup_cp_unit_id = #{supCpUnitId}
+        and co.ref_bill_id in
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+    <select id="unInvoiceBillPage"
+            resultType="com.wishare.finance.domains.bill.dto.UnInvoiceReceivableBillDto">
+        SELECT
+            b.pay_time,
+            b.id as billId,
+            b.bill_no,
+            b.sys_source,
+            1 as bill_type,
+            b.statutory_body_id,
+            b.statutory_body_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.room_name,
+            b.room_id,
+            b.payer_id,
+            b.payer_name,
+            b.charge_item_name,
+            b.pay_infos,
+            b.receivable_amount,
+            b.discount_amount,
+            b.start_time,
+            b.end_time
+        FROM
+            receivable_bill b
+            ${ew.customSqlSegment}
+        GROUP BY
+            b.id
+    </select>
+    <select id="getVoucherStatus" resultType="java.lang.Integer">
+        select push_bill_state
+        from voucher_bill_detail
+        where bill_no = #{billNo} and deleted=0
+    </select>
+    <select id="chargeAgainstBillList"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+        SELECT gd.id as sceneId
+FROM gather_bill gb
+            LEFT JOIN gather_detail gd ON gb.id = gd.gather_bill_id
+            INNER JOIN receivable_bill b ON gd.rec_bill_id = b.id
+            inner JOIN ${tableName} vbd2 on vbd2.scene_id = gd.id and vbd2.scene_type = #{eventType} and vbd2.deleted = 0
+            LEFT JOIN ${tableName} vbd on vbd.scene_id = gd.id and vbd.scene_type = #{chargeAgainstEventType} AND (vbd.deleted is null or vbd.deleted = 0)
+        ${ew.customSqlSegment}
+        group by gd.id
+    </select>
+    <select id="moneyCarriedForwardList"
+            resultType="com.wishare.finance.domains.voucher.strategy.core.VoucherBusinessBill">
+
+        select
+        b.id as businessBillId,
+        b.bill_no as businessBillNo,
+        br.id AS sceneId,
+        #{sceneType} AS sceneType,
+        b.statutory_body_id,
+        b.statutory_body_name,
+        b.cost_center_id,
+        b.cost_center_name,
+        b.charge_item_id,
+        b.charge_item_name,
+        3 as businessBillType,
+        b.total_amount,
+        b.receivable_amount as receivable_amount,
+        b.deductible_amount,
+        b.discount_amount,
+        b.settle_amount as actualPayAmount,
+        br.carryover_amount,
+        b.tax_amount,
+        b.tax_rate_id,
+        b.tax_rate,
+        b.account_year,
+        b.account_date,
+        b.sup_cp_unit_id,
+        b.sup_cp_unit_name,
+        b.cp_unit_id,
+        b.cp_unit_name,
+
+        IFNULL(b.payer_id,b.customer_id) as customerId,
+        IFNULL(b.payer_name,b.customer_name) as customerName,
+        IFNULL(b.payer_type,b.customer_type) as customerType,
+        b.sb_account_id,
+        b.sys_source,
+        b.room_id,
+        b.business_code,
+        b.business_name,
+        b.business_unit_id,
+        b.settle_state,
+        b.id as receivableBillId
+        from receivable_bill AS b
+        INNER JOIN bill_carryover  AS br ON br.carried_bill_id = b.id and br.deleted=0
+        left join ${tableName} vbd on vbd.scene_id = br.id and vbd.scene_type = #{sceneType} AND (vbd.deleted is null or vbd.deleted = 0)
+        ${ew.customSqlSegment}
+    </select>
+    <select id="moneyCarriedForwardSet" resultType="java.lang.Long">
+        select id from receivable_bill where sup_cp_unit_id = #{communityId} and bill_type = 1 and deleted=0 and id in
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+
+
+    <update id="updateCostMsgByRoomIds">
+        UPDATE ${receivableBillName} SET cost_center_id = #{costCenterId},cost_center_name =#{costCenterName}
+        WHERE room_id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and  sup_cp_unit_id = #{supCpUnitId}
+        and  bill_type = #{billType}
+    </update>
+
+    <update id="updateCostMsgBySupCpUnitId">
+        UPDATE ${receivableBillName} SET cost_center_id = #{costCenterId},cost_center_name =#{costCenterName}
+        WHERE
+        sup_cp_unit_id = #{supCpUnitId}
+        and  bill_type = #{billType}
+    </update>
+
+    <update id="updateProvisionVoucherPushingStatusById">
+        UPDATE receivable_bill
+        SET provision_voucher_pushing_status = #{status},
+        provision_status = #{status}
+        WHERE sup_cp_unit_id = #{supCpUnitId}
+        AND id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateRelatedBillStatusOnPayCost">
+        UPDATE receivable_bill
+        SET settlement_voucher_pushing_status = #{status},
+        settlement_status = #{status}
+        WHERE sup_cp_unit_id = #{supCpUnitId}
+        AND id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateRelatedBillStatusOnPayIncome">
+        UPDATE receivable_bill
+        SET receipt_confirmation_voucher_pushing_status = #{status},
+        receipt_confirmation_status = #{status}
+        WHERE sup_cp_unit_id = #{supCpUnitId}
+        AND id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+
+    <update id="updateCertainStatusOnVoucherBillApprovedV2">
+        UPDATE receivable_bill
+        SET
+            <if test="eventType == 3 or eventType == 5">
+                provision_status = #{status}
+            </if>
+            <if test="eventType == 4">
+                settlement_status = #{status}
+            </if>
+            <if test="eventType == 6">
+                receipt_confirmation_status = #{status}
+            </if>
+            <if test="eventType == 9">
+                pay_app_status = #{status}
+            </if>
+        WHERE sup_cp_unit_id = #{communityId}
+        AND id in
+        <foreach collection="billIdList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+    <update id="updatePayAppVoucherPushingStatusById">
+        UPDATE receivable_bill
+        SET pay_app_push_status = #{status},
+        pay_app_status = #{status}
+        WHERE sup_cp_unit_id = #{supCpUnitId}
+        AND id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="queryBillApproveByPage" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        select
+        b.id, b.bill_type, b.bill_label, b.statutory_body_id, b.statutory_body_name, b.cost_center_id,
+        ba.reason as oprReason,ba.operate_type as oprType,ba.remark as oprRemark,
+        b.cost_center_name, b.sb_account_id, b.business_unit_id, b.community_id, b.community_name, b.charge_item_id,
+        b.charge_item_name, b.charge_item_type, b.cp_org_id, b.cp_org_name, b.sup_cp_unit_id, b.sup_cp_unit_name,
+        b.cp_unit_id, b.cp_unit_name, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_id, b.room_name,
+        b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time, b.tax_rate_id,
+        b.tax_rate, b.bill_no, b.out_bus_no, b.out_bill_no, b.out_bus_id, b.description, b.currency, b.total_amount, b.receivable_amount,
+        b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount,b.reverse_amount,
+        b.deduction_amount, b.payee_id, b.payee_name, b.payer_id, b.payer_name, b.invoice_type, b.payer_label, b.contact_name, b.contact_phone, b.customer_type,
+        b.customer_label, b.customer_id, b.customer_name, b.attach_params, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state,
+        b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated,
+        b.reversed, b.adjusted, b.app_id, b.app_name, b.app_number, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark, b.business_code, b.business_name,
+        b.tenant_id, b.deleted, b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4,
+        b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10, b.is_exact, b.pay_infos as pay_str, b.payer_phone,b.receivable_date,b.is_sign,b.freeze_type
+        <if test="tblName != null and tblName.length > 0">
+            , b.overdue
+            from ${tblName} b
+        </if>
+        <if test="tblName == null or tblName.length == 0">
+            from receivable_bill b
+        </if>
+        left join ${tblName2} ba on b.id = ba.bill_id
+        ${ew.customSqlSegment}
+    </select>
+    <select id="revenueRecognitionBillListForSQ"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBillForSettlement"
+            parameterType="com.baomidou.mybatisplus.core.conditions.query.QueryWrapper">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.contract_no,
+            b.contract_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount_new as taxAmount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.receivable_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.ext_field7 as settlementId,
+            b.ext_field8 as taxRateStr,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.signed_payment_id as subjectExtId,
+            cib.signed_payment_name as subjectName
+        from
+            receivable_bill b
+                LEFT JOIN voucher_bill_detail_dx_zj vbdz ON vbdz.bill_id = b.id and vbdz.bill_event_type = 6
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = '023' and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="revenueRecognitionBillListForPaySettlement"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBillForSettlement">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.contract_no,
+            b.contract_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount_new as taxAmount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.receivable_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.ext_field7 as settlementId,
+            b.ext_field8 as taxRateStr,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.signed_payment_id as subjectExtId,
+            cib.signed_payment_name as subjectName
+        from
+            receivable_bill b
+                LEFT JOIN voucher_bill_detail_dx_zj vbdz ON vbdz.bill_id = b.id and vbdz.bill_event_type = 4
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = '004' and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+    <select id="revenueRecognitionBillListForPayIncome"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBillForSettlement"
+            parameterType="com.baomidou.mybatisplus.core.conditions.query.QueryWrapper">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.contract_no,
+            b.contract_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payee_type,
+            b.payer_id,
+            b.payer_name,
+            b.payer_type,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate as taxRate,
+            b.ext_field10 as taxAmount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.total_amount as taxIncludAmount,
+            b.ext_field9 as taxExcludAmount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.ext_field7 as settlementId,
+            b.ext_field8 as taxRateStr,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.payment_id as subjectExtId,
+            cib.payment_name as subjectName
+        from
+            receivable_bill b
+                LEFT JOIN voucher_bill_detail_dx_zj vbdz ON vbdz.bill_id = b.id and vbdz.bill_event_type = 5
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = '023' and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="revenueRecognitionBillListForPayIncomeOnReverse"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBillForSettlement"
+            parameterType="com.baomidou.mybatisplus.core.conditions.query.QueryWrapper">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.contract_no,
+            b.contract_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate as taxRate,
+            -b.ext_field10 as taxAmount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            -b.total_amount as taxIncludAmount,
+            -b.ext_field9 as taxExcludAmount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.ext_field7 as settlementId,
+            b.ext_field8 as taxRateStr,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.payment_id as subjectExtId,
+            cib.payment_name as subjectName
+        from
+            receivable_bill b
+                LEFT JOIN voucher_bill_detail_dx_zj vbdz ON vbdz.bill_id = b.id and vbdz.bill_event_type = 8
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = '023' and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="getBusinessTypeCode" resultType="java.lang.String">
+        select distinct cib.business_type_id
+        from receivable_bill b
+                 left join  charge_item ci  on  ci.id = b.charge_item_id
+                 left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id and cib.document_code = '004' and  cib.deleted = 0
+        where b.id = #{billId}
+        and  b.sup_cp_unit_id = #{projectId}
+        limit 1
+    </select>
+    <select id="queryMxBysettlementIdList"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBillForSettlement"
+            parameterType="com.baomidou.mybatisplus.core.conditions.query.QueryWrapper">
+        SELECT
+            b.id as billId,
+            b.bill_no,
+            b.bill_type,
+            b.contract_no,
+            b.contract_name,
+            b.community_id,
+            b.community_name,
+            b.charge_item_id,
+            b.charge_item_name,
+            b.cost_center_id,
+            b.cost_center_name,
+            b.account_date,
+            b.customer_id AS customId,
+            b.customer_name AS customName,
+            b.payee_id,
+            b.payee_name,
+            b.payer_id,
+            b.payer_name,
+            b.invoice_state,
+            b.tax_rate_id,
+            b.tax_rate,
+            b.tax_amount_new as taxAmount,
+            b.overdue_amount,
+            b.discount_amount,
+            b.refund_amount,
+            b.carried_amount,
+            b.settle_amount,
+            b.receivable_amount,
+            b.bill_cost_type,
+            b.business_unit_id,
+            b.room_id,
+            b.sb_account_id,
+            b.sys_source,
+            b.room_name,
+            b.start_time,
+            b.end_time,
+            b.ext_field6 as contractId,
+            b.ext_field7 as settlementId,
+            b.ext_field8 as taxRateStr,
+            b.room_name,
+            cib.business_type_code as businessType,
+            cib.business_type_id as businessTypeId,
+            cib.business_type_name as businessTypeName,
+            cib.change_code as changeCode,
+            cib.change_name as changeName,
+            cib.signed_payment_id as subjectExtId,
+            cib.signed_payment_name as subjectName
+        from
+            receivable_bill b
+                LEFT JOIN voucher_bill_detail_dx_zj vbdz ON vbdz.bill_id = b.id
+                and vbdz.bill_event_type = 9
+                left join  charge_item ci  on  ci.id = b.charge_item_id
+                left join charge_item_business cib  on  cib.charge_item_id = b.charge_item_id
+                /*获取核销逻辑不在判断该字段*/
+                and cib.document_code = '004'
+                and  cib.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+    <select id="queryBillInfo" resultType="com.wishare.finance.apps.model.third.BillInfoResponse">
+        select
+           a.id,
+           a.bill_type,
+           a.bill_no,
+           a.community_id,
+           a.payer_id,
+           a.room_id,
+           a.cp_unit_id,
+           a.cp_unit_name,
+           a.start_time,
+           a.end_time,
+           a.account_date,
+           a.total_amount,
+           a.receivable_amount,
+           a.overdue_amount,
+           a.discount_amount,
+           a.settle_amount,
+           a.refund_amount,
+           a.carried_amount,
+           a.state,
+           a.settle_state,
+           a.approved_state,
+           a.customer_type,
+           a.reversed,
+           a.carried_state,
+           a.refund_state,
+           a.bill_label,
+           a.ext_field6 as contractId,
+           a.contract_no,
+           a.contract_name,
+           a.charge_item_id,
+           <!--以防万一，费项名称使用费项表里面的-->
+           b.name as chargeItemName,
+           a.tax_rate_id,
+           <!--2%转为200，数据库存的小数，于是乘10000转换-->
+           a.tax_rate*10000 as taxRate,
+           a.ext_field8,
+           a.tax_amount_new,
+           a.gmt_create,
+           case when a.approved_state = 2 and a.settle_state not in (2, 3) and a.state = 0 and a.reversed !=1
+           and a.carried_state != 3 and a.refund_state != 3 and a.bill_label IS NULL then 1 else 0 end as reminder
+        from ${receivableBillName} a
+        left join charge_item b on a.charge_item_id = b.id and b.deleted = 0
+        WHERE
+            a.community_id = #{communityId}
+          and a.deleted = 0
+          and a.gmt_modify <![CDATA[ >= ]]> #{queryBillReq.updateTime}
+        <if test="queryBillReq.billIds != null and queryBillReq.billIds.size() > 0">
+            and a.id in
+            <foreach collection="queryBillReq.billIds" item="billId" open="(" close=")" separator=",">
+                #{billId}
+            </foreach>
+        </if>
+        <if test="queryBillReq.billTypes != null and queryBillReq.billTypes.size() > 0">
+            and a.bill_type in
+            <foreach collection="queryBillReq.billTypes" item="billType" open="(" close=")" separator=",">
+                #{billType}
+            </foreach>
+        </if>
+        <if test="queryBillReq.roomIds != null and queryBillReq.roomIds.size() > 0">
+            and a.room_id in
+            <foreach collection="queryBillReq.roomIds" item="roomId" open="(" close=")" separator=",">
+                #{roomId}
+            </foreach>
+        </if>
+        <if test="queryBillReq.settleState != null ">
+            and a.settle_state  = #{queryBillReq.settleState}
+        </if>
+        <if test="queryBillReq.state != null ">
+            and a.state = #{queryBillReq.state}
+        </if>
+        <if test="queryBillReq.approvedState != null ">
+            and a.approved_state  = #{queryBillReq.approvedState}
+        </if>
+        <!-- 只要传了sysSource那么就应该加上该条件 -->
+        <if test="sysSource != null">
+            and a.sys_source = #{sysSource}
+        </if>
+        <!-- 只要sysSource=2,那么就应该加上费项属性条件 -->
+        <if test="sysSource != null and sysSource==2">
+            and b.attribute = #{attribute}
+        </if>
+        <if test="queryBillReq.payerIds != null and queryBillReq.payerIds.size() > 0">
+            and a.payer_id in
+            <foreach collection="queryBillReq.payerIds" item="payerId" open="(" close=")" separator=",">
+                #{payerId}
+            </foreach>
+        </if>
+    </select>
+
+    <!--根据合同ID获取合同报账单中对下计提非进行中（1待推送/3推送失败/5已驳回/6单据驳回/8制单失败）临时账单ID-->
+    <select id="getReceivableBillIdList" resultType="java.lang.String">
+        select b.id
+        from receivable_bill b
+         left join voucher_bill_detail_dx_zj dz on b.id = dz.bill_id and dz.deleted = 0
+         left join voucher_bill_dx_zj zj on dz.voucher_bill_no = zj.voucher_bill_no
+        where
+            zj.deleted = 0
+          and zj.push_state not in (1,3,5,6,8)
+          and b.deleted = 0
+          and b.ext_field6 = #{contractId}
+          and b.sup_cp_unit_id = #{communityId}
+          and zj.bill_event_type = 3
+    </select>
+    <!--根据临时账单ID获取有无对下结算单计提-->
+    <select id="getdeleteReceivableDxList" resultType="java.lang.String">
+        select dz.voucher_bill_no
+        from receivable_bill b
+         left join voucher_bill_detail_dx_zj dz on b.id = dz.bill_id and dz.deleted = 0
+         left join voucher_bill_dx_zj zj on dz.voucher_bill_no = zj.voucher_bill_no
+        where
+          zj.deleted = 0
+          and b.deleted = 0
+          and b.sup_cp_unit_id = #{communityId}
+          and b.id in <foreach collection="billIdList" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+          and zj.bill_event_type = 3
+    </select>
+    <!--根据临时账单ID获取报账单数据-->
+    <select id="getVoucherBillByReceivableId" resultType="java.util.Map">
+        select
+        zj.bill_event_type,
+        GROUP_CONCAT(DISTINCT zj.voucher_bill_no) as voucher_bill_nos
+        from receivable_bill b
+        left join voucher_bill_detail_zj dz on b.id = dz.bill_id and dz.deleted = 0
+        left join voucher_bill_zj zj on dz.voucher_bill_no = zj.voucher_bill_no
+        where
+        zj.deleted = 0
+        and b.deleted = 0
+        and b.sup_cp_unit_id = #{communityId}
+        and b.id in
+        <foreach collection="billIdList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        group by zj.bill_event_type
+    </select>
+
+    <!--根据临时账单ID获取合同报账单数据-->
+    <select id="getVoucherBillDxByReceivableId" resultType="java.util.Map">
+        select
+        zj.bill_event_type,
+        GROUP_CONCAT(DISTINCT zj.voucher_bill_no) as voucher_bill_nos
+        from receivable_bill b
+        left join voucher_bill_detail_dx_zj dz on b.id = dz.bill_id and dz.deleted = 0
+        left join voucher_bill_dx_zj zj on dz.voucher_bill_no = zj.voucher_bill_no
+        where
+        zj.deleted = 0
+        and b.deleted = 0
+        and b.sup_cp_unit_id = #{communityId}
+        and b.id in
+        <foreach collection="billIdList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        group by zj.bill_event_type
+    </select>
+
+    <!--根据临时账单ID删除对应临时账单-->
+    <update id="deleteReceivableBillById" parameterType="java.util.List">
+        update receivable_bill
+        SET deleted = 1
+        where id in
+        <foreach collection="billIdList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and sup_cp_unit_id = #{communityId}
+    </update>
+
+    <!--根据临时账单ID获取报账单数据-实签-->
+    <select id="getVoucherBillSq" resultType="java.util.Map">
+        select
+        zj.voucher_bill_no,
+        CONCAT(zj.approve_state, ',', zj.bill_event_type) as stageAndType
+        from receivable_bill b
+        left join voucher_bill_detail_dx_zj dz on b.id = dz.bill_id and dz.deleted = 0
+        left join voucher_bill_dx_zj zj on dz.voucher_bill_no = zj.voucher_bill_no
+        where
+        zj.deleted = 0
+        and b.deleted = 0
+        and b.sup_cp_unit_id = #{communityId}
+        and b.id in
+        <foreach collection="billIdList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and zj.bill_event_type in (4,6)
+        group by zj.voucher_bill_no
+    </select>
+
+    <update id="deleteReceivable">
+        UPDATE receivable_bill
+        SET deleted = 1
+        WHERE sup_cp_unit_id = #{communityId}
+        AND id IN
+        <foreach collection="billIdList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+    <update id="restoreBill">
+        update `receivable_bill`
+            set `settlement_status` = 0,
+        `settlement_voucher_pushing_status` = 0,
+        `reduction_amount` = null,
+        `receivable_amount` = 0,
+        `tax_amount_new` = #{taxAmountNew},
+        `ext_field7` = null
+        where id = #{id} and sup_cp_unit_id = #{supCpUnitId}
+    </update>
+
+    <select id="getVoucherBillList" resultType="java.lang.String">
+        select
+        zj.voucher_bill_no
+        from receivable_bill b
+        left join voucher_bill_detail_dx_zj dz on b.id = dz.bill_id and dz.deleted = 0
+        left join voucher_bill_dx_zj zj on dz.voucher_bill_no = zj.voucher_bill_no
+        where
+        zj.deleted = 0
+        and b.deleted = 0
+        and b.sup_cp_unit_id = #{communityId}
+        and b.id in
+        <foreach collection="billIdList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and zj.bill_event_type in (4,6)
+        group by zj.voucher_bill_no
+    </select>
+</mapper>

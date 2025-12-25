@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.export.repository.mapper.ExportMapper">
+
+    <update id="dropTmpTbl">
+        DROP TABLE IF EXISTS ${tmpTblName}
+    </update>
+
+    <update id="createTmpTbl">
+        CREATE TEMPORARY TABLE IF NOT EXISTS export_tmp_${tblName}_${tblNameSuffix} (tid INT NOT NULL AUTO_INCREMENT,PRIMARY KEY (tid)) AS
+        <choose>
+            <!-- ============应收账单============ -->
+            <!-- 应收账单列表 -->
+            <!-- @com.wishare.finance.infrastructure.conts.ExportTmpTblTypeEnum@RECEIVABLE -->
+            <when test="tmpTblType == 1">
+            (<include refid="com.wishare.finance.domains.bill.repository.mapper.ReceivableBillMapper.queryBillSql" />)
+            </when>
+            <!-- 应收账单分组 -->
+            <when test="tmpTblType == 2">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.ReceivableBillMapper.pageWithGroupSql" />)
+            </when>
+            <!-- 应收账单分组-审核 -->
+            <when test="tmpTblType == 3">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.ReceivableBillMapper.pageWithGroupByApproveSql" />)
+            </when>
+            <!-- 应收账单分组-未审核 -->
+            <when test="tmpTblType == 10">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.ReceivableBillMapper.getPageNotApproveSql" />)
+            </when>
+
+            <!-- ============预收账单============ -->
+            <!-- 预收账单列表 -->
+            <when test="tmpTblType == 4">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.AdvanceBillMapper.queryBillByPageSql" />)
+            </when>
+            <!-- 预收账单分组 -->
+            <when test="tmpTblType == 5">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.AdvanceBillMapper.pageWithGroupSql" />)
+            </when>
+            <!-- 预收账单分组-审核 -->
+            <when test="tmpTblType == 6">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.AdvanceBillMapper.pageWithGroupByApproveSql" />)
+            </when>
+            <!-- 预收账单分组-未审核 -->
+            <when test="tmpTblType == 11">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.AdvanceBillMapper.getPageNotApproveSql" />)
+            </when>
+
+            <!-- ============临时账单============ -->
+            <!-- 临时账单列表 -->
+            <when test="tmpTblType == 7">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.TemporaryChargeBillMapper.queryBillByPageSql"/>)
+            </when>
+            <!-- 临时账单审核列表 -->
+            <when test="tmpTblType == 8">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.TemporaryChargeBillMapper.queryPageNotApproveSql" />)
+            </when>
+            <!-- 临时账单审核列表-未审核 -->
+            <when test="tmpTblType == 9">
+                (<include refid="com.wishare.finance.domains.bill.repository.mapper.TemporaryChargeBillMapper.queryPageWithApproveSql" />)
+            </when>
+            <!-- 欠费原因账单 -->
+            <when test="tmpTblType == 12">
+                (<include refid="com.wishare.finance.domains.configure.arrears.repository.mapper.ArrearsReasonMapper.queryOverdueReasonBillPageBillSql" />)
+            </when>
+        </choose>
+    </update>
+
+    <sql id="querySql">
+        select * from export_tmp_${tblName}_${tblNameSuffix} where tid > #{tid}
+    </sql>
+
+    <select id="queryReceivableBill" resultType="com.wishare.finance.domains.bill.entity.ReceivableBill">
+        <!--<include refid="querySql" />-->
+        select b.id,  b.statutory_body_name,
+        b.cost_center_name,   b.community_id, b.community_name,
+        b.charge_item_name, b.charge_item_type,  b.cp_org_name,  b.sup_cp_unit_name,
+        b.cp_unit_name,b.cp_unit_id, b.bill_method, b.charging_area, b.charging_count, b.unit_price, b.room_name,b.room_id,
+        b.payer_type, b.payee_type, b.overdue_state, b.start_time, b.end_time, b.pay_time, b.pay_infos, b.charge_time,
+        b.tax_rate, b.bill_no, b.total_amount, b.receivable_amount,
+        b.tax_amount, b.deductible_amount, b.overdue_amount, b.discount_amount, b.settle_amount, b.refund_amount, b.carried_amount, b.invoice_amount,b.reverse_amount,
+        b.deduction_amount, b.payee_name,  b.payer_name,  b.payer_label,
+        b.customer_label,  b.customer_name, b.sys_source, b.source, b.state, b.on_account, b.settle_state, b.refund_state, b.verify_state,
+        b.approved_state, b.carried_state, b.invoice_state, b.reconcile_state, b.mc_reconcile_state, b.account_handed, b.inference_state, b.bill_cost_type, b.separated,
+        b.reversed, b.adjusted, b.reference_state, b.pay_type, b.account_year, b.account_date, b.remark,
+        b.creator, b.creator_name, b.gmt_create, b.operator, b.operator_name, b.gmt_modify, b.ext_field1, b.ext_field2, b.ext_field3, b.ext_field4,
+        b.ext_field5, b.ext_field6, b.ext_field7, b.ext_field8, b.ext_field9, b.ext_field10, b.pay_infos as pay_str, b.payer_phone,b.receivable_date
+        from export_tmp_${tblName}_${tblNameSuffix} b where b.tid > #{tid}
+
+    </select>
+
+    <select id="queryReceivableBillCount" resultType="java.lang.Integer">
+        <!--<include refid="querySql" />-->
+        select count(1)
+        from export_tmp_${tblName}_${tblNameSuffix} b where b.tid > #{tid}
+
+    </select>
+
+    <select id="queryTemporaryChargeBill" resultType="com.wishare.finance.domains.bill.entity.TemporaryChargeBill">
+        <include refid="querySql" />
+    </select>
+
+    <select id="queryReceivableBillGroup" resultType="com.wishare.finance.domains.bill.dto.ReceivableBillGroupDto">
+        <include refid="querySql" />
+    </select>
+
+    <select id="queryAdvanceBill" resultType="com.wishare.finance.domains.bill.entity.AdvanceBill">
+        <include refid="querySql" />
+    </select>
+
+    <select id="queryAdvanceBillGroup" resultType="com.wishare.finance.domains.bill.dto.AdvanceBillGroupDto">
+        <include refid="querySql" />
+    </select>
+
+    <select id="queryOverDueReasonBill" resultType="com.wishare.finance.apps.model.configure.arrearsCategory.vo.ArrearsReasonBillV">
+        <include refid="querySql" />
+    </select>
+
+</mapper>

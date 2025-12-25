@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.invoicereceipt.repository.mapper.ReceiptMapper">
+
+    <resultMap id="baseMap" type="com.wishare.finance.domains.invoicereceipt.entity.invoicing.ReceiptE">
+        <result property="id" column="id"/>
+        <result property="invoiceReceiptId" column="invoice_receipt_id"/>
+        <result property="receiptNo" column="receipt_no"/>
+        <result property="paymentTime" column="payment_time"/>
+        <result property="paymentType" column="payment_type"/>
+        <result property="stampUrl" column="stamp_url"/>
+        <result property="receiptUrl" column="receipt_url"/>
+        <result property="signApplyNo" column="sign_apply_no"/>
+        <result property="signStatus" column="sign_status"/>
+        <result property="signReceiptUrl" column="sign_receipt_url"/>
+        <result property="signSealStatus" column="sign_seal_status"/>
+        <result property="signVoidStatus" column="sign_void_status"/>
+        <result property="sendStatus" column="send_status"/>
+        <result property="lastPushTime" column="last_push_time"/>
+        <result property="voidSendStatus" column="void_send_status"/>
+        <result property="scriptFileVos" column="script_file_vos" typeHandler="com.wishare.finance.domains.bill.support.ListFileVoTypeHandler"/>
+        <result property="signFileVos" column="sign_file_vos" typeHandler="com.wishare.finance.domains.bill.support.ListFileVoTypeHandler"/>
+        <result property="voidFileVos" column="void_file_vos" typeHandler="com.wishare.finance.domains.bill.support.ListFileVoTypeHandler"/>
+        <result property="voidSignApplyNo" column="void_sign_apply_no"/>
+        <result property="voidPdf" column="void_pdf"/>
+        <result property="discountInfo" column="discount_info"/>
+        <result property="deleted" column="deleted"/>
+        <result property="tenantId" column="tenant_id"/>
+        <result property="creatorName" column="creator_name"/>
+        <result property="creator" column="creator"/>
+        <result property="gmtCreate" column="gmt_create"/>
+        <result property="operatorName" column="operator_name"/>
+        <result property="operator" column="operator"/>
+        <result property="gmtModify" column="gmt_modify"/>
+    </resultMap>
+
+    <select id="queryPage" resultType="com.wishare.finance.apps.model.invoice.invoice.dto.ReceiptDto">
+        SELECT
+            DISTINCT
+               ir.id,
+               ir.bill_type,
+               ir.invoice_receipt_no,
+               ir.community_id,
+               ir.community_name,
+               ird.room_name,
+               ir.customer_id,
+               ir.customer_name,
+               ir.customer_phone,
+               ir.price_tax_amount,
+               ir.billing_time,
+               ir.clerk,
+               ir.state,
+               ir.sys_source,
+               ir.type,
+               ir.inv_rec_unit_id,
+               ir.inv_rec_unit_name,
+               ir.push_state,
+               r.sign_receipt_url,
+               r.sign_apply_no,
+               r.void_sign_apply_no,
+               r.sign_status,
+               r.receipt_url,
+               r.last_push_time,
+               r.sign_seal_status,
+               r.send_status,
+               r.sign_void_status,
+               r.void_pdf,
+               r.void_send_status,
+               ir.buyer_phone,
+               rt.template_style
+        FROM receipt r
+                 LEFT JOIN invoice_receipt ir ON ir.id = r.invoice_receipt_id
+                 LEFT JOIN receipt_template rt on rt.id = ir.receipt_template_id
+                 LEFT JOIN invoice_receipt_detail ird on ird.invoice_receipt_id = ir.id
+            ${ew.customSqlSegment}
+    </select>
+
+    <resultMap id="queryByElementBase" type="com.wishare.finance.apps.model.invoice.invoice.dto.ReceiptVDto">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="receiptUrl" column="receipt_url" jdbcType="VARCHAR"/>
+        <result property="signReceiptUrl" column="sign_receipt_url" jdbcType="VARCHAR"/>
+        <result property="invoiceReceiptNo" column="invoice_receipt_no" jdbcType="VARCHAR"/>
+        <result property="invoiceReceiptId" column="invoice_receipt_id" jdbcType="INTEGER"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="sendStatus" column="send_status" jdbcType="INTEGER"/>
+        <result property="signStatus" column="sign_status" jdbcType="INTEGER"/>
+        <result property="state" column="state" jdbcType="INTEGER"/>
+        <result property="voidSendStatus" column="void_send_status" jdbcType="INTEGER"/>
+        <result property="signApplyNo" column="sign_apply_no" jdbcType="VARCHAR"/>
+        <result property="voidSignApplyNo" column="void_sign_apply_no" jdbcType="VARCHAR"/>
+        <result property="signApplyNo" column="sign_apply_no" jdbcType="VARCHAR"/>
+        <result property="statutoryBodyName" column="statutory_body_name" jdbcType="VARCHAR"/>
+        <result column="room_name" property="roomName" jdbcType="VARCHAR"/>
+        <result column="community_id" property="communityId" jdbcType="VARCHAR"/>
+        <result column="community_name" property="communityName" jdbcType="VARCHAR"/>
+        <result property="email" column="email" jdbcType="VARCHAR"/>
+        <result property="pushMode" column="push_mode" jdbcType="VARCHAR" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result property="buyerPhone" column="buyer_phone" jdbcType="VARCHAR"/>
+        <result property="customerPhone" column="customer_phone" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="signFileVos" column="sign_file_vos" jdbcType="VARCHAR" typeHandler="com.wishare.finance.domains.bill.support.ListFileVoTypeHandler"/>
+        <result property="scriptFileVos" column="script_file_vos" jdbcType="VARCHAR" typeHandler="com.wishare.finance.domains.bill.support.ListFileVoTypeHandler"/>
+        <result property="voidFileVos" column="void_file_vos" jdbcType="VARCHAR" typeHandler="com.wishare.finance.domains.bill.support.ListFileVoTypeHandler"/>
+        <result property="statutoryBodyId" column="statutory_body_id" jdbcType="INTEGER"/>
+        <result property="billType" column="bill_type" jdbcType="INTEGER"/>
+        <result property="gatherBillId" column="gather_bill_id" jdbcType="INTEGER"/>
+        <result property="gatherBillNo" column="gather_bill_no" jdbcType="VARCHAR"/>
+
+    </resultMap>
+
+
+    <select id="queryByElement" resultMap="queryByElementBase">
+        <!-- CREATE INDEX IDX_irId ON wishare_finance.invoice_receipt_detail(invoice_receipt_id); -->
+        <!-- CREATE INDEX IDX_irId ON wishare_finance.receipt(invoice_receipt_id); -->
+        SELECT DISTINCT
+        r.id, <!-- invoice_receipt_detail存在多个数据费项区分 -->
+        r.receipt_url,
+        r.sign_receipt_url,
+        r.invoice_receipt_id,
+        r.tenant_id,
+        r.send_status,
+        r.sign_status,
+        r.sign_file_vos,
+        r.script_file_vos,
+        r.void_file_vos,
+        r.sign_apply_no,
+        r.void_sign_apply_no,
+        r.sign_apply_no,
+        r.creator,
+        r.creator_name,
+        r.operator,
+        r.operator_name,
+        r.void_send_status,
+        ir.state,
+        ir.invoice_receipt_no,
+        ir.customer_phone,
+        ir.statutory_body_name,
+        ir.community_id,
+        ir.community_name,
+        ir.push_mode,
+        ir.email,
+        ir.buyer_phone,
+        ir.statutory_body_id,
+        ird.room_name,
+        ird.gather_bill_id,
+        ird.gather_bill_no,
+        ird.bill_type
+        FROM
+        receipt r
+        LEFT JOIN invoice_receipt ir ON ir.id = r.invoice_receipt_id
+        LEFT JOIN invoice_receipt_detail ird ON ird.invoice_receipt_id = ir.id
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="statistics"
+            resultType="com.wishare.finance.apps.model.invoice.invoice.dto.ReceiptStatisticsDto">
+        SELECT
+            COUNT(*) as receiptTotal,
+            SUM( price_tax_amount ) AS priceTaxAmountTotal
+        FROM
+            (
+                SELECT DISTINCT
+                    ir.id,
+                    ir.price_tax_amount
+                FROM
+                    receipt r
+                        LEFT JOIN invoice_receipt ir ON ir.id = r.invoice_receipt_id
+                        LEFT JOIN invoice_receipt_detail ird ON ird.invoice_receipt_id = ir.id
+                    ${ew.customSqlSegment}
+            ) a
+    </select>
+
+    <!--通过账单ids和状态查询收据-->
+    <select id="getByBillIds" resultType="java.lang.Integer">
+        SELECT
+        COUNT(*)
+        FROM
+        receipt r
+        LEFT JOIN invoice_receipt ir ON ir.id = r.invoice_receipt_id
+        LEFT JOIN invoice_receipt_detail ird ON ird.invoice_receipt_id = r.invoice_receipt_id
+        <where>
+            <if test="billIds != null and billIds.size() > 0">
+                and ird.bill_id in
+                <foreach collection="billIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="invoiceReceiptState != null">
+                and ir.state = #{invoiceReceiptState}
+            </if>
+        </where>
+    </select>
+
+    <select id="getReceiptMessages"
+            resultType="com.wishare.finance.domains.invoicereceipt.dto.ReceiptMessageDto">
+        select invoice_receipt_id, receipt_url from receipt where invoice_receipt_id in
+        <foreach collection="invoiceReceiptIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="signingInProgress" resultMap="baseMap">
+        <!-- todo 当前表随着时间推移需要对 receipt 的gmt_creat 创建索引 (未建索引未来带来的问题发送短信、邮件延迟会很久) -->
+        select r.* from receipt r where
+                <if test="signSealStatusList != null and signSealStatusList.size() > 0">
+                    r.sign_seal_status in
+                    <foreach collection="signSealStatusList" item="item" separator="," open="(" close=")">
+                        #{item}
+                    </foreach>
+                </if>
+                <!-- 签章：开启 -->
+                and r.sign_status = 0
+                <!-- 过滤掉发送过的（已发送和未发送的和无需发送的） 不过滤空的 -->
+                and (r.send_status not in (2,3,4)
+                    or r.send_status is null)
+        and r.gmt_create <![CDATA[>= #{gmtCreate1}]]>
+    </select>
+
+    <select id="signingVoidProgress" resultMap="baseMap">
+        <!-- todo 当前表随着时间推移需要对 receipt 的gmt_modify 创建索引 (未建索引未来带来的问题发送短信、邮件延迟会很久) -->
+        select r.* from receipt r where
+        <if test="signVoidStatusList != null and signVoidStatusList.size() > 0">
+            r.sign_void_status in
+            <foreach collection="signVoidStatusList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <!-- 签章：开启 -->
+        and r.sign_status = 0
+        <!-- 过滤掉发送过的（已发送和未发送的） 不过滤空的 -->
+        and (r.void_send_status not in (2,3,4)
+        or r.void_send_status is null)
+        and r.gmt_modify <![CDATA[>= #{gmtCreate1}]]>
+    </select>
+</mapper>
+

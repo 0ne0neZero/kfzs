@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.GatherDetailMapper">
+
+    <update id="batchUpdateDetailInferenceSate" parameterType="java.util.List">
+        update gather_detail set inference_state = #{state} where id in
+        <foreach collection="list" open="(" separator="," close=")" item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateHandRecState">
+        update receivable_bill rb left join gather_detail gd on rb.id = gd.rec_bill_id and gd.sup_cp_unit_id = #{supCpUnitId}
+            set rb.account_handed = #{code}
+        where
+            gd.gather_bill_id = #{billId}
+            and rb.sup_cp_unit_id = #{supCpUnitId}
+    </update>
+
+    <select id="listInferenceInfoByIdAndInfer" resultType="com.wishare.finance.apps.model.bill.vo.BillInferenceV">
+        select b.id,
+               b.bill_no,
+               b.statutory_body_id,
+               b.statutory_body_name,
+               bd.sup_cp_unit_id   as communityId,
+               bd.sup_cp_unit_name as communityName,
+               bd.inference_state,
+               b.sys_source        as `source`,
+               b.sb_account_id,
+               bd.charge_item_id,
+               bd.charge_item_name,
+               bd.cp_unit_id       as roomId,
+               bd.cp_unit_name     as roomName,
+               b.start_time,
+               b.end_time,
+               b.out_bill_no,
+               b.out_bus_no,
+               b.currency,
+               b.total_amount,
+               b.discount_amount,
+               bd.pay_amount       as receivableAmount,
+               b.discount_amount,
+               b.carried_amount,
+               b.refund_amount,
+               b.invoice_amount,
+               b.payee_id,
+               b.payee_name,
+               b.payer_id,
+               b.payer_name,
+               b.state,
+               b.on_account,
+               b.refund_state,
+               b.verify_state,
+               b.approved_state,
+               b.carried_state,
+               b.invoice_state,
+               b.reversed,
+               b.reconcile_state,
+               b.tax_rate,
+               bd.id               as concatId,
+               bd.pay_time         as gmtCreate,
+               bd.cost_center_id,
+               bd.cost_center_name,
+               bd.rec_bill_id      as taxBillId,
+               bd.gather_type      as taxBillType
+        from gather_detail bd
+                 inner join gather_bill b on bd.gather_bill_id = b.id ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryByGatherBillIdIgnore" resultType="com.wishare.finance.domains.bill.entity.GatherDetail">
+        select * from gather_detail
+        where (gather_bill_id = #{id} or rec_bill_id = #{id}) and sup_cp_unit_id = #{supCpUnitId}
+
+    </select>
+    <select id="listGatherBillByRecIdAndSupCpUnitId" resultType="com.wishare.finance.domains.bill.entity.GatherDetail">
+      select * from gather_detail
+      where rec_bill_id = #{id} and sup_cp_unit_id = #{supCpUnitId} and deleted = 0
+        order by gmt_create desc;
+
+    </select>
+    <select id="listGatherBillByRecIdAndSupCpUnitIds" resultType="com.wishare.finance.domains.bill.entity.GatherDetail">
+        select * from gather_detail
+        where rec_bill_id in
+        <foreach collection="ids" item="item" separator="," open="(" close=")">
+            ${item}
+        </foreach>
+
+          and sup_cp_unit_id = #{supCpUnitId} and deleted = 0
+        order by gmt_create desc;
+
+    </select>
+    <select id="getFundReceiptsBillZJList"
+            resultType="com.wishare.finance.domains.voucher.support.zhongjiao.strategy.core.PushZJBusinessBill">
+        SELECT
+            gd.id as gatherBillDetailId,
+            gd.gather_bill_id as gatherBillId,
+            gd.gather_bill_no as gatherBillNo,
+            rb.id as billId,
+            rb.bill_no,
+            rb.bill_type,
+            rb.community_id,
+            rb.community_name,
+            rb.charge_item_id,
+            rb.charge_item_name,
+            rb.cost_center_id,
+            rb.cost_center_name,
+            rb.account_date,
+            rb.customer_id AS customId,
+            rb.customer_name AS customName,
+            rb.payee_id,
+            rb.payee_name,
+            rb.payer_id,
+            rb.payer_name,
+            rb.payer_type,
+            gd.invoice_state,
+            rb.tax_rate_id,
+            rb.tax_rate,
+            if(rb.ext_field6 is null, rb.tax_amount, rb.tax_amount_new) as taxAmount,
+            rb.overdue_amount,
+            rb.discount_amount,
+            gd.refund_amount,
+            rb.carried_amount,
+            gd.pay_amount - gd.refund_amount as settleAmount,
+            rb.receivable_amount,
+            rb.bill_cost_type,
+            rb.business_unit_id,
+            rb.room_id,
+            rb.sb_account_id,
+            rb.sys_source,
+            rb.room_name,
+            rb.start_time,
+            rb.end_time,
+            rb.ext_field6 as contractId,
+            rb.room_name,
+            gd.refund_amount,
+            rb.ext_field6 as innerContractId,
+            rb.ext_field8 as taxRateStr,
+            rb.contract_no as innerContractNo,
+            rb.pay_time as payTime
+        from
+            ${gatherDetailTableName} gd
+                left join ${receivableBillTableName} rb on gd.rec_bill_no = rb.bill_no
+            ${ew.customSqlSegment}
+
+        UNION ALL
+            SELECT
+                gd.id as gatherBillDetailId,
+                gd.gather_bill_id as gatherBillId,
+                gd.gather_bill_no as gatherBillNo,
+                rb.id as billId,
+                rb.bill_no,
+                2 as bill_type,
+                rb.community_id,
+                rb.community_name,
+                rb.charge_item_id,
+                rb.charge_item_name,
+                rb.cost_center_id,
+                rb.cost_center_name,
+                rb.account_date,
+                rb.customer_id AS customId,
+                rb.customer_name AS customName,
+                rb.payee_id,
+                rb.payee_name,
+                rb.payer_id,
+                rb.payer_name,
+                rb.payer_type,
+                gd.invoice_state,
+                rb.tax_rate_id,
+                rb.tax_rate,
+                rb.tax_amount,
+                rb.overdue_amount,
+                rb.discount_amount,
+                gd.refund_amount,
+                rb.carried_amount,
+                gd.pay_amount - gd.refund_amount  as settleAmount,
+                rb.receivable_amount,
+                rb.bill_cost_type,
+                rb.business_unit_id,
+                rb.room_id,
+                rb.sb_account_id,
+                rb.sys_source,
+                rb.room_name,
+                rb.start_time,
+                rb.end_time,
+                rb.ext_field6 as contractId,
+                rb.room_name,
+                gd.refund_amount,
+                null as innerContractId,
+                null as taxRateStr,
+                null as innerContractNo,
+                rb.pay_time as payTime
+            from
+                ${gatherDetailTableName} gd
+                left join advance_bill rb on gd.rec_bill_no = rb.bill_no
+            ${ew.customSqlSegment}
+    </select>
+
+
+  <update id="updateCostMsgByRoomIds">
+    UPDATE ${gatherDetailName} as gd
+    INNER JOIN ${receivableBillName} AS r ON gd.rec_bill_id = r.id AND r.bill_type = #{billType}
+    SET gd.cost_center_id = #{costCenterId},gd.cost_center_name =#{costCenterName}
+    WHERE gd.cp_unit_id IN
+    <foreach collection="list" item="item" open="(" close=")" separator=",">
+      #{item}
+    </foreach>
+    and  gd.sup_cp_unit_id = #{supCpUnitId}
+  </update>
+
+  <update id="updateCostMsgBySupCpUnitId">
+    UPDATE ${gatherDetailName} as gd
+    INNER JOIN ${receivableBillName} AS r ON gd.rec_bill_id = r.id AND r.bill_type = #{billType}
+    SET gd.cost_center_id = #{costCenterId},gd.cost_center_name =#{costCenterName}
+    WHERE gd.sup_cp_unit_id = #{supCpUnitId}
+  </update>
+
+
+
+
+
+
+  <update id="updateCostMsgByRoomIdsAdv">
+    UPDATE ${gatherDetailName} as gd
+    INNER JOIN advance_bill AS ab ON gd.rec_bill_id = ab.id
+    SET gd.cost_center_id = #{costCenterId},gd.cost_center_name =#{costCenterName}
+    WHERE gd.cp_unit_id IN
+    <foreach collection="list" item="item" open="(" close=")" separator=",">
+      #{item}
+    </foreach>
+    and  gd.sup_cp_unit_id = #{supCpUnitId}
+  </update>
+
+  <update id="updateCostMsgBysupCpUnitIdAdv">
+    UPDATE ${gatherDetailName} as gd
+    INNER JOIN advance_bill AS ab ON gd.rec_bill_id = ab.id
+    SET gd.cost_center_id = #{costCenterId},gd.cost_center_name =#{costCenterName}
+    WHERE gd.sup_cp_unit_id = #{supCpUnitId}
+  </update>
+
+
+
+
+    <select id="statisticsGather" resultType="java.lang.Long">
+      SELECT SUM(subquery.payAmount) from
+      (SELECT gd.id,sum(pay_amount) as payAmount
+      FROM
+        ${gatherBillName} b
+        INNER JOIN ${gatherDetailName} gd ON b.id = gd.gather_bill_id and gd.available = 0
+        and gd.deleted = 0 and b.deleted = 0
+        ${ew.customSqlSegment}
+        group by gd.id
+        ) AS subquery;
+  </select>
+
+    <select id="getAllDetailByGatherBillIds" resultType="com.wishare.finance.domains.bill.entity.GatherDetail">
+        select * from gather_detail
+        where gather_bill_id in
+        <foreach collection="gatherBillIds" item="item" separator="," open="(" close=")">
+            ${item}
+        </foreach>
+        and sup_cp_unit_id = #{supCpUnitId} and deleted in (0,1)
+    </select>
+
+    <select id="getAllDetailByIds" resultType="com.wishare.finance.domains.bill.entity.GatherDetail">
+        select * from gather_detail
+        where id in
+        <foreach collection="ids" item="item" separator="," open="(" close=")">
+            ${item}
+        </foreach>
+        and sup_cp_unit_id = #{supCpUnitId} and deleted in (0,1)
+    </select>
+
+    <select id="queryPageGatherDetail"
+    resultType="com.wishare.finance.apps.model.bill.vo.GatherDetailV">
+      SELECT
+        id,
+        gather_bill_id,
+        gather_bill_no,
+        rec_bill_id,
+        rec_bill_no,
+        sup_cp_unit_id,
+        sup_cp_unit_name,
+        cp_unit_id,
+        cp_unit_name,
+        charge_item_id,
+        charge_item_name,
+        pay_amount,
+        rec_pay_amount,
+        refund_amount,
+        carried_amount,
+        deduction_amount,
+        invoice_amount,
+        charge_start_time,
+        charge_end_time,
+        pay_time,
+        pay_way,
+        pay_channel,
+        payer_id,
+        payer_name,
+        payer_type,
+        payer_phone
+      FROM
+        gather_detail b
+        ${ew.customSqlSegment}
+      ORDER BY
+        pay_time,id DESC
+  </select>
+</mapper>

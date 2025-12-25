@@ -1,0 +1,659 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.report.repository.mapper.ReportMapper">
+
+    <select id="chargeDailyReportPage" resultType="com.wishare.finance.domains.report.dto.ChargeDailyReportPageDto">
+        SELECT
+            '1' as billType,
+            rb.id,
+            rb.sup_cp_unit_name as communityName,
+            rb.cp_unit_name as roomName,
+            rb.cp_unit_id as roomId,
+            rb.bill_no,
+            rb.charge_item_name,
+            gd.payee_name,
+            gd.pay_amount AS pay_amount,
+            gd.out_pay_no AS remark,
+            gd.pay_channel,
+            c.invoice_receipt_no
+        FROM
+            gather_detail gd
+            LEFT JOIN receivable_bill rb ON gd.rec_bill_id = rb.id
+            LEFT JOIN (
+                SELECT
+                    GROUP_CONCAT( ir.invoice_receipt_no ) AS invoice_receipt_no,
+                    ird.bill_id
+                FROM invoice_receipt ir
+                LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+                GROUP BY ird.bill_id
+            ) c ON c.bill_id = rb.id
+        WHERE
+            rb.cp_unit_id IS NOT NULL
+            and rb.state in (0,1)
+            AND rb.approved_state = 2
+            AND rb.carried_state in (0,1,2)
+            AND rb.reversed = 0
+            AND rb.refund_state in (0,1,2)
+            AND rb.bill_label is null
+            <if test="chargeDate != null">
+                and date_format(gd.pay_time,'%Y-%m-%d') = #{chargeDate}
+            </if>
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    AND
+                </if>
+                ${ew.sqlSegment}
+            </if>
+        UNION ALL
+        SELECT
+        '2' as billType,
+        rb.id,
+        rb.sup_cp_unit_name as communityName,
+        rb.cp_unit_name as roomName,
+        rb.cp_unit_id as roomId,
+        rb.bill_no,
+        rb.charge_item_name,
+        gd.payee_name,
+        gd.pay_amount AS pay_amount,
+        gd.out_pay_no AS remark,
+        gd.pay_channel,
+        c.invoice_receipt_no
+        FROM
+        gather_detail gd
+        LEFT JOIN advance_bill rb ON gd.gather_bill_id = rb.id
+        LEFT JOIN (
+        SELECT
+        GROUP_CONCAT( ir.invoice_receipt_no ) AS invoice_receipt_no,
+        ird.bill_id
+        FROM invoice_receipt ir
+        LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+        GROUP BY ird.bill_id
+        ) c ON c.bill_id = rb.id
+        WHERE
+        rb.cp_unit_id IS NOT NULL
+        and rb.state in (0,1)
+        AND rb.approved_state = 2
+        AND rb.carried_state != 3
+        AND rb.reversed = 0
+        AND rb.refund_state in (0,1,2)
+        AND rb.bill_label is null
+        <if test="chargeDate != null">
+            and date_format(gd.pay_time,'%Y-%m-%d') = #{chargeDate}
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+    </select>
+
+    <select id="chargeReductionReportPage" resultType="com.wishare.finance.domains.report.dto.ChargeReductionReportPageDto">
+        SELECT
+            '1' as billType,
+            b.start_time,
+            b.id,
+            b.sup_cp_unit_name as communityName,
+            b.cp_unit_name as roomName,
+            b.charge_item_name,
+            b.total_amount as receivableAmount,
+            bad.adjust_amount as reductionAmount,
+            CONCAT(DATE_FORMAT(b.start_time,'%Y-%m-%d'),'至',DATE_FORMAT(b.end_time,'%Y-%m-%d')) as reductionTime,
+            bap.out_approve_id as reductionNo,
+            (ABS(bad.adjust_amount) / b.total_amount)  as reductionRatio,
+            DATE_FORMAT(bap.gmt_create,'%Y-%m-%d') as initiationTime,
+            DATE_FORMAT(bap.gmt_modify,'%Y-%m-%d') as approvedTime,
+            bap.approved_remark,
+            bad.state as approvedState,
+            CASE bad.adjust_way
+                WHEN 1 THEN '应收减免'
+                WHEN 2 THEN '应收减免'
+                WHEN 3 THEN '应收减免'
+                WHEN 4 THEN '实收减免'
+                WHEN 5 THEN '实收减免'
+                WHEN 6 THEN '实收减免'
+                WHEN 7 THEN '实收减免'
+                WHEN 8 THEN '实收减免'
+                ELSE '减免' END
+            as reductionType,
+            bad.reason as reductionReason
+        FROM
+            receivable_bill b
+            LEFT JOIN
+            bill_adjust bad on b.id = bad.bill_id
+            LEFT JOIN
+            bill_approve bap on bad.bill_approve_id = bap.id
+        WHERE
+            bad.adjust_type = 1
+            and bad.state in (1,2,3)
+            and b.cp_unit_id IS NOT NULL
+            AND b.approved_state = 2
+            and b.state in (0,1)
+            and b.carried_state in (0,1,2)
+            and b.reversed = 0
+            and b.refund_state in (0,1,2)
+            AND b.bill_label is null
+            <if test="reductionEndDate != null and reductionStartDate != null ">
+                and b.start_time BETWEEN #{reductionStartDate} and #{reductionEndDate}
+            </if>
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    AND
+                </if>
+                ${ew.sqlSegment}
+            </if>
+        UNION ALL
+        SELECT
+            '2' as billType,
+            b.start_time,
+            b.id,
+            b.sup_cp_unit_name as communityName,
+            b.cp_unit_name as roomName,
+            b.charge_item_name,
+            b.total_amount as receivableAmount,
+            bad.adjust_amount as reductionAmount,
+            CONCAT(DATE_FORMAT(b.start_time,'%Y-%m-%d'),'至',DATE_FORMAT(b.end_time,'%Y-%m-%d')) as reductionTime,
+            bap.out_approve_id as reductionNo,
+            (ABS(bad.adjust_amount) / b.total_amount)  as reductionRatio,
+            DATE_FORMAT(bap.gmt_create,'%Y-%m-%d') as initiationTime,
+            DATE_FORMAT(bap.gmt_modify,'%Y-%m-%d') as approvedTime,
+            bap.approved_remark,
+            bad.state as approvedState,
+            bad.adjust_way as reductionType,
+            bad.reason as reductionReason
+        FROM
+            advance_bill b
+        LEFT JOIN
+            bill_adjust bad on b.id = bad.bill_id
+        LEFT JOIN
+            bill_approve bap on bad.bill_approve_id = bap.id
+        WHERE
+            bad.adjust_type = 1
+            and bad.state in (1,2,3)
+            and b.cp_unit_id IS NOT NULL
+            AND b.approved_state = 2
+            and b.state != 2
+            and b.carried_state != 3
+            and b.reversed != 1
+            and b.refund_state != 3
+            AND b.bill_label is null
+            <if test="reductionEndDate != null and reductionStartDate != null ">
+                and b.start_time BETWEEN #{reductionStartDate} and #{reductionEndDate}
+                and b.end_time BETWEEN #{reductionStartDate} and #{reductionEndDate}
+            </if>
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    AND
+                </if>
+                ${ew.sqlSegment}
+            </if>
+        ORDER BY start_time DESC
+    </select>
+
+    <select id="chargeDailyReportChargeItemTotal" resultType="com.wishare.finance.domains.report.dto.ChargeDailyReportTotalDto">
+        SELECT
+        charge_item_name as name,
+        sum( pay_amount ) AS amount
+        FROM (
+        SELECT
+        rb.charge_item_name,
+        gd.pay_amount,
+        DATE_FORMAT( gd.pay_time, '%Y-%m-%d' ) AS settle_time,
+        gd.pay_channel,
+        c.invoice_receipt_no
+        FROM
+        gather_detail gd
+        LEFT JOIN receivable_bill rb ON gd.rec_bill_id = rb.id
+        LEFT JOIN (
+        SELECT
+        GROUP_CONCAT( ir.invoice_receipt_no ) AS invoice_receipt_no,
+        ird.bill_id
+        FROM
+        invoice_receipt ir
+        LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+        GROUP BY
+        ird.bill_id
+        ) c ON c.bill_id = rb.id
+        WHERE
+        rb.cp_unit_id IS NOT NULL
+        and rb.state in (0,1)
+        AND rb.approved_state = 2
+        and rb.carried_state in (0,1,2)
+        and rb.reversed = 0
+        and rb.refund_state in (0,1,2)
+        AND rb.bill_label is null
+        <if test="chargeDate != null">
+            and date_format(gd.pay_time,'%Y-%m-%d') = #{chargeDate}
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        UNION ALL
+        SELECT
+        rb.charge_item_name,
+        gd.pay_amount,
+        DATE_FORMAT( gd.pay_time, '%Y-%m-%d' ) AS settle_time,
+        gd.pay_channel,
+        c.invoice_receipt_no
+        FROM
+        gather_detail gd
+        LEFT JOIN advance_bill rb ON gd.gather_bill_id = rb.id
+        LEFT JOIN (
+        SELECT
+        GROUP_CONCAT( ir.invoice_receipt_no ) AS invoice_receipt_no,
+        ird.bill_id
+        FROM invoice_receipt ir
+        LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+        GROUP BY ird.bill_id
+        ) c ON c.bill_id = rb.id
+        WHERE
+        rb.cp_unit_id IS NOT NULL
+        and rb.state in (0,1)
+        AND rb.approved_state = 2
+        AND rb.carried_state in (0,1,2)
+        AND rb.reversed = 0
+        AND rb.refund_state in (0,1,2)
+        AND rb.bill_label is null
+        <if test="chargeDate != null">
+            and date_format(gd.pay_time,'%Y-%m-%d') = #{chargeDate}
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        ) a GROUP BY charge_item_name
+    </select>
+
+    <select id="chargeDailyReportPayChannelTotal" resultType="com.wishare.finance.domains.report.dto.ChargeDailyReportTotalDto">
+        SELECT
+        pay_channel as name,
+        sum( pay_amount ) AS amount
+        FROM (
+        SELECT
+        rb.charge_item_name,
+        gd.pay_amount,
+        DATE_FORMAT( gd.pay_time, '%Y-%m-%d' ) AS settle_time,
+        gd.pay_channel,
+        c.invoice_receipt_no
+        FROM
+        gather_detail gd
+        LEFT JOIN receivable_bill rb ON gd.rec_bill_id = rb.id
+        LEFT JOIN (
+        SELECT
+        GROUP_CONCAT( ir.invoice_receipt_no ) AS invoice_receipt_no,
+        ird.bill_id
+        FROM
+        invoice_receipt ir
+        LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+        GROUP BY
+        ird.bill_id
+        ) c ON c.bill_id = rb.id
+        WHERE
+        rb.cp_unit_id IS NOT NULL
+        and rb.state in (0,1)
+        AND rb.approved_state = 2
+        and rb.carried_state in (0,1,2)
+        and rb.reversed = 0
+        and rb.refund_state in (0,1,2)
+        AND rb.bill_label is null
+        <if test="chargeDate != null">
+            and date_format(gd.pay_time,'%Y-%m-%d') = #{chargeDate}
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        UNION ALL
+        SELECT
+        rb.charge_item_name,
+        gd.pay_amount,
+        DATE_FORMAT( gd.pay_time, '%Y-%m-%d' ) AS settle_time,
+        gd.pay_channel,
+        c.invoice_receipt_no
+        FROM
+        gather_detail gd
+        LEFT JOIN advance_bill rb ON gd.gather_bill_id = rb.id
+        LEFT JOIN (
+        SELECT
+        GROUP_CONCAT( ir.invoice_receipt_no ) AS invoice_receipt_no,
+        ird.bill_id
+        FROM invoice_receipt ir
+        LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+        GROUP BY ird.bill_id
+        ) c ON c.bill_id = rb.id
+        WHERE
+        rb.cp_unit_id IS NOT NULL
+        and rb.state in (0,1)
+        AND rb.approved_state = 2
+        AND rb.carried_state != 3
+        AND rb.reversed != 1
+        AND rb.refund_state != 3
+        AND rb.bill_label is null
+        <if test="chargeDate != null">
+            and date_format(gd.pay_time,'%Y-%m-%d') = #{chargeDate}
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        ) a GROUP BY pay_channel
+    </select>
+
+    <select id="chargeCollectionRateReportPage" resultType="com.wishare.finance.domains.report.dto.ChargeCollectionRateReportPageDto">
+        SELECT
+            c.invoiceType,
+            b.charging_area,
+            b.cost_center_id,
+            b.sup_cp_unit_name as communityName,
+            b.cp_unit_name as roomName,
+            b.cp_unit_id as roomId,
+            b.charge_item_name,
+            b.charge_item_id,
+            sum( total_amount ) AS totalAmount,
+            sum( b.deductible_amount ) AS deductibleAmount,
+            sum( b.discount_amount ) AS discountAmount,
+            sum( b.settle_amount - b.refund_amount - b.carried_amount ) AS actualPayAmount,
+            sum( b.total_amount - b.deductible_amount + b.refund_amount + b.carried_amount - b.settle_amount ) AS actualUnPayAmount,
+            sum( b.settle_amount - b.refund_amount - b.carried_amount ) / sum( b.total_amount - b.deductible_amount ) AS collectionRate,
+            max( b.charge_time ) AS chargeTime
+        FROM
+            receivable_bill b
+            LEFT JOIN (
+                SELECT
+                    GROUP_CONCAT( ir.type ) AS invoiceType,
+                    ird.bill_id
+                FROM
+                    invoice_receipt ir
+                        LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+                GROUP BY
+                    ird.bill_id
+            ) c ON c.bill_id = b.id
+        WHERE
+            b.cp_unit_id IS NOT NULL
+            AND b.state in (0,1)
+            AND b.approved_state = 2
+            AND b.carried_state in (0,1,2)
+            AND b.reversed = 0
+            AND b.bill_label is null
+            AND b.refund_state in (0,1,2)
+            <if test="startDate != null and endDate != null ">
+                and b.start_time BETWEEN #{startDate} and #{endDate}
+            </if>
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    AND
+                </if>
+                ${ew.sqlSegment}
+            </if>
+            GROUP BY
+            b.cp_unit_id,
+            b.charge_item_id
+    </select>
+
+    <select id="queryChargeClosingDate" resultType="com.wishare.finance.domains.report.dto.ChargeClosingDateDto">
+        SELECT
+            GROUP_CONCAT( DISTINCT rb.cp_unit_id,rb.charge_item_id) as roomIdAndChargeItemId,
+            rb.cp_unit_id as roomId,
+            rb.cp_unit_name as roomName,
+            rb.charge_item_id,
+            rb.charge_item_name,
+            max( rb.charge_time ) as chargeTime
+        FROM
+            receivable_bill rb
+        WHERE
+            rb.cp_unit_id IS NOT NULL
+            AND rb.state in (0,1)
+            AND rb.approved_state = 2
+            AND rb.carried_state in (0,1,2)
+            AND rb.reversed = 0
+            AND rb.refund_state in (0,1,2)
+            AND rb.bill_label is null
+            <if test="roomIdList != null and roomIdList.size() > 0">
+                and rb.cp_unit_id in
+                <foreach collection="roomIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="chargeItemIdList != null and chargeItemIdList.size() > 0">
+                and rb.charge_item_id in
+                <foreach collection="chargeItemIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        GROUP BY
+            rb.cp_unit_id,
+            rb.charge_item_id
+    </select>
+
+    <select id="queryLastYearArrearsReceiveInfo" resultType="com.wishare.finance.domains.report.dto.ChargeLastYearArrearsReceiveDto">
+        select
+            GROUP_CONCAT( DISTINCT rb.cp_unit_id,rb.charge_item_id) as roomIdAndChargeItemId,
+            rb.cp_unit_id as roomId,
+            rb.cp_unit_name as roomName,
+            rb.charge_item_id,
+            rb.charge_item_name,
+            sum(rb.total_amount - rb.deductible_amount + rb.refund_amount + rb.carried_amount - rb.settle_amount) as earlyReceivableAmount,
+            sum(rb.deductible_amount) as earlyDeductibleAmount
+        from receivable_bill rb
+        where rb.cp_unit_id IS NOT NULL
+            and rb.settle_state in (0,1)
+            AND rb.state in (0,1)
+            AND rb.approved_state = 2
+            AND rb.carried_state in (0,1,2)
+            AND rb.reversed = 0
+            AND rb.refund_state in (0,1,2)
+            AND rb.bill_label is null
+            <if test="lastYearStartDate != null and lastYearEndDate != null ">
+                and rb.start_time BETWEEN #{lastYearStartDate} and #{lastYearEndDate}
+                and rb.end_time BETWEEN #{lastYearStartDate} and #{lastYearEndDate}
+            </if>
+            <if test="roomIdList != null and roomIdList.size() > 0">
+                and rb.cp_unit_id in
+                <foreach collection="roomIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="chargeItemIdList != null and chargeItemIdList.size() > 0">
+                and rb.charge_item_id in
+                <foreach collection="chargeItemIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        GROUP BY
+            rb.cp_unit_id,
+            rb.charge_item_id
+    </select>
+
+    <select id="queryLastYearArrearsSettleInfo" resultType="com.wishare.finance.domains.report.dto.ChargeLastYearArrearsSettleDto">
+        select
+            GROUP_CONCAT( DISTINCT rb.cp_unit_id,rb.charge_item_id) as roomIdAndChargeItemId,
+            rb.cp_unit_id as roomId,
+            rb.cp_unit_name as roomName,
+            rb.charge_item_id,
+            rb.charge_item_name,
+            sum(rb.discount_amount) as earlyDiscountAmount,
+            sum(gd.pay_amount) as earlyActualPayAmount
+        from receivable_bill rb
+                 left join gather_detail gd on gd.rec_bill_id = rb.id
+        where
+            rb.cp_unit_id IS NOT NULL
+            and rb.settle_state in (0,1)
+            AND rb.state in (0,1)
+            AND rb.approved_state = 2
+            AND rb.carried_state in (0,1,2)
+            AND rb.reversed = 0
+            AND rb.refund_state in (0,1,2)
+            AND rb.bill_label is null
+            <if test="startDate != null and endDate != null ">
+                and gd.pay_time BETWEEN #{startDate} and #{endDate}
+            </if>
+            <if test="roomIdList != null and roomIdList.size() > 0">
+                and rb.cp_unit_id in
+                <foreach collection="roomIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="chargeItemIdList != null and chargeItemIdList.size() > 0">
+                and rb.charge_item_id in
+                <foreach collection="chargeItemIdList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        GROUP BY
+            rb.cp_unit_id,
+            rb.charge_item_id
+    </select>
+
+
+    <select id="exportGenerateBillReportList"
+            resultType="com.wishare.finance.domains.report.dto.ChargeGenerateDto">
+        SELECT
+            community_id,
+            community_name,
+            room_id,
+            room_name,
+            charge_item_name,
+            GROUP_CONCAT( start_time ) AS start_time
+        FROM
+            receivable_bill
+        WHERE
+        deleted = 0
+        AND bill_label is null
+        and start_time <![CDATA[ >=  ]]> #{startDate}
+        AND end_time <![CDATA[ < ]]> #{endDate}
+        <if test="chargeItemName != null and chargeItemName != ''">
+            and charge_item_name = #{chargeItemName}
+        </if>
+        <if test="communitIds != null and communitIds.size > 0">
+            and community_id in (
+            <foreach collection="communitIds" item="item" separator=" or ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="roomId != null and roomId.size > 0">
+            and room_id in (
+            <foreach collection="roomId" item="item" separator=" or ">
+                #{item}
+            </foreach>
+            )
+        </if>
+        GROUP BY
+            community_id,
+            room_id,
+            charge_item_id
+        ORDER BY start_time DESC
+    </select>
+
+    <select id="advanceRateReportPage" resultType="com.wishare.finance.domains.report.dto.AdvanceRateReportPageDto">
+        select GROUP_CONCAT(DISTINCT cost_center_id) as cost_center_id,
+        cost_center_name,
+        communityId,
+        communityName,
+        roomId,
+        roomName,
+        charge_item_id,
+        charge_item_name,
+        sum( receivableAmount) as totalAmount,
+        sum( actualPayAmount ) AS actualPayAmount
+        from(
+            SELECT
+            GROUP_CONCAT(DISTINCT b.cost_center_id) as cost_center_id,
+            b.cost_center_name,
+            b.sup_cp_unit_id as communityId,
+            b.sup_cp_unit_name as communityName,
+            b.cp_unit_id as roomId,
+            b.cp_unit_name as roomName,
+            b.charge_item_id,
+            b.charge_item_name,
+            sum( b.receivable_amount) as receivableAmount,
+            sum( b.settle_amount - b.refund_amount - b.carried_amount ) AS actualPayAmount,
+            c.invoiceType
+            FROM
+            receivable_bill b
+            LEFT JOIN gather_detail gd ON gd.rec_bill_id = b.id
+            LEFT JOIN (
+            SELECT
+            GROUP_CONCAT( ir.type ) AS invoiceType,
+            ird.bill_id
+            FROM invoice_receipt ir
+            LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+            GROUP BY ird.bill_id
+            ) c ON c.bill_id = b.id
+            WHERE
+            b.cp_unit_id IS NOT NULL
+            AND b.state IN ( 0, 1 )
+            AND b.approved_state = 2
+            AND b.bill_label IS NULL
+            AND b.carried_state IN ( 0, 1,2 )
+            AND b.reversed = 0
+            AND b.refund_state IN ( 0, 1,2 )
+            AND gd.pay_time <![CDATA[< ]]> #{startDate}
+            <if test="startDate != null and endDate != null ">
+                and b.start_time BETWEEN #{startDate} and #{endDate}
+            </if>
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    AND
+                </if>
+                ${ew.sqlSegment}
+            </if>
+            GROUP BY
+            b.cp_unit_id,
+            b.charge_item_id
+            UNION ALL
+            SELECT
+            GROUP_CONCAT(DISTINCT b.cost_center_id) as cost_center_id,
+            b.cost_center_name,
+            b.sup_cp_unit_id as communityId,
+            b.sup_cp_unit_name as communityName,
+            b.cp_unit_id as roomId,
+            b.cp_unit_name as roomName,
+            b.charge_item_id,
+            b.charge_item_name,
+            sum( b.receivable_amount) as receivableAmount,
+            sum( b.settle_amount - b.refund_amount - b.carried_amount ) AS actualPayAmount,
+            c.invoiceType
+            FROM
+            advance_bill b
+            LEFT JOIN gather_detail gd ON gd.gather_bill_id = b.id
+            LEFT JOIN (
+            SELECT
+            GROUP_CONCAT( ir.type ) AS invoiceType,
+            ird.bill_id
+            FROM invoice_receipt ir
+            LEFT JOIN invoice_receipt_detail ird ON ir.id = ird.invoice_receipt_id
+            GROUP BY ird.bill_id
+            ) c ON c.bill_id = b.id
+            WHERE
+            b.cp_unit_id IS NOT NULL
+            AND b.state IN ( 0, 1 )
+            AND b.approved_state = 2
+            AND b.carried_state IN ( 0, 1 ,2)
+            AND b.reversed = 0
+            AND b.refund_state IN ( 0, 1 ,2)
+            AND b.bill_label IS NULL
+            <if test="startDate != null and endDate != null ">
+                and b.start_time BETWEEN #{startDate} and #{endDate}
+            </if>
+            <if test="ew != null">
+                <if test="ew.nonEmptyOfWhere">
+                    AND
+                </if>
+                ${ew.sqlSegment}
+            </if>
+            GROUP BY
+            b.cp_unit_id,
+            b.charge_item_id
+        ) a GROUP BY roomId,charge_item_id
+    </select>
+</mapper>

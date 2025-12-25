@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.reconciliation.repository.mapper.FlowClaimRecordMapper">
+    <sql id="flow_details_fields">
+        f.id,
+        f.serial_number,
+        f.claim_amount,
+        f.settle_amount,
+        f.claim_date,
+        f.our_account,
+        f.our_name,
+        f.our_bank,
+        f.trading_platform,
+        f.invoice_id,
+        f.flow_id,
+        f.room_id,
+        f.community_id,
+        f.tenant_id,
+        f.deleted,
+        f.creator,
+        f.creator_name,
+        f.gmt_create,
+        f.operator,
+        f.operator_name,
+        f.gmt_modify
+    </sql>
+
+    <select id="queryRecordPage" resultType="com.wishare.finance.domains.reconciliation.entity.FlowClaimRecordE">
+        select f.*
+        from flow_claim_record f
+            LEFT JOIN statutory_body_account sba
+                ON f.our_account = sba.bank_account
+            LEFT JOIN bank_account_cost_org ba
+                ON ba.bank_account_id = sba.id
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryIdByFlowId" resultType="java.lang.Long">
+        SELECT flow_claim_record_id
+        FROM flow_claim_detail
+        WHERE flow_id = #{flowId}
+        and state = 0 and deleted = 0
+        LIMIT 1
+    </select>
+
+
+    <select id="queryIdByFlowIds" resultType="java.lang.Long">
+        SELECT distinct flow_claim_record_id
+        FROM flow_claim_detail
+        WHERE flow_id in
+        <foreach collection="flowIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+          and state = 0 and deleted = 0
+    </select>
+
+
+    <select id="getPageRecord" resultType="com.wishare.finance.apps.model.reconciliation.vo.FlowRecordPageV">
+        select f.id,
+               f.serial_number,
+               CASE
+                 WHEN f.difference_flag = 0
+                     THEN 0
+                   ELSE 1
+                   END as flowType,
+               f.claim_type,
+               f.claim_amount / 100 as claimAmount,
+               f.settle_amount / 100 as settleAmount,
+               (f.settle_amount -  f.claim_amount) / 100  as compareAmount,
+               f.approve_state,
+               f.claim_name  as operatorName,
+               f.claim_date as  claimDateTime,
+               f.sup_cp_unit_id,
+               f.push_state,
+               f.sup_cp_unit_name as supCpUnitName,
+               f.our_account as bankAccount,
+               f.flow_files,
+               f.report_files,
+                CASE
+                WHEN MIN(fd.pay_time) = MAX(fd.pay_time)
+                THEN MIN(fd.pay_time)
+                ELSE CONCAT(MIN(fd.pay_time), ' - ', MAX(fd.pay_time))
+                END AS payTime,
+              f.difference_remark,
+              f.difference_reason,
+              f.review_comments,
+              f.refuse_name,
+              f.refuse_time,
+              f.pay_channel_type,
+              f.voucher_bill_no,
+              f.voucher_bill_id,
+              group_concat(DISTINCT concat(fd.id,' ',fd.serial_number)) as flowDetailSimpleStr
+        from flow_claim_record f
+        left join flow_claim_detail fcd on f.id = fcd.flow_claim_record_id and fcd.deleted = 0
+        left join  flow_detail  fd on fd.id = fcd.flow_id and fd.deleted = 0
+            ${ew.customSqlSegment}
+        and f.deleted = 0
+        GROUP BY f.id
+        order by f.claim_date desc, f.id desc
+    </select>
+
+    <select id="getFlowRecordStatistics" resultType="com.wishare.finance.apps.model.reconciliation.vo.FlowRecordStatisticsV">
+        select
+              sum(f.claim_amount) /100 as claimAmount,
+              sum(f.settle_amount) / 100 as settleAmount ,
+              (sum(f.settle_amount)  -  sum(f.claim_amount) ) / 100 as compareAmount
+        from flow_claim_record f
+            where id in (
+                select f.id
+                from flow_claim_record f
+                left join flow_claim_detail fcd on f.id = fcd.flow_claim_record_id and fcd.deleted = 0
+                left join  flow_detail  fd on fd.id = fcd.flow_id and fd.deleted = 0
+            ${ew.customSqlSegment}
+              and f.deleted = 0
+                )
+        and f.deleted = 0
+    </select>
+
+
+
+    <select id="queryIdByRecordIds" resultType="java.lang.Long">
+        SELECT fcd.invoice_id
+        FROM flow_claim_detail  fcd
+        left join  flow_claim_record fcr on  fcr.id = fcd.flow_claim_record_id
+        WHERE fcr.id in
+        <foreach collection="recordIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+       and fcr.deleted = 0
+    </select>
+
+</mapper>

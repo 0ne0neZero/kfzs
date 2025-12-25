@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.chargeitem.repository.mapper.AssisteAccountMapper">
+
+    <resultMap type="com.wishare.finance.domains.configure.chargeitem.entity.AssisteAccountE" id="AssisteAccountMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="asAcCode" column="as_ac_code" jdbcType="VARCHAR"/>
+        <result property="asAcItem" column="as_ac_item" jdbcType="VARCHAR"/>
+        <result property="asAcTarget" column="as_ac_target" jdbcType="VARCHAR"/>
+        <result property="referenceName" column="reference_name" jdbcType="VARCHAR"/>
+        <result property="enterLength" column="enter_length" jdbcType="VARCHAR"/>
+        <result property="accuracy" column="accuracy" jdbcType="VARCHAR"/>
+        <result property="sysSource" column="sys_source" jdbcType="VARCHAR"/>
+        <result property="tenantId" column="tenant_id" jdbcType="VARCHAR"/>
+        <result property="deleted" column="deleted" jdbcType="INTEGER"/>
+        <result property="creator" column="creator" jdbcType="VARCHAR"/>
+        <result property="creatorName" column="creator_name" jdbcType="VARCHAR"/>
+        <result property="gmtCreate" column="gmt_create" jdbcType="TIMESTAMP"/>
+        <result property="operator" column="operator" jdbcType="VARCHAR"/>
+        <result property="operatorName" column="operator_name" jdbcType="VARCHAR"/>
+        <result property="gmtModify" column="gmt_modify" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="field">
+        id
+        , as_ac_code, as_ac_item, as_ac_target, reference_name, enter_length, accuracy, sys_source, tenant_id, deleted, creator, creator_name, gmt_create, operator, operator_name, gmt_modify
+    </sql>
+
+    <select id="queryPage" resultMap="AssisteAccountMap">
+        select
+        <include refid="field"></include>
+        FROM
+        assiste_account
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="exportList" resultMap="AssisteAccountMap">
+        select
+        <include refid="field"></include>
+        FROM
+        assiste_account
+        ${ew.customSqlSegment}
+    </select>
+
+</mapper>
+

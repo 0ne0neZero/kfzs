@@ -1,0 +1,34 @@
+jasypt:
+  encryptor:
+    password: wishare
+server:
+  servlet:
+    context-path: /finance
+  port: 8200
+spring:
+  application:
+      name: wishare-finance
+  profiles:
+    active: dev
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  cloud:
+    nacos:
+      username: wishare
+      password: ENC(WjAs7n6GdFxxh9CY5AqdNkaRtLKMtCryfHUfwLDZcIRchas49h0tGPnRsHWqi8ed)
+      config:
+        server-addr: 10.100.50.31:31445
+        namespace: wishare
+        prefix: wishare-finance
+        file-extension: yaml
+        shared-configs[0]:
+          data-id: public-default.yaml
+          refresh: true
+
+#logging:
+#  config: classpath:logback-spring.xml
+
+#mybatis-plus:
+#   configuration:
+#     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

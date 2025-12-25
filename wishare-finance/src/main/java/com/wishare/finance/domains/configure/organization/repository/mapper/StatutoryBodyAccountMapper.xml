@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.organization.repository.mapper.StatutoryBodyAccountMapper">
+
+  <select id="queryPage" resultType="com.wishare.finance.domains.configure.organization.entity.StatutoryBodyAccountE">
+        SELECT
+          id,
+          `name`,
+          type,
+          bank_name,
+          bank_account,
+          rec_pay_type,
+          statutory_body_id,
+          tenant_id,
+          disabled,
+          deleted,
+          creator,
+          creator_name,
+          gmt_create,
+          operator,
+          operator_name,
+          gmt_modify,
+          statutory_body_name
+        FROM statutory_body_account ${ew.customSqlSegment}
+  </select>
+
+  <select id="queryPageWithoutTenantId"
+    resultType="com.wishare.finance.domains.configure.organization.entity.StatutoryBodyAccountE">
+    SELECT id,
+           `name`,
+           type,
+           bank_name,
+           bank_account,
+           rec_pay_type,
+           statutory_body_id,
+           tenant_id,
+           disabled,
+           deleted,
+           creator,
+           creator_name,
+           gmt_create,
+           operator,
+           operator_name,
+           gmt_modify
+    FROM statutory_body_account ${ew.customSqlSegment}
+  </select>
+    <select id="selectByCodeAndName" resultType="com.wishare.finance.domains.configure.organization.entity.StatutoryBodyAccountE">
+        SELECT *
+        FROM statutory_body_account sba
+        where sba.bank_account like CONCAT('%', #{code}, '%') or sba.name like CONCAT('%', #{name}, '%')
+    </select>
+
+    <insert id="insertBatch" keyProperty="id" useGeneratedKeys="true">
+    insert into statutory_body_account(id,name, type, bank_name, bank_account, rec_pay_type,
+    statutory_body_id, tenant_id, deleted, creator, creator_name, gmt_create, operator,
+    operator_name, gmt_modify, disabled)
+    values
+    <foreach collection="entities" item="entity" separator=",">
+      (#{entity.id},#{entity.name}, #{entity.type}, #{entity.bankName}, #{entity.bankAccount},
+      #{entity.recPayType}, #{entity.statutoryBodyId}, #{entity.tenantId}, #{entity.deleted},
+      #{entity.creator}, #{entity.creatorName}, #{entity.gmtCreate}, #{entity.operator},
+      #{entity.operatorName}, #{entity.gmtModify}, #{entity.disabled})
+    </foreach>
+  </insert>
+</mapper>

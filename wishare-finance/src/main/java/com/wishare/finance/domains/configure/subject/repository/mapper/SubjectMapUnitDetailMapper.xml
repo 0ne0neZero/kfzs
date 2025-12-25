@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.subject.repository.mapper.SubjectMapUnitDetailMapper">
+
+
+    <select id="selectSubject" resultType="com.wishare.finance.domains.configure.subject.entity.SubjectE">
+        select s.*,
+               (select GROUP_CONCAT(sj.subject_name ORDER BY sj.subject_code separator '/')  from subject sj where JSON_CONTAINS(s.`path`, JSON_ARRAY(sj.id)) order by sj.subject_code) as fullName
+        from subject s inner join subject_map_unit_detail smud on s.id  = smud.subject_level_last_id
+                       INNER JOIN subject_map_rules smr on smud.sub_map_rule_id=smr.id
+        where s.deleted = 0
+          and s.disabled = 0
+          and smr.disabled = 0
+          and smud.sub_map_unit_id = #{subMapUnitId}
+          and smud.sub_map_type = #{subMapType}
+          and JSON_CONTAINS(s.`path`, JSON_ARRAY(#{subjectId}))
+    </select>
+
+    <!--根据条件获取对应科目ID-->
+    <select id="getSubMapUnitDetIdList" resultType="java.lang.String">
+        SELECT
+            s.id_ext
+        FROM
+            subject_map_unit_detail d
+            left join subject s on s.id = d.subject_level_last_id
+        WHERE
+            d.deleted = 0
+          AND d.sub_map_rule_id = #{subMapRuleId}
+          AND d.tenant_id = #{tenantId}
+          AND d.subject_level_one_name = #{subjectLevelOneName}
+          AND d.sub_map_unit_id in
+            <foreach collection="subMapUnitIdList" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+          AND s.id_ext is not null
+        group by s.id_ext
+    </select>
+</mapper>

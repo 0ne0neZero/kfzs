@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.configure.businessunit.repository.mapper.BusinessUnitMapper">
+
+    <sql id="tableFields" >
+        bu.*
+    </sql>
+
+    <select id="queryBusinessUnitByPage" resultType="com.wishare.finance.domains.configure.businessunit.entity.BusinessUnitE">
+        select
+        <include refid="tableFields" />
+        from
+        business_unit bu
+        where bu.id IN (
+            SELECT DISTINCT
+            JSON_EXTRACT( path, '$[0]' )
+            FROM
+            business_unit
+            ${ew.customSqlSegment}
+        )
+        order by bu.id desc
+    </select>
+
+    <select id="getBusinessUnitWithRateByPath" resultType="com.wishare.finance.domains.configure.businessunit.entity.BusinessUnitE">
+        select
+        <include refid="tableFields" />
+        from
+        business_unit bu
+        where bu.deleted = 0
+        <if test="idList != null and idList.size > 0">
+            and (
+            <foreach collection="idList" item="item" separator=" or ">
+                JSON_CONTAINS(bu.path, JSON_ARRAY(#{item}))
+            </foreach>
+            )
+        </if>
+        <if test="ew != null">
+            <if test="ew.nonEmptyOfWhere">
+                AND
+            </if>
+            ${ew.sqlSegment}
+        </if>
+        order by bu.id desc
+    </select>
+
+    <select id="queryBusinessUnitByTree" resultType="com.wishare.finance.domains.configure.businessunit.entity.BusinessUnitE">
+        select
+        <include refid="tableFields" />
+        from
+        business_unit bu
+        ${ew.customSqlSegment}
+        order by bu.id desc
+    </select>
+
+    <select id="queryBusinessUnitByListPage" resultType="com.wishare.finance.domains.configure.businessunit.entity.BusinessUnitE">
+        select
+        <include refid="tableFields" />
+        from
+        business_unit bu
+        ${ew.customSqlSegment}
+        order by bu.id desc
+    </select>
+
+    <select id="queryBusinessUnitWithByStatutoryBodysId" resultType="com.wishare.finance.domains.bill.dto.BusinessUnitAccountDto">
+        SELECT
+        DISTINCT
+            bu.id as businessUnitId,
+            bu.`code` as businessUnitCode,
+            bu.`name` as businessUnitName
+        FROM
+            business_unit_detail bud
+                left join business_unit bu on bud.business_unit_id = bu.id
+        where bud.deleted = 0  and bu.deleted = 0 and bu.disabled = 0
+        <if test="id != null">
+            and relevance_id = #{id} AND bud.type = 1
+        </if>
+    </select>
+
+    <select id="queryBusinessUnitAccount" resultType="com.wishare.finance.domains.bill.dto.BusinessUnitAccountBankDto">
+        SELECT
+            distinct
+            sba.id as sbAccountId,
+            sba.bank_account as bankAccount,
+            sba.bank_name as bankName
+        FROM
+            business_unit_detail bud
+                left join statutory_body_account sba on  bud.relevance_id = sba.id
+        where bud.type = 4 and bud.business_unit_id = #{id}
+    </select>
+</mapper>

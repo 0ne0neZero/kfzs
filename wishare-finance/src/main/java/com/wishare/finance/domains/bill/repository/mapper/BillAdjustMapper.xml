@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.finance.domains.bill.repository.mapper.BillAdjustMapper">
+
+    <update id="batchUpdateInferenceSate" parameterType="java.util.List">
+        update bill_adjust set inference_state = #{state} where id in
+        <foreach collection="list" open="(" separator="," close=")" item="item">
+            #{item}
+        </foreach>
+    </update>
+
+    <select id="queryList" resultType="com.wishare.finance.domains.bill.entity.BillAdjustE">
+        select b.*
+        from bill_adjust b
+        ${ew.customSqlSegment}
+    </select>
+
+
+    <select id="getDeductionDetail" resultType="com.wishare.finance.domains.bill.dto.ChargeDeductionDetailDto">
+        SELECT
+            ba.bill_id as billId ,rb.bill_no as billNo,rb.bill_type as type ,rb.charge_item_name as chargeItemName,rb.room_name as roomName,ba.bill_amount as totalAmount,
+            rb.community_id,
+            rb.deductible_amount + rb.discount_amount as alreadyReducedAmount, IF(ba.payer_name IS NULL, rb.payer_name, ba.payer_name) as customerName,
+            rb.account_date as accountDate,  ABS(ba.adjust_amount) AS adjustAmount
+        FROM
+        bill_adjust ba
+            right join ${receivableBillName} rb on ba.bill_id = rb.id
+            and rb.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="queryPageBySearch" resultType="com.wishare.finance.domains.bill.dto.BillAdjustDto">
+        select b.*,rb.bill_no as billNo,rb.start_time as startTime,rb.end_time as endTime,rb.room_name as room_name
+            ,rb.charge_item_id as chargeItemId,rb.charge_item_name as chargeItemName
+        from bill_adjust b
+                 left join receivable_bill rb on rb.id = b.bill_id
+            ${ew.customSqlSegment}
+        ORDER BY b.approve_time DESC
+    </select>
+
+    <update id="updateBillInferenceState">
+        UPDATE bill_adjust SET inference_state = #{inferenceState}
+        WHERE id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateBillInferenceStateByGmtModify">
+        UPDATE bill_adjust SET inference_state = #{inferenceState}
+        WHERE bill_id IN
+        <foreach collection="list" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and state = 2
+        and gmt_modify  <![CDATA[ <= ]]> #{gmtCreate}
+    </update>
+
+</mapper>
