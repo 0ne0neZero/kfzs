@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.income.fund.ContractIncomeFundMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,contractId,name,typeId,type,amount,taxRateId,taxRate,
+    payTypeId,payType,payWayId,payWay,startDate,endDate,standardId,
+    standard,remark,tenantId,creator,creatorName,gmtCreate,operator,
+    operatorName,gmtModify,deleted -->
+    <select id="getContractPaySettFundList" resultType="com.wishare.contract.domains.vo.revision.income.fund.ContractIncomeFundV">
+        SELECT * FROM contract_income_fund
+        WHERE contractId = #{contractId}
+          AND deleted = 0
+    </select>
+    <select id="getFundChargeItemById" resultType="com.wishare.contract.apps.fo.revision.FunChargeItemF">
+        SELECT chargeItemId as id,
+               chargeItemId as code,
+               chargeItem as name
+               FROM contract_income_fund
+        WHERE contractId = #{contractId}
+          AND deleted = 0
+          and chargeItemId is not null
+        group by chargeItemId
+    </select>
+
+    <delete id="deleteByContractId">
+        delete from contract_income_fund
+        where contractId = #{contractId}
+    </delete>
+</mapper>

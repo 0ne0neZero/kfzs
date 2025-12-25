@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.pay.ContractPaySettlementConcludeMapper">
+
+    <update id="updateSettlementStep">
+        UPDATE contract_pay_conclude_settlement
+        SET step = #{step}
+        WHERE id = #{settlementId}
+    </update>
+
+    <update id="updateReviewStatus">
+        UPDATE contract_pay_conclude_settlement
+        SET reviewStatus = #{reviewStatus}
+        WHERE id = #{settlementId}
+        and reviewStatus = 9
+    </update>
+
+    <select id="collectionPaySettlementPage"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPaySettlementConcludeV">
+        SELECT
+            cck.*,
+            cc.contractAmountOriginalRate contractAmount,
+            cc.contractNo,
+            (cck.plannedCollectionAmount - cck.deductionAmount) realSettlementAmount,
+            if(cck.settleStatus = 0,'未结算',elt(cck.settleStatus, '未完成', '已完成' )) settleStatusName,
+            if(cck.invoiceStatus = 0,'未完成','已完成') invoiceStatusName,
+            if(cck.paymentStatus = 0,'未完成','已完成') paymentStatusName
+        from
+            contract_pay_conclude_settlement cck
+            left join contract_pay_conclude cc
+            on cck.contractId = cc.id
+            ${ew.customSqlSegment}
+        AND cck.pid = '0'
+        ORDER BY
+            cck.gmtModify DESC
+    </select>
+
+    <select id="queryByPathInfo"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPaySettlementConcludeInfoV">
+        SELECT
+            cck.*,
+            cc.contractAmountOriginalRate contractAmount,
+            cc.contractNo,
+            if(cck.settleStatus = 0,'未结算',elt(cck.settleStatus, '未完成', '已完成' )) settleStatusName,
+            if(cck.invoiceStatus = 0,'未完成','已完成') invoiceStatusName,
+            if(cck.paymentStatus = 0,'未完成','已完成') paymentStatusName
+        from
+            contract_pay_conclude_settlement cck
+                left join contract_pay_conclude cc
+                          on cck.contractId = cc.id
+            ${ew.customSqlSegment}
+        AND cck.pid not in ('0')
+        ORDER BY
+            cck.gmtModify DESC
+    </select>
+
+    <select id="queryByPath"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPaySettlementConcludeV">
+        SELECT
+            cck.*,
+            REPLACE(cck.settleCycle,',','至') settleCycles,
+            cc.contractAmountOriginalRate contractAmount,
+            cc.contractNo,
+            (cck.plannedCollectionAmount - cck.deductionAmount) realSettlementAmount,
+            if(cck.settleStatus = 0,'未结算',elt(cck.settleStatus, '未完成', '已完成' )) settleStatusName,
+            if(cck.invoiceStatus = 0,'未完成','已完成') invoiceStatusName,
+            if(cck.paymentStatus = 0,'未完成','已完成') paymentStatusName
+        from
+            contract_pay_conclude_settlement cck
+                left join contract_pay_conclude cc
+                 on cck.contractId = cc.id
+            ${ew.customSqlSegment}
+        <if test="parentIdList != null and parentIdList.size() > 0">
+            AND cck.pid IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            or cck.id IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY
+            cck.gmtModify DESC
+    </select>
+
+    <select id="accountAmountSum"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPaySettlementConcludeSumV">
+        SELECT
+            sum(cck.plannedCollectionAmount)  plannedCollectionAmountSum,
+            sum(cck.paymentAmount)   paymentAmountSum
+        from contract_pay_conclude_settlement cck
+            left join contract_pay_conclude cc
+             on cck.contractId = cc.id
+            ${ew.customSqlSegment}
+        ORDER BY
+            cck.gmtModify DESC
+    </select>
+
+    <select id="getContractPaySettlementInfo"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPaySettlementConcludeV">
+        SELECT *
+            FROM contract_pay_conclude_settlement
+        where contractid = #{contractId}
+         and  pid in ('0') and deleted = 0
+    </select>
+
+    <select id="getPidsByCondition" resultType="java.lang.String">
+        SELECT distinct s.pid
+        FROM contract_pay_conclude_settlement s
+        LEFT JOIN contract_pay_conclude c ON c.id = s.contractId
+        LEFT JOIN contract_pay_conclude_settlement_plan_relation r ON r.settlement_id = s.id
+        LEFT JOIN contract_pay_conclude_plan p ON p.id = r.plan_id and p.deleted = 0
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="selectPageV2ByPids"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.ContractPaySettlementPageV2">
+        SELECT
+        s.id as id,
+        s.pid as pid,
+        s.contractId as contractId,
+        s.title as title,
+        s.payFundNumber as payFundNumber,
+        s.plannedCollectionAmount as amountPayable,
+        s.deductionAmount as deductionAmount,
+        s.plannedCollectionAmount-s.deductionAmount as actualSettlementAmount,
+        s.reviewStatus as reviewStatus,
+        s.creatorName as creator,
+        s.gmtCreate as gmtCreate,
+        s.invoiceApplyAmount as invoiceAmount,
+        s.invoiceStatus as invoiceStatus,
+        s.paymentAmount as paymentAmount,
+        s.paymentMethod as paymentMethod,
+        s.paymentStatus as paymentStatus,
+        s.step as step,
+        group_concat(p.id) as planIdStr,
+        s.startTime as startTime,
+        s.endTime as endTime,
+        s.settlementType as settlementType,
+        s.approveCompletedTime as approveCompletedTime,
+        s.totalSettledAmount as totalSettledAmount
+        FROM contract_pay_conclude_settlement s
+        LEFT JOIN contract_pay_conclude_settlement_plan_relation r ON r.settlement_id = s.id
+        LEFT JOIN contract_pay_conclude_plan p ON p.id = r.plan_id and p.deleted = 0
+        ${ew.customSqlSegment}
+        AND s.pid IN
+        <foreach collection="pids" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        GROUP BY s.id
+    </select>
+
+    <select id="selectPageV2OfContract"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.ContractPaySettlementPageV2">
+        select
+            c.id as contractId,
+            c.region as contractRegion,
+            c.communityId as communityId,
+            c.communityName as communityName,
+            c.contractNo as contractNo,
+            c.name as contractName,
+            e.conmanagetype as contractCategoryName,
+            c.contractServeType as contractServeType,
+            c.oppositeOneId as merchant,
+            c.oppositeOne as merchantName,
+            c.contractAmountOriginalRate as contractAmount,
+            c.gmtExpireStart as contractStartDate,
+            c.gmtExpireEnd as contractEndDate,
+            c.status as contractStatusCode,
+            group_concat(DISTINCT p.splitMode) as splitMode,
+            c.contractBusinessLine
+        from contract_pay_conclude c
+            left join contract_pay_conclude_expand e on c.id = e.contractId and e.deleted = 0
+        left join contract_pay_conclude_plan p on p.contractId = c.id and p.deleted = 0
+        where c.id in
+        <foreach collection="contractIdList" separator="," item="item" open="(" close=")">
+            #{item}
+        </foreach>
+        group by c.id
+    </select>
+
+    <select id="accountAmountSum2"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPaySettlementConcludeSumV">
+        select sum(t.plannedCollectionAmount) plannedCollectionAmountSum,
+               sum(paymentAmount) paymentAmountSum
+        from
+            (
+                SELECT s.id id ,
+                       s.plannedCollectionTime,
+                       s.plannedCollectionAmount as plannedCollectionAmount,
+                       s.gmtCreate,
+                       s.paymentAmount as paymentAmount
+                FROM
+                    contract_pay_conclude_settlement s
+                        LEFT JOIN contract_pay_conclude c ON c.id = s.contractId
+                        AND c.deleted = 0
+                        LEFT JOIN contract_pay_conclude_settlement_plan_relation r ON r.settlement_id = s.id
+                        LEFT JOIN contract_pay_conclude_plan p ON p.id = r.plan_id
+                        AND p.deleted = 0
+                    ${ew.customSqlSegment}
+            ) t
+    </select>
+    <select id="checkSettleStatus" resultType="java.lang.String"
+            parameterType="java.util.List">
+        select r.plan_id
+        from contract_pay_conclude_settlement_plan_relation r
+                 left join contract_pay_conclude_settlement s on r.settlement_id = s.id and s.deleted = 0
+        where s.reviewStatus != 9
+        and r.plan_id in
+
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </select>
+    <select id="queryBySettleId" resultType="java.lang.String" parameterType="java.lang.String">
+        select distinct pip.id
+        from contract_pay_conclude_settlement_plan_relation r
+            inner join pay_cost_plan pip on pip.planId = r.plan_id
+            inner join contract_pay_conclude_settlement s on r.settlement_id = s.id and s.deleted = 0
+        where  s.id =#{settleId}
+    </select>
+    <select id="getApprovingContractPaySettlementInfo"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPaySettlementConcludeV">
+        select *
+        from contract_pay_conclude_settlement
+        where contractId = #{contractId}
+        and pid != '0'
+        and deleted = 0
+        and reviewStatus in (1,0,9,4)
+        limit 1
+    </select>
+    <select id="calculateTotalAmount"
+            resultType="com.wishare.contract.apps.fo.revision.pay.settlement.ContractPaySettlementF"
+            parameterType="java.util.List">
+
+        SELECT
+            pcs.settlementId,
+            SUM(pcs.amount - COALESCE(pcs.deductionAmount, 0)) AS totalAmount
+        FROM
+            contract_pay_conclude_settdetails pcs
+        WHERE
+            pcs.settlementId in
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+          and pcs.deleted = 0
+        GROUP BY
+            pcs.settlementId;
+    </select>
+
+    <!--更新结算单中其他附件-业务事由-->
+    <update id="updateOtherBusinessReasons">
+        UPDATE contract_pay_conclude_settlement
+        SET otherBusinessReasons = #{otherBusinessReasons},
+            externalDepartmentCode = #{externalDepartmentCode},
+            calculationMethod = #{calculationMethod}
+        WHERE id = #{settlementId}
+    </update>
+
+    <select id="getSettlementByPlan" resultType="java.lang.String"
+            parameterType="java.util.List">
+        select r.plan_id
+        from contract_pay_conclude_settlement_plan_relation r
+        left join contract_pay_conclude_settlement s on r.settlement_id = s.id
+        where s.deleted = 0
+        and r.plan_id in
+
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+
+    </select>
+    <select id="getPlanBySettlement" resultType="java.lang.String"
+            parameterType="java.util.List">
+        select plan_id
+        from contract_pay_conclude_settlement_plan_relation r
+        where settlement_id = #{settlementId}
+    </select>
+
+    <update id="deletedSettlement">
+        UPDATE contract_pay_conclude_settlement
+        SET deleted = 1
+        WHERE id = #{id}
+    </update>
+
+    <select id="getSettlementPeriodAmount"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPaySettlementPeriodAmountV">
+        select
+        -- 合同ID
+        s.contractId as contractId,
+        s.id as settlementId,
+        p.start_date as startDate,
+        p.end_date as endDate,
+        -- 实际结算金额
+        s.actualSettlementAmount as actualSettlementAmount
+        from contract_pay_conclude_settlement s
+        left join contract_pay_conclude_settlement_period p on s.id = p.settlement_id
+        where s.contractId in
+        <foreach collection="contractIdList" separator="," item="item" open="(" close=")">
+            #{item}
+        </foreach>
+        and s.deleted = 0
+        and s.reviewStatus = 2
+    </select>
+
+    <!--获取审批通过结算单ID-->
+    <select id="getApprovedSettlementId" resultType="java.lang.String"
+            parameterType="java.util.List">
+        select s.id
+        from contract_pay_conclude_settlement s
+        where s.deleted = 0
+        and s.reviewStatus = 2
+        and s.contractId in
+        <foreach collection="contractIdList" separator="," item="item" open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+</mapper>

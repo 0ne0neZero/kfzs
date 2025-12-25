@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractBpmProcessRecordMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    com.wishare.contract.domains.consts.contractset.ContractBpmProcessRecordFieldConst 会每次重新生成
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,processId,bpmBoUuid,type,tenantId,creator,creatorName,gmtCreate,
+    operator,operatorName,deleted,gmtModify,reviewStatus,rejectReason -->
+    <select id="selectOneByProId" resultType="com.wishare.contract.domains.entity.contractset.ContractBpmProcessRecordE">
+    select * from contract_bpm_process_record
+    where processId = #{proId}
+    limit 1
+    </select>
+</mapper>

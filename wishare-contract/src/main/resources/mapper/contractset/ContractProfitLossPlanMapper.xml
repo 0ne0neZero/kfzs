@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractProfitLossPlanMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    com.wishare.contract.domains.consts.contractset.ContractProfitLossPlanFieldConst 会每次重新生成
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,chargeItemId,costId,contractId,orgId,budgetAccount,summary,billType,
+    taxRate,confirmTime,amountTaxIncluded,localCurrencyAmount,taxExcludedAmount,serviceStartDate,serviceEndDate,
+    profitLossAccounting,creator,creatorName,gmtCreate,operator,operatorName,gmtModify,
+    deleted -->
+
+    <update id="deleteProfitLossPlan">
+        UPDATE contract_profit_loss_plan SET deleted = 1
+        <where>
+            deleted = 0 and paymentStatus = 0
+            <if test="collectionPlanId != null">
+                AND collectionPlanId=#{collectionPlanId}
+            </if>
+            <if test="contractId != null">
+                AND contractId=#{contractId}
+            </if>
+        </where>
+    </update>
+    <update id="updateBillId">
+         UPDATE contract_profit_loss_plan
+            SET billId = #{billId}
+        WHERE
+            id = #{id}
+    </update>
+    <delete id="deletePlan">
+        delete from contract_profit_loss_plan where contractId=#{contractId}
+    </delete>
+    <select id="selectAmountSum" resultType="java.math.BigDecimal">
+        select sum(amountTaxIncluded) from contract_profit_loss_plan where collectionPlanId=#{id}
+    </select>
+    <select id="localCurrencyAmount" resultType="java.math.BigDecimal">
+        select sum(localCurrencyAmount) from contract_profit_loss_plan where collectionPlanId=#{id}
+    </select>
+    <select id="getProfitLossPlanList"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractProfitLossPlanV">
+        select *
+        from contract_profit_loss_plan
+        where 1=1
+        <if test="p!= null">
+            <if test="p.id != null">
+                AND id=#{p.id}
+            </if>
+            <if test="p.collectionId != null">
+                AND collectionPlanId=#{p.collectionId}
+            </if>
+            <if test="p.contractId != null">
+                AND contractId=#{p.contractId}
+            </if>
+            <if test="p.deleted != null">
+                AND deleted = 0
+            </if>
+            <if test="p.paymentStatus != null">
+                AND paymentStatus!=#{p.paymentStatus}
+            </if>
+            <if test="p.setPaymentStatus != null">
+                AND paymentStatus =#{p.setPaymentStatus}
+            </if>
+            <if test="p.invoiceStatus != null">
+                AND invoiceStatus!=#{p.invoiceStatus}
+            </if>
+            <if test="p.setInvoiceStatus != null">
+                AND invoiceStatus=#{p.setInvoiceStatus}
+            </if>
+        </if>
+    </select>
+    <select id="selectProfitLossPlanByIds"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractProfitLossPlanV">
+        select *
+        from contract_profit_loss_plan
+        where deleted = 0
+        <if test="ids != null and ids.size() > 0">
+            AND id IN
+            <foreach collection="ids" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="selectByContract"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractProfitLossPlanV">
+        SELECT
+	    id,
+	    chargeItemId,
+	    costId,
+	    contractId,
+	    orgId,
+	    budgetAccount,
+	    summary,
+	    billType,
+	    taxRate,
+	    confirmTime,
+	    sum( amountTaxIncluded ) AS amountTaxIncluded,
+	    sum( localCurrencyAmount ) AS localCurrencyAmount,
+	    sum( taxExcludedAmount ) AS taxExcludedAmount,
+	    profitLossAccounting,
+	    creator,
+	    creatorName,
+	    gmtCreate,
+	    operator,
+	    operatorName,
+	    gmtModify,
+	    deleted,
+	    sum( taxAmount ) AS taxAmount,
+	    taxRateId
+        FROM
+	    contract_profit_loss_plan
+        where deleted = 0 AND contractId=#{contractId} and paymentStatus = 0
+        group by chargeItemId,costId,date_format( confirmTime, '%Y-%m' )
+    </select>
+    <select id="selectAmountByContract" resultType="com.wishare.contract.domains.vo.contractset.ContractInfoV">
+        select sum(localCurrencyAmount) as profitLocalCurrencyAmount,sum(taxExcludedAmount) as profitTaxExcludedAmount
+        from contract_profit_loss_plan
+        where deleted = 0 AND contractId=#{contractId}
+    </select>
+</mapper>

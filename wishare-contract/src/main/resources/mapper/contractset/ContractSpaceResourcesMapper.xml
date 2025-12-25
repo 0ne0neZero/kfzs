@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractSpaceResourcesMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    com.wishare.contract.domains.consts.contractset.ContractSpaceResourcesFieldConst 会每次重新生成
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,contractId,tenantId,code,name,category,position,businessType,
+    pricingStandard,resourceRates,startTime,endTime,state,creator,creatorName,
+    gmtCreate,operator,operatorName,gmtModify,deleted -->
+    <delete id="deleteByContractId">
+        delete from contract_space_resources
+        where contractId=#{contractId}
+    </delete>
+</mapper>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.income.PayCostPlanMapper">
+
+
+    <select id="pageInfo"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.PayCostPlanPageV">
+        select
+            p.id as id,
+            c.region as contractRegion,
+            c.communityId as communityId,
+            c.communityName as communityName,
+            c.conmaincode as conMainCode,
+            c.id as contractId,
+            c.contractNo as contractNo,
+            c.name as contractName,
+            p.planId as planId,
+            p.planNo as planNo,
+            p.termDate as termDate,
+            p.costPlanCode as costPlanCode,
+            p.merchant as merchant,
+            p.merchantName as merchantName,
+            p.payObjectType as payObjectType,
+            p.chargeItemId as chargeItemId,
+            p.chargeItem as chargeItem,
+            p.costStartTime as costStartTime,
+            p.costEndTime as costEndTime,
+            p.plannedCollectionTime as plannedCollectionTime,
+            p.plannedSettlementAmount as plannedSettlementAmount,
+            p.paymentAmount as paymentAmount,
+            p.plannedSettlementAmount-paymentAmount as notPaymentAmount,
+            p.taxRateId as taxRateId,
+            p.taxRate as taxRate,
+            p.settlementStatus as settlementStatus,
+            p.billGenerationStatus as billGenerationStatus,
+            p.costCenterId as costCenterId,
+            p.costCenterName as costCenterName,
+            p.ourPartyId as ourPartyId,
+            p.ourParty as ourParty,
+            p.departId as departId,
+            p.departName as departName,
+            p.creatorName as creatorName,
+            p.gmtCreate as gmtCreate
+        from pay_cost_plan p
+        left join contract_pay_conclude c on c.id = p.contractId
+        ${ew.customSqlSegment}
+    </select>
+
+    <select id="getNoListByPrefix" resultType="java.lang.String">
+        select costPlanCode
+        from pay_cost_plan
+        where deleted = 0
+        and costPlanCode like concat(#{prefix}, '%')
+    </select>
+    <select id="queryPlanVListByPlanIdList"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.PayCostPlanV">
+        select id,
+         costPlanCode,
+         plannedSettlementAmount,
+         paymentAmount,
+         costStartTime,
+         costEndTime,
+         typeId,
+         type,
+         chargeItemId,
+         chargeItem,
+         costStartTime as belongMonth
+        from pay_cost_plan
+        where deleted = 0
+          and contractId = #{contractId}
+        and payFundId = #{funId}
+        and costStartTime &gt;= #{startDate} and costEndTime &lt;= #{endDate}
+    </select>
+
+    <update id="updatePayPlan" parameterType="java.util.List">
+        <foreach collection="amountList" item="item" index="index" open="" close="" separator=";">
+            update pay_cost_plan
+            set reductionAmount =#{item.reductionAmount}
+            where id = #{item.id}
+        </foreach>
+    </update>
+
+    <!--根据结算计划ID及结算周期查询范围内的成本计划-->
+    <select id="getCostListByPlanAndCostTime" resultType="com.wishare.contract.domains.entity.revision.pay.PayCostPlanE">
+        select *
+        from pay_cost_plan
+        where deleted = 0
+        and contractId = #{contractId}
+        and payFundId = #{funId}
+        and costStartTime &gt;= #{startDate} and costEndTime &lt;= #{endDate}
+    </select>
+</mapper>

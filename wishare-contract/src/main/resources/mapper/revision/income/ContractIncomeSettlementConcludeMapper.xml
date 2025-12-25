@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.income.ContractIncomeSettlementConcludeMapper">
+
+    <update id="updateSettlementStep">
+        UPDATE contract_income_conclude_settlement
+        SET step = #{step}
+        WHERE id = #{settlementId}
+    </update>
+
+    <update id="updateReviewStatus">
+        UPDATE contract_income_conclude_settlement
+        SET reviewStatus = #{reviewStatus}
+        WHERE id = #{settlementId}
+          and reviewStatus = 9
+    </update>
+
+
+    <select id="collectionPaySettlementPage"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeSettlementConcludeV">
+        SELECT
+            cck.*,
+            cc.contractAmountOriginalRate contractAmount,
+            cc.contractNo
+        from
+            contract_income_conclude_settlement cck
+            left join contract_income_conclude cc
+            on cck.contractId = cc.id
+            ${ew.customSqlSegment}
+        ORDER BY
+            cck.gmtModify DESC
+    </select>
+
+    <select id="accountAmountSum"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeSettlementConcludeSumV">
+        SELECT
+            sum(cck.plannedCollectionAmount)  plannedCollectionAmountSum,
+            sum(cck.paymentAmount)   paymentAmountSum
+        from contract_income_conclude_settlement cck
+            left join contract_income_conclude cc
+            on cck.contractId = cc.id
+            ${ew.customSqlSegment}
+        ORDER BY
+            cck.gmtModify DESC
+    </select>
+
+    <select id="getContractIncomeSettlementInfo"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeSettlementConcludeV">
+        SELECT *
+        FROM contract_income_conclude_settlement
+        where contractId = #{contractId}
+          and  pid in ('0') and deleted = 0
+    </select>
+
+    <select id="getPidsByCondition" resultType="java.lang.String">
+        SELECT s.pid
+        FROM contract_income_conclude_settlement s
+                 LEFT JOIN contract_income_conclude c ON c.id = s.contractId and c.deleted = 0
+                 LEFT JOIN contract_income_conclude_expand cpe on cpe.contractId = c.id
+                 LEFT JOIN contract_income_conclude_settlement_plan_relation r ON r.settlement_id = s.id
+                 LEFT JOIN contract_income_conclude_plan p ON p.id = r.plan_id and p.deleted = 0
+            ${ew.customSqlSegment}
+    </select>
+
+    <select id="selectPageV2ByPids"
+            resultType="com.wishare.contract.domains.vo.revision.income.settlement.ContractIncomeSettlementPageV2">
+        SELECT
+        s.id as id,
+        s.pid as pid,
+        s.contractId as contractId,
+
+        s.payFundNumber as payFundNumber,
+        s.plannedCollectionAmount as amountPayable,
+        s.deductionAmount as deductionAmount,
+        s.plannedCollectionAmount-s.deductionAmount as actualSettlementAmount,
+        s.settleStatus,
+        s.approveCompletedTime,
+        s.reviewStatus as reviewStatus,
+        s.creatorName as creator,
+        s.gmtCreate as gmtCreate,
+        s.invoiceApplyAmount as invoiceAmount,
+        s.invoiceStatus as invoiceStatus,
+        s.paymentAmount as paymentAmount,
+        s.paymentMethod as paymentMethod,
+        s.paymentStatus as paymentStatus,
+        s.step as step,
+        group_concat(p.id) as planIdStr
+        FROM contract_income_conclude_settlement s
+        LEFT JOIN contract_income_conclude_settlement_plan_relation r ON r.settlement_id = s.id
+        LEFT JOIN contract_income_conclude_plan p ON p.id = r.plan_id and p.deleted = 0
+        ${ew.customSqlSegment}
+        AND s.pid IN
+        <foreach collection="pids" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        GROUP BY s.id
+    </select>
+
+    <select id="selectPageV2OfContract"
+            resultType="com.wishare.contract.domains.vo.revision.income.settlement.ContractIncomeSettlementPageV2">
+        select
+        c.id as contractId,
+        c.region as contractRegion,
+        c.communityId as communityId,
+        c.communityName as communityName,
+        c.contractNo as contractNo,
+        c.name as contractName,
+        c.categoryName as contractCategoryName,
+        c.contractServeType as contractServeType,
+        c.oppositeOneId as customer,
+        c.oppositeOne as customerName,
+        c.contractAmountOriginalRate as contractAmount,
+        c.changContractAmount as contractChangeAmount,
+        c.gmtExpireStart as contractStartDate,
+        c.gmtExpireEnd as contractEndDate,
+        c.status as contractStatusCode,
+        cpe.conmanagetype as conManageType,
+        group_concat(DISTINCT p.splitMode) as splitMode,
+        c.contractBusinessLine
+        from contract_income_conclude c
+        left join contract_income_conclude_expand cpe on cpe.contractId = c.id
+        left join contract_income_conclude_plan p on p.contractId = c.id and p.deleted = 0
+        where c.id in
+        <foreach collection="contractIdList" separator="," item="item" open="(" close=")">
+            #{item}
+        </foreach>
+        group by c.id
+    </select>
+    <select id="checkSettleStatus" resultType="java.lang.String"
+            parameterType="java.util.List">
+        select r.plan_id
+        from contract_income_conclude_settlement_plan_relation r
+        left join contract_income_conclude_settlement s on r.settlement_id = s.id and s.deleted = 0
+        where s.reviewStatus != 9
+        and r.plan_id in
+
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getContractIncomeSettlementList" resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeSettlementConcludeV" parameterType="java.util.List">
+        select s.settleStatus, s.approveCompletedTime, r.plan_id
+        from contract_income_conclude_settlement_plan_relation r
+        left join contract_income_conclude_settlement s on r.settlement_id = s.id and s.deleted = 0
+        where r.plan_id in
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="queryBySettleId" resultType="java.lang.String" parameterType="java.lang.String">
+        select distinct pip.id
+        from contract_income_conclude_settlement_plan_relation r
+        inner join pay_income_plan pip on pip.planId = r.plan_id
+        inner join contract_income_conclude_settlement s on r.settlement_id = s.id and s.deleted = 0
+        where  s.id =#{settleId}
+    </select>
+
+    <select id="getApprovingContractPaySettlementInfo"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeSettlementConcludeV">
+        select *
+        from contract_income_conclude_settlement
+        where contractId = #{contractId}
+        and deleted = 0
+        and pid != '0'
+        and reviewStatus in (1,0,9,4)
+        limit 1
+    </select>
+
+    <select id="getSettlementByPlan" resultType="java.lang.String"
+            parameterType="java.util.List">
+        select r.plan_id
+        from contract_income_conclude_settlement_plan_relation r
+        left join contract_income_conclude_settlement s on r.settlement_id = s.id
+        where s.deleted = 0
+        and r.plan_id in
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="getPlanBySettlement" resultType="java.lang.String"
+            parameterType="java.util.List">
+        select plan_id
+        from contract_income_conclude_settlement_plan_relation
+        where settlement_id = #{settlementId}
+    </select>
+    <update id="deletedSettlement">
+        UPDATE contract_income_conclude_settlement
+        SET deleted = 1
+        WHERE id = #{id}
+    </update>
+</mapper>

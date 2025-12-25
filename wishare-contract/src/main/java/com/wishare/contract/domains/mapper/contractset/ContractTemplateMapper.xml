@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractTemplateMapper">
+
+    <sql id="template">
+            ct.id,
+            ct.name,
+            ct.categoryId,
+            cc.path AS categoryPath,
+            ct.parentId,
+            ct.parentId AS pid,
+            IF(ct.status = 1 , CONCAT("草稿V", ct.version), CONCAT("V", ct.version)) AS version,
+            ct.useCount,
+            ct.useStatus,
+            ct.fileUrl,
+            ct.remark,
+            ct.status,
+            ct.deleted,
+            ct.tenantId,
+            ct.creator,
+            ct.creatorName,
+            ct.gmtCreate,
+            ct.operator,
+            ct.operatorName,
+            ct.gmtModify,
+            ct.fileName,
+            ct.path,
+            ct.categoryPathName
+    </sql>
+
+    <select id="queryByPage" resultType="com.wishare.contract.apps.vo.contractset.ContractTemplateTreeV">
+        SELECT
+            <include refid="template"/>
+        FROM
+            contract_template ct
+            LEFT JOIN contract_category cc ON ct.categoryId = cc.id
+        ${ew.customSqlSegment}
+            AND ct.parentId = 0
+            <if test="tenantId != null and tenantId != ''">
+                AND ct.tenantId = #{tenantId}
+            </if>
+        GROUP BY
+            ct.name
+        ORDER BY
+            ct.status ASC,
+            ct.gmtModify DESC,
+            ct.version DESC
+    </select>
+    <select id="queryByWrapper" resultType="com.wishare.contract.apps.vo.contractset.ContractTemplateTreeV">
+        SELECT
+            <include refid="template"/>
+        FROM
+            contract_template ct
+            LEFT JOIN contract_category cc ON ct.categoryId = cc.id
+        ${ew.customSqlSegment}
+            AND ct.deleted = 0
+            <if test="tenantId != null and tenantId != ''">
+                AND ct.tenantId = #{tenantId}
+            </if>
+            <if test="id != null">
+                AND (JSON_CONTAINS(ct.path, JSON_ARRAY(#{id})))
+            </if>
+    </select>
+
+    <select id="queryByPath" resultType="com.wishare.contract.apps.vo.contractset.ContractTemplateTreeV">
+        SELECT
+            <include refid="template"/>
+        FROM
+            contract_template ct
+            LEFT JOIN contract_category cc ON ct.categoryId = cc.id
+        ${ew.customSqlSegment}
+            AND ct.deleted = 0
+            <if test="parentIdList != null and parentIdList.size > 0">
+                AND (
+                    <foreach collection="parentIdList" item="item" separator="or">
+                        JSON_CONTAINS(ct.path, JSON_ARRAY(#{item}))
+                    </foreach>
+                )
+            </if>
+            <if test="tenantId != null and tenantId != ''">
+                AND ct.tenantId = #{tenantId}
+            </if>
+        ORDER BY
+            ct.status ASC,
+            ct.gmtModify DESC,
+            ct.version DESC
+    </select>
+</mapper>

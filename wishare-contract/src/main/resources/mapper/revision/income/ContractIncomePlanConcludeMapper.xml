@@ -1,0 +1,531 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.income.ContractIncomePlanConcludeMapper">
+    <select id="collectionPlanDetailPage"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomePlanConcludeV">
+        SELECT
+            ccp.*,
+            (ccp.plannedCollectionAmount - ccp.receiptAmount) noPaymentAmount,
+            cc.contractAmountOriginalRate contractAmount,
+            '已收款'  receiptStaus
+        from contract_income_conclude_plan ccp
+                 left join contract_income_conclude cc
+                           on ccp.contractId = cc.id
+            ${ew.customSqlSegment}
+        and ccp.pid = '0'
+        ORDER BY
+            ccp.gmtModify DESC
+    </select>
+
+    <select id="pageInfo"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomePlanConcludeInfoV">
+        SELECT
+            ccp.*,
+            (ccp.plannedCollectionAmount - ccp.receiptAmount) noPaymentAmount,
+            cc.contractAmountOriginalRate contractAmount,
+            '已收款'  receiptStaus
+        from contract_income_conclude_plan ccp
+                 left join contract_income_conclude cc
+                           on ccp.contractId = cc.id
+            ${ew.customSqlSegment}
+        and ccp.pid not in ('0')
+        ORDER BY
+            ccp.gmtModify DESC
+    </select>
+
+    <select id="queryByPath" resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomePlanConcludeV">
+        SELECT
+        ccp.*,
+        (ccp.plannedCollectionAmount - ccp.receiptAmount) noPaymentAmount,
+        cc.contractAmountOriginalRate contractAmount,
+        '已收款'  receiptStaus
+        from contract_income_conclude_plan ccp
+        left join contract_income_conclude cc
+        on ccp.contractId = cc.id
+        ${ew.customSqlSegment}
+        and ccp.deleted = 0
+        <if test="parentIdList != null and parentIdList.size() > 0">
+            AND ccp.pid IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            or ccp.id IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY
+        ccp.gmtModify DESC
+    </select>
+
+    <select id="accountAmountSum"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomePlanConcludeSumV">
+        SELECT
+            sum(ccp.plannedCollectionAmount)  plannedCollectionAmountSum,
+            sum(ccp.receiptAmount)   paymentAmountSum
+        from contract_income_conclude_plan ccp
+                 left join contract_income_conclude cc
+                           on ccp.contractId = cc.id
+            ${ew.customSqlSegment}
+        ORDER BY
+            ccp.gmtModify DESC
+    </select>
+
+
+    <select id="getHowOrder"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomePlanConcludeV">
+        SELECT s.*,
+               b.contractAmountOriginalRate contractAmount
+        FROM contract_income_conclude_plan s
+        left join contract_income_conclude b
+        on s.contractId = b.id
+        WHERE s.contractid = #{contractId}
+        <if test="howOrder != null and howOrder !=''">
+            AND howOrder= ${howOrder}
+        </if>
+        AND s.deleted = 0
+        ORDER BY HOWORDER  DESC
+    </select>
+
+    <select id="getHowOrderInfo"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomePlanConcludeInfoV">
+        SELECT s.*,
+        b.contractAmountOriginalRate contractAmount
+        FROM contract_income_conclude_plan s
+        left join contract_income_conclude b
+        on s.contractId = b.id
+        WHERE s.contractid = #{contractId}
+        <if test="howOrder != null and howOrder !=''">
+            AND howOrder= ${howOrder}
+        </if>
+        AND s.pid not in ('0')
+        AND s.deleted = 0
+        ORDER BY HOWORDER  DESC
+    </select>
+
+    <select id="selectRemindContractPlan" resultType="com.wishare.contract.domains.vo.revision.remind.ContractAndPlanInfoV">
+        select
+            1 as messageConfig,
+            2 as contractNature,
+            b.id as contractId,
+            b.name as contractName,
+            b.contractNo,
+            b.creator as handlerId,
+            b.creatorName as handlerName,
+            b.communityId,
+            b.gmtExpireStart as contractGmtExpireStart,
+            b.gmtExpireEnd as contractGmtExpireEnd,
+            a.id as planId,
+            a.plannedCollectionTime
+        from contract_income_conclude_plan a left join contract_income_conclude b on a.contractId = b.id and b.deleted = 0
+        where
+            b.signingMethod in (0,2)
+            and b.contractType != 1
+            and a.paymentStatus != 2
+            and b.reviewStatus = 2
+            and b.status = 1
+            and DATEDIFF(a.plannedCollectionTime,now()) in
+            <foreach collection="remindDays" item="days" separator="," open="(" close=")">
+                #{days}
+            </foreach>
+            and a.deleted = 0
+    </select>
+
+    <select id="selectOverdueContractPlan" resultType="com.wishare.contract.domains.vo.revision.remind.ContractAndPlanInfoV">
+        select
+            2 as messageConfig,
+            2 as contractNature,
+            b.id as contractId,
+            b.name as contractName,
+            b.contractNo,
+            b.creator as handlerId,
+            b.creatorName as handlerName,
+            b.communityId,
+            b.gmtExpireStart as contractGmtExpireStart,
+            b.gmtExpireEnd as contractGmtExpireEnd,
+            a.id as planId,
+            a.plannedCollectionTime
+        from contract_income_conclude_plan a left join contract_income_conclude b on a.contractId = b.id and b.deleted = 0
+        where
+        b.signingMethod in (0,2)
+        and b.contractType != 1
+        and a.paymentStatus != 2
+        and b.reviewStatus = 2
+        and b.status = 1
+        and DATEDIFF(now(),a.plannedCollectionTime) in
+        <foreach collection="overdueDays" item="days" separator="," open="(" close=")">
+            #{days}
+        </foreach>
+        and a.deleted = 0
+    </select>
+    <select id="listPlan" resultType="com.wishare.contract.domains.vo.revision.income.IncomePlanListV">
+        SELECT
+            ccp.*,
+            (ccp.plannedCollectionAmount - ccp.receiptAmount) noPaymentAmount,
+            cc.contractAmountOriginalRate contractAmount,
+            '已收款'  receiptStaus
+        from contract_income_conclude_plan ccp
+                 left join contract_income_conclude cc
+                           on ccp.contractId = cc.id
+                 left join contract_income_conclude_expand cpe on cpe.contractId=cc.id
+            ${ew.customSqlSegment}
+        and ccp.pid != '0'
+        group BY
+            ccp.pid
+        order by ccp.gmtModify desc
+    </select>
+    <select id="queryByNewPath" resultType="com.wishare.contract.domains.vo.revision.income.IncomePlanListV">
+        SELECT
+        cc.departId,
+        cc.departName as departName,
+        ccp.*,
+        (ccp.plannedCollectionAmount - ccp.receiptAmount) noReceiptAmount,
+        cc.contractAmountOriginalRate contractAmount,
+        cpe.conmanagetype,
+        cc.communityName,
+        cc.communityId ,
+        cpe.conmanagetype ,
+        cc.name ,
+        COALESCE(NULLIF(cc.changContractAmount, 0), cc.contractAmountOriginalRate) contractAmountOriginalRate,
+        cc.gmtExpireStart ,
+        cc.gmtExpireEnd ,
+        cc.status ,
+        cc.costCenterName,
+        cc.region,
+        cc.conmaincode,
+        cc.oppositeOne,
+        cc.ourPartyId,
+        cc.ourParty,
+        cc.contractBusinessLine
+        from contract_income_conclude_plan ccp
+        left join contract_income_conclude cc on ccp.contractId = cc.id
+        left JOIN contract_income_conclude_expand cpe on cpe.contractId=cc.id
+        ${ew.customSqlSegment}
+        and ccp.deleted = 0
+        <if test="parentIdList != null and parentIdList.size() > 0">
+            AND ccp.pid IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            or ccp.id IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY
+        ccp.gmtCreate DESC,ccp.termDate asc
+    </select>
+
+    <select id="getPlanPeriod"
+            resultType="com.wishare.contract.domains.vo.revision.income.settlement.IncomePlanPeriodV">
+        select distinct costStartTime startDate,
+                        costEndTime endDate
+        from contract_income_conclude_plan
+        where pid != '0'
+        and deleted = 0
+        and contractId = #{contractId}
+          and paymentStatus = 0
+        order by costStartTime
+    </select>
+
+    <select id="getPlanList"
+            resultType="com.wishare.contract.domains.vo.revision.income.settlement.ContractIncomePlanForSettlementV">
+        select
+        plan.id as planId,
+        plan.termDate as termDate,
+        plan.costStartTime as costStartTime,
+        plan.costEndTime as costEndTime,
+        plan.plannedCollectionTime as plannedCollectionTime,
+        plan.plannedCollectionAmount as plannedCollectionAmount,
+        plan.settlementAmount as settlementAmount,
+        plan.plannedCollectionAmount-plan.settlementAmount as notSettlementAmount,
+        plan.ratioAmount as ratioAmount,
+        f.typeId as typeId,
+        f.type as type,
+        f.chargeItemId as chargeItemId,
+        f.chargeItem as chargeItem,
+        f.taxRateId as taxRateId,
+        f.taxRate as taxRate,
+        plan.taxAmount as taxRateAmount,
+        plan.noTaxAmount as amountWithOutRate,
+        plan.remark as remark
+        from contract_income_conclude_plan plan
+        left join contract_income_fund f on
+        f.contractId = plan.contractId
+        and f.chargeItemId =  plan.chargeItemId
+        AND f.taxRateId = plan.taxRateId
+        AND f.typeId = plan.serviceType
+        and f.deleted = 0
+        where plan.pid != '0'
+        and plan.deleted = 0
+        and plan.paymentStatus != 2
+        and plan.contractId = #{contractId}
+        and plan.costEndTime <![CDATA[ <= ]]> #{date}
+        group by plan.id
+        order by plan.costStartTime
+    </select>
+
+    <select id="getOriginPlanList"
+            resultType="com.wishare.contract.domains.vo.revision.income.settlement.ContractIncomePlanForSettlementV">
+        select
+            id as planId,
+            termDate as termDate,
+            costStartTime as costStartTime,
+            costEndTime as costEndTime,
+            plannedCollectionTime as plannedCollectionTime,
+            plannedCollectionAmount as plannedCollectionAmount,
+            settlementAmount as settlementAmount,
+            plannedCollectionAmount-settlementAmount as notSettlementAmount,
+            ratioAmount as ratioAmount,
+            serviceType as typeId,
+            chargeItemId as chargeItemId,
+            chargeItem as chargeItem,
+            taxRateId as taxRateId,
+            taxRate as taxRate,
+            taxAmount as taxRateAmount,
+            noTaxAmount as amountWithOutRate,
+            contractPayFundId as payFundId,
+            remark as remark,
+            settlePlanGroup as settlePlanGroup,
+            splitMode as splitMode
+        from contract_income_conclude_plan
+        where pid != '0'
+        and deleted = 0
+        and paymentStatus != 2
+        and contractId = #{contractId}
+        and (
+        <foreach collection="periodList" item="period" separator="or">
+            (costStartTime = #{period.startDate} and costEndTime = #{period.endDate})
+        </foreach>
+        )
+        order by costStartTime
+    </select>
+    <select id="getOriginPlanDateList"
+            resultType="com.wishare.contract.domains.vo.revision.income.settlement.ContractIncomePlanForSettlementV">
+        select
+            id as planId,
+            termDate as termDate,
+            costStartTime as costStartTime,
+            costEndTime as costEndTime,
+            plannedCollectionTime as plannedCollectionTime,
+            plannedCollectionAmount as plannedCollectionAmount,
+            settlementAmount as settlementAmount,
+            plannedCollectionAmount-settlementAmount as notSettlementAmount,
+            ratioAmount as ratioAmount,
+            serviceType as typeId,
+            chargeItemId as chargeItemId,
+            chargeItem as chargeItem,
+            taxRateId as taxRateId,
+            taxRate as taxRate,
+            taxAmount as taxRateAmount,
+            noTaxAmount as amountWithOutRate,
+            contractPayFundId as payFundId,
+            remark as remark,
+            settlePlanGroup as settlePlanGroup,
+            splitMode as splitMode
+        from contract_income_conclude_plan
+        where pid != '0'
+        and deleted = 0
+        and paymentStatus != 2
+        and contractId = #{contractId}
+        and splitMode = #{splitMode}
+        and costEndTime <![CDATA[ <= ]]> #{date}
+        order by costStartTime
+    </select>
+
+    <select id="getChoosePlanInfoNew" resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomePlanConcludeV">
+        SELECT s.*,
+            CONCAT(b.name,CONCAT('-',b.contractNo)) nameNo,
+            b.contractAmountOriginalRate,
+            b.isCorrectionAndPlan,
+            b.conmaincode,
+            b.communityId,
+            b.communityName,
+            b.contractAmount,
+            b.changContractAmount,
+            b.ourPartyId,
+            b.ourParty,
+            b.oppositeOneId,
+            b.oppositeOne,
+            b.oppositeTwoId,
+            b.oppositeTwo,
+            e.qydws
+        FROM contract_income_conclude_plan s
+        left join contract_income_conclude b on s.contractId = b.id and b.deleted = 0
+        left join contract_income_conclude_expand e on b.id = e.contractId and e.deleted = 0
+        WHERE s.deleted = 0
+        AND s.pid in ('0')
+        AND b.pid = '0'
+        /*过滤已终止合同*/
+        and b.status != 3
+        <!-- fix:只能查询到推送成功的合同 -->
+        AND b.contractNature = 1
+        <if test="nameNo != null and nameNo !=''">
+            AND (b.name like CONCAT('%',#{nameNo},'%')
+            or b.contractNo like CONCAT('%',#{nameNo},'%'))
+        </if>
+        <if test="orgIds != null and orgIds.size() > 0">
+            and b.departId in
+            <foreach collection="orgIds" item="orgId" separator="," open="(" close=")">
+                #{orgId}
+            </foreach>
+        </if>
+        <!-- 按照合同id去重 -->
+        group by s.contractId
+        ORDER BY howorder  DESC, termDate Asc
+    </select>
+    <select id="queryByCostTime" resultType="com.wishare.contract.domains.entity.revision.income.ContractIncomePlanConcludeE">
+        select * from contract_income_conclude_plan where
+        deleted = 0 and
+        id in
+        <foreach collection="planIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and (
+        <foreach collection="periodList" item="period" separator="or">
+            (costStartTime = #{period.startDate} and costEndTime = #{period.endDate})
+        </foreach>
+        )
+        <!-- 只能查询出没有被核销过的结算计划 -->
+        and (settlementAmount is null or settlementAmount = 0)
+    </select>
+
+    <select id="queryByCostTimeNotFinished" resultType="com.wishare.contract.domains.entity.revision.income.ContractIncomePlanConcludeE">
+        select * from contract_income_conclude_plan where
+        deleted = 0 and payIncomeFinished = 0
+        id in
+        <foreach collection="planIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and (
+            <foreach collection="periodList" item="period" separator="or">
+                (costStartTime = #{period.startDate} and costEndTime = #{period.endDate})
+            </foreach>
+        )
+    </select>
+    <select id="getInnerInfoByContractId"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayPlanInnerInfoV">
+        select
+        c.id as contractId,
+        c.contractNo as contractNo,
+        c.name as contractName,
+        c.fromid as fromId,
+        c.conmaincode as conMainCode,
+        c.oppositeOneId as oppositeOneId,
+        c.oppositeOne as oppositeOne,
+        c.gmtExpireStart as gmtExpireStart,
+        c.gmtExpireEnd as gmtExpireEnd,
+        p.splitMode as splitMode,
+        c.communityId as communityId,
+        c.communityName as communityName,
+        cpe.fkdwxx as fkdwxx,
+        cpe.skdwxx as skdwxx,
+        c.contractAmountOriginalRate as contractAmountOriginalRate,
+        c.changContractAmount as changeContractAmount
+        from contract_income_conclude c
+        left join contract_income_conclude_expand cpe on c.id = cpe.contractId and cpe.deleted = 0
+        left join contract_income_conclude_plan p on c.id = p.contractId and p.deleted = 0 and p.pid != '0'
+        where c.deleted = 0 and c.id in
+        <foreach collection="contractIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        group by c.id
+    </select>
+    <select id="queryByCostTimeForBill"
+            resultType="com.wishare.contract.domains.entity.revision.income.ContractIncomePlanConcludeE">
+        select * from contract_income_conclude_plan where
+        deleted = 0 and
+        id in
+        <foreach collection="planIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and (
+        <foreach collection="periodList" item="period" separator="or">
+            (costStartTime = #{period.startDate} and costEndTime = #{period.endDate})
+        </foreach>
+        )
+    </select>
+
+    <select id="getEffectivePlan"
+            resultType="com.wishare.contract.domains.entity.revision.income.ContractIncomePlanConcludeE">
+        select *
+        from contract_income_conclude_plan
+        where deleted = 0
+          and pid != '0'
+        and contractId = #{contractId}
+    </select>
+
+    <select id="getUsedPlanIdListOnSettlement" resultType="java.lang.String">
+        select p.id
+        from contract_income_conclude_plan p
+        left join contract_income_conclude_settlement_plan_relation r on r.plan_id = p.id
+        left join contract_income_conclude_settlement s on s.id = r.settlement_id and s.deleted = 0
+        where p.deleted = 0
+        and s.deleted = 0
+        and p.id in
+        <foreach collection="planIdList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="getUsedPlanIdListOnPayCostPlan" resultType="java.lang.String">
+        select p.id
+        from contract_income_conclude_plan p
+        left join pay_income_plan c on c.planId = p.id and c.deleted = 0
+        where p.deleted = 0
+        and c.deleted = 0
+        and p.id in
+        <foreach collection="planIdList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="notSettlementGroup" resultType="java.lang.String">
+        select settlePlanGroup
+        from contract_income_conclude_plan
+        where deleted = 0
+          and pid != '0'
+        and contractId = #{contractId}
+          and paymentStatus = 0
+    </select>
+
+
+    <update id="updateIncomePlan" parameterType="java.util.List">
+        <foreach collection="amountList" item="item" index="index" open="" close="" separator=";">
+            update contract_income_conclude_plan
+                set reductionAmount =#{item.reductionAmount}
+            where id = #{item.id}
+        </foreach>
+    </update>
+
+    <update id="restoreplan" parameterType="java.util.List">
+        update contract_income_conclude_plan
+        set  settlementAmount = 0,
+        paymentStatus = 0
+        where id in
+        <foreach collection="planIdList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+    <select id="getFunDateList"
+            resultType="com.wishare.contract.domains.entity.revision.income.ContractIncomePlanConcludeE">
+        select id,
+        contractPayFundId,
+        min(costStartTime) as costStartTime,
+        max(costEndTime) as costEndTime
+        from contract_income_conclude_plan
+        where deleted = 0
+        and contractId = #{contractId}
+        and contractPayFundId in
+        <foreach collection="fundidList" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+        and (
+        <foreach collection="periodList" item="period" separator="or">
+            (costStartTime = #{period.startDate} and costEndTime = #{period.endDate})
+        </foreach>
+        )
+        group by contractPayFundId
+    </select>
+</mapper>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.pay.ContractPayConcludeSettlementContractSnapshotMapper">
+
+    <delete id="deleteBySettlementId">
+        delete from contract_pay_conclude_settlement_contract_snapshot
+        where settlementId = #{settlementId}
+    </delete>
+
+
+    <select id="querySnapshotByContractId"
+            resultType="com.wishare.contract.domains.entity.revision.pay.ContractPayConcludeSettlementContractSnapshotE">
+        select 	c.id contractId,
+                  c.contractNo contractNo,
+                  c.name contractName,
+                  c.conmaincode conmaincode,
+                  c.communityId communityId,
+                  c.communityName communityName,
+                  c.contractAmountOriginalRate contractAmountOriginalRate,
+                  c.contractAmount contractAmount,
+                  c.changContractAmount changContractAmount,
+                  c.ourPartyId ourPartyId,
+                  c.ourParty ourParty,
+                  c.oppositeOneId oppositeOneId,
+                  c.oppositeOne oppositeOne,
+                  c.oppositeTwoId oppositeTwoId,
+                  c.oppositeTwo oppositeTwo,
+                  e.qydws qydws
+        from contract_pay_conclude c
+                 left join contract_pay_conclude_expand e on e.contractId = c.id and e.deleted = 0
+        where (c.deleted = 0 or (c.deleted = 1
+            AND c.pid != '0'
+            AND c.nkStatus != 0
+            AND c.contractType = 0))
+        and c.id = #{contractId}
+    </select>
+
+    <select id="querySnapshotBySettlementId"
+            resultType="com.wishare.contract.domains.entity.revision.pay.ContractPayConcludeSettlementContractSnapshotE">
+        select *
+        from contract_pay_conclude_settlement_contract_snapshot
+        where settlementId = #{settlementId}
+    </select>
+</mapper>

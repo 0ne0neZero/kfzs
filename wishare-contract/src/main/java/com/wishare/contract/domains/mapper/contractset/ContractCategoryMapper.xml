@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractCategoryMapper">
+
+    <sql id="tableFields" >
+        cc.id,
+        cc.name,
+        cc.parentId,
+        cc.path,
+        cc.disabled,
+        cc.deleted,
+        cc.tenantId,
+        cc.creator,
+        cc.creatorName,
+        cc.gmtCreate,
+        cc.operator,
+        cc.operatorName,
+        cc.gmtModify,
+        cc.abbrCode
+    </sql>
+
+    <select id="querySubLevel" resultType="com.wishare.contract.domains.entity.contractset.ContractCategoryE">
+        select
+        <include refid="tableFields" />
+        from
+        contract_category cc
+        where cc.deleted = 0
+        <if test="id != null">
+            and (JSON_CONTAINS(cc.path, JSON_ARRAY(#{id})))
+        </if>
+    </select>
+
+    <select id="queryByBizCode" resultType="com.wishare.contract.domains.entity.contractset.ContractCategoryE">
+        select
+        <include refid="tableFields" />
+        from
+        contract_category cc
+        where cc.deleted = 0
+        and cc.bizCode = #{bizCode}
+    </select>
+
+
+</mapper>

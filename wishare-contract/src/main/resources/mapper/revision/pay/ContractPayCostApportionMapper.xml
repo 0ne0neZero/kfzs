@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.pay.ContractPayCostApportionMapper">
+
+    <update id="deletedCostData">
+        update contract_pay_cost_apportion
+        set deleted= 1,
+            gmtModify  = now()
+        where contractId = #{contractId}
+        and id in <foreach collection="idList" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+    </update>
+    <update id="deletedCostDataOne">
+        update contract_pay_cost_apportion
+        set deleted= 1,
+            gmtModify  = now()
+        where contractId = #{contractId}
+        and id = #{id}
+    </update>
+</mapper>

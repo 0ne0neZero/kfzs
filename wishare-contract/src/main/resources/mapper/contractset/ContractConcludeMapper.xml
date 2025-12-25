@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractConcludeMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    com.wishare.contract.domains.consts.contractset.ContractConcludeFieldConst 会每次重新生成
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,name,tenantId,communityId,partyAName,PartyBName,category,contractNature,
+    amountTaxIncluded,amountTaxExcluded,estimatedAmount,gmtExpireStart,gmtExpireEnd,virtualContract,backdatingContract,
+    signingMethod,contractState,bondAmount,bidBond,bidBondName,bidBondAmount,projectSource,
+    businessType,propertyModel,propertyFeePrice,expenditureContract,contractAbstract,referenceModel,ModelName,
+    incomeContract,contractText,contractEnclosure,otherDocuments,reviewStatus,procId,handledBy,
+    orgId,bond,chargeItemId,bondType,frameworkContract,creator,creatorName,
+    gmtCreate,operator,operatorName,gmtModify,deleted -->
+    <select id="selectContractCount" resultType="java.lang.Integer">
+        select count(0)
+        from contract_conclude
+        where pid = #{pid} and tenantId=#{tenantId}
+    </select>
+
+    <select id="listContractConclude" resultType="com.wishare.contract.domains.vo.contractset.ConcludeInfoV">
+        select *
+        from contract_conclude
+        <where>
+            deleted = 0
+            <if test="p!= null">
+                <if test="p.tenantId != null and p.tenantId !=''">
+                    AND tenantId=#{p.tenantId}
+                </if>
+                <if test="p.communityId != null and p.communityId !=''">
+                    AND communityId=#{p.communityId}
+                </if>
+                <if test="p.contractNature != null">
+                    AND contractNature=#{p.contractNature}
+                </if>
+                <if test="p.id != null">
+                    AND id=#{p.id}
+                </if>
+                <if test="p.pid != null">
+                    AND pid=#{p.pid}
+                </if>
+                <if test="p.contractState != null">
+                    AND contractState=#{p.contractState}
+                </if>
+                <if test="p.virtualContract != null">
+                    AND virtualContract=#{p.virtualContract}
+                </if>
+                <if test="p.tenantId != null">
+                    AND tenantId=#{p.tenantId}
+                </if>
+                <if test="p.categoryId != null">
+                    AND categoryId=#{p.categoryId}
+                </if>
+                <if test="p.frameworkContract != null">
+                    AND frameworkContract=#{p.frameworkContract}
+                </if>
+                <if test="p.name != null and p.name !=''">
+                    AND name LIKE concat('%', #{p.name} ,'%')
+                </if>
+            </if>
+        </where>
+    </select>
+    <select id="relevanceListContractConclude" resultType="com.wishare.contract.domains.vo.contractset.ConcludeInfoV">
+        select *
+        from contract_conclude conclude
+        LEFT JOIN contract_category category on conclude.categoryId = category.id
+        <where>
+            conclude.deleted = 0
+            AND (category.natureTypeName like concat('%', '美居服务' ,'%')
+            OR category.natureTypeName like concat('%', '租售服务' ,'%')
+            OR category.natureTypeName like concat('%', '工程服务' ,'%')
+            )
+            <if test="p!= null">
+                <if test="p.contractNature != null">
+                    AND conclude.contractNature=#{p.contractNature}
+                </if>
+                <if test="p.name != null and p.name !=''">
+                    AND (conclude.name LIKE concat('%', #{p.name} ,'%')
+                        or conclude.contractNo LIKE concat('%', #{p.name} ,'%'))
+                </if>
+            </if>
+        </where>
+        LIMIT 10
+    </select>
+    <select id="contractList" resultType="com.wishare.contract.domains.vo.contractset.ContractDetailsV">
+        select id,gmtExpireEnd,contractState,tenantId,name
+        from contract_conclude
+        where deleted = 0 and contractState != 2
+    </select>
+
+    <select id="queryByPage" resultType="com.wishare.contract.domains.vo.contractset.ContractConcludeV">
+        SELECT *
+        FROM contract_conclude
+        ${ew.customSqlSegment}
+        and pid=0
+        and deleted = 0
+        order by gmtModify DESC,id DESC
+    </select>
+    <select id="queryByPath" resultType="com.wishare.contract.domains.vo.contractset.ContractConcludeV">
+        SELECT *
+        FROM contract_conclude
+        ${ew.customSqlSegment}
+        and deleted = 0
+        and pid IN ( '15996893328101')
+        <if test="parentIdList != null and parentIdList.size() > 0">
+            AND pid IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            or id IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        order by gmtModify DESC,id DESC
+    </select>
+
+    <select id="queryByContractPage" resultType="com.wishare.contract.domains.vo.contractset.ContractInfoV">
+        SELECT id,name,contractNo,tenantId,communityId,pid,partyAId,PartyBId,PartyCId,categoryId,contractNature,
+        amountTaxIncluded,amountTaxExcluded,originalCurrency, gmtExpireStart ,gmtExpireEnd,signingMethod
+        ,bondHomeCurrency,contractState,taxRate,creatorName,gmtCreate
+        FROM contract_conclude
+        ${ew.customSqlSegment}
+        <if test="method == 1">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) = #{dayDate}
+        </if>
+        <if test="method == 3">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) > #{dayDate}
+        </if>
+        <if test="method == 5">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) &lt; #{dayDate}
+        </if>
+        <if test="method == 4">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) &lt;= #{dayDate}
+        </if>
+        <if test="method == 6">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) >= #{dayDate}
+        </if>
+        <if test="method == 13">
+            and date_format( gmtExpireStart, '%Y-%m-%d' ) &lt;= #{dayDateStart}
+        </if>
+        <if test="method == 13">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) >= #{dayDateEnd}
+        </if>
+        and pid=0
+        and deleted = 0
+        order by gmtModify DESC,id DESC
+    </select>
+    <select id="queryByContractPath" resultType="com.wishare.contract.domains.vo.contractset.ContractInfoV">
+        SELECT id,name,contractNo,tenantId,communityId,communityName,pid,partyAId,PartyBId,PartyCId,categoryId,contractNature,amountTaxIncluded,amountTaxExcluded,originalCurrency,
+        gmtExpireStart,gmtExpireEnd,signingMethod,bondHomeCurrency,contractState,taxRate,creatorName,gmtCreate
+        FROM contract_conclude
+        ${ew.customSqlSegment}
+        and deleted = 0
+        <if test="parentIdList != null and parentIdList.size() > 0">
+            AND pid IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            or id IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="method == 1">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) = #{dayDate}
+        </if>
+        <if test="method == 3">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) > #{dayDate}
+        </if>
+        <if test="method == 5">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) &lt; #{dayDate}
+        </if>
+        <if test="method == 4">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) &lt;= #{dayDate}
+        </if>
+        <if test="method == 6">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) >= #{dayDate}
+        </if>
+        <if test="method == 13">
+            and date_format( gmtExpireStart, '%Y-%m-%d' ) &lt;= #{dayDateStart}
+        </if>
+        <if test="method == 13">
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) >= #{dayDateEnd}
+        </if>
+        order by gmtModify DESC,id DESC
+    </select>
+
+    <select id="expireContract" resultType="com.wishare.contract.domains.vo.contractset.ContractDetailsV">
+        SELECT id,name,date_format( gmtExpireEnd, '%Y-%m-%d' ) as gmtExpireEnd,tenantId,creator
+        FROM contract_conclude
+        WHERE virtualContract = 0 and signingMethod in (0,2) and deleted = 0 and frameworkContract = 0 and contractState in (1,2)
+        <if test="id != null">
+            AND id=#{id}
+        </if>
+        <if test="tenantId != null">
+            AND tenantId=#{tenantId}
+        </if>
+        <if test="flag != null and flag == true">
+            and
+            date_format( now(), '%Y-%m-%d' ) &gt; date_format( gmtExpireEnd, '%Y-%m-%d' )
+        </if>
+        <if test="flag != null and flag == false">
+            and
+            date_format( now(), '%Y-%m-%d' ) = date_format( gmtExpireEnd, '%Y-%m-%d' )
+        </if>
+        <if test="flag == null">
+            and
+            DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 DAY),'%Y-%m-%d') = date_format( gmtExpireEnd, '%Y-%m-%d' )
+        </if>
+    </select>
+
+    <select id="contractAdvent" resultType="com.wishare.contract.domains.vo.contractset.ContractDetailsV">
+        SELECT id,name,date_format( gmtExpireEnd, '%Y-%m-%d' ) as gmtExpireEnd,tenantId,creator
+        FROM contract_conclude
+        WHERE virtualContract = 0 and signingMethod in (0,2) and deleted = 0 and frameworkContract = 0 and contractState in (1,2) and warnState !=2
+        <if test="id != null">
+            AND id=#{id}
+        </if>
+        <if test="tenantId != null">
+            AND tenantId=#{tenantId}
+        </if>
+        <if test="flag != null and flag == true">
+            and
+            date_format( DATE_SUB( gmtExpireEnd, INTERVAL #{dayNum} DAY ), '%Y-%m-%d' ) &lt;= date_format(now(),'%Y-%m-%d'  )
+            and date_format( gmtExpireEnd, '%Y-%m-%d' ) &gt;= date_format(now(), '%Y-%m-%d'  )
+        </if>
+        <if test="flag != null and flag == false">
+            and
+            date_format( DATE_SUB( gmtExpireEnd, INTERVAL #{dayNum} DAY ), '%Y-%m-%d' ) = date_format(now(), '%Y-%m-%d'  )
+        </if>
+    </select>
+    <select id="checkContract" resultType="java.lang.Long">
+        select id
+        from contract_conclude
+        where deleted = 0 and originalContractId=#{id}
+        <if test="signingMethod != null">
+            AND reviewStatus in (0,2,4) and contractState = 0
+        </if>
+    </select>
+    <select id="amountSum" resultType="com.wishare.contract.domains.vo.contractset.ContractConcludeSumV">
+        select sum(ccp.localCurrencyAmount) as amountSum,
+        sum(ccp.paymentAmount) as paymentAmountSum,
+        SUM( ccp.localCurrencyAmount )-SUM( ccp.paymentAmount ) as uncollectedSum
+        from contract_conclude cc LEFT JOIN contract_collection_plan ccp ON ccp.contractId = cc.id
+        where ccp.deleted = 0
+        <if test="contractIds != null and contractIds.size() > 0">
+            and cc.id IN
+            <foreach collection="contractIds" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+--         and cc.contractState in (1,3,4) and cc.virtualContract=0 and cc.frameworkContract=0 and cc.signingMethod in (0,2,5)
+    </select>
+
+    <update id="updateContractState">
+        UPDATE contract_conclude SET contractState = 2, warnState = 2
+        WHERE id=#{id}
+    </update>
+
+    <update id="updateWarnState">
+        UPDATE contract_conclude SET warnState = #{warnState}
+        WHERE id=#{id}
+    </update>
+
+    <update id="contractBackups">
+        UPDATE contract_conclude SET deleted = 0
+        WHERE pid=#{pid} and contractState = 5
+    </update>
+
+    <select id="countContractSum" resultType="com.wishare.contract.domains.vo.contractset.ContractAccountSumV">
+        select sum(ccp.localCurrencyAmount) as amountSum,
+        sum(ccp.paymentAmount) as paymentAmountSum,
+        sum(ccp.invoiceAmount) as invoiceAmount,
+        sum(ccp.localCurrencyAmount) as collectedSum
+        from contract_conclude cc LEFT JOIN contract_collection_plan ccp ON ccp.contractId = cc.id
+        where cc.deleted = 0 and ccp.deleted = 0
+        <if test="contractIds != null and contractIds.size() > 0">
+            and cc.id IN
+            <foreach collection="contractIds" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        and cc.signingMethod not in (1,3,6)
+    </select>
+    <select id="selectContractTimeList" resultType="com.wishare.contract.domains.vo.contractset.ContractPlanV">
+        SELECT id,contractNo agreementNo,name agreementName,reviewStatus agreementStatus,deleted deleteFlag,partyAId
+        FROM contract_conclude
+        WHERE virtualContract = 0 and signingMethod in (0,2,5) and frameworkContract = 0 and contractState =1 and warnState !=2 and contractNature =1
+        and date_format(gmtModify, '%Y-%m-%d' ) = date_format(now(), '%Y-%m-%d'  )
+        <if test="tenantId != null">
+            AND tenantId=#{tenantId}
+        </if>
+    </select>
+    <select id="selectOneByBpmRecordId" resultType="java.lang.Long">
+        select id
+        from contract_conclude
+        where deleted = 0
+        and procId = #{recordId}
+        limit 1
+    </select>
+
+</mapper>

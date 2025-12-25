@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.pay.fund.ContractPayFundMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,name,typeId,type,amount,chargeItemId,chargeItem,taxRateId,
+    taxRate,payTypeId,payType,payWayId,payWay,startDate,endDate,
+    standardId,standard,remark,tenantId,creator,creatorName,gmtCreate,
+    operator,operatorName,gmtModify,deleted -->
+
+    <select id="getContractPayFundList" resultType="com.wishare.contract.domains.vo.revision.pay.fund.ContractPayFundInfoV">
+        SELECT TYPE,
+               CHARGEITEM,
+               AMOUNT,
+               PAYWAY,
+               STANDARD ,
+               STANDAMOUNT,
+               AMOUNTNUM num
+               FROM contract_pay_fund
+               WHERE CONTRACTID = #{contractid}
+               AND deleted = 0
+    </select>
+
+    <select id="getContractPaySettFundList" resultType="com.wishare.contract.domains.vo.revision.pay.fund.ContractPayFundV">
+        SELECT * FROM contract_pay_fund
+        WHERE CONTRACTID = #{contractid}
+          AND deleted = 0
+    </select>
+
+    <!--获取清单项最大金额数据-->
+    <select id="getFundListByContractIdList" resultType="com.wishare.contract.apps.fo.revision.pay.report.ContractPayReportDetailListV">
+        SELECT f.contractId,
+            group_concat(DISTINCT p.splitMode) as splitMode
+        FROM contract_pay_fund f
+            INNER JOIN (
+            SELECT contractId, MAX(amount) AS max_amount
+            FROM contract_pay_fund
+            where deleted = 0
+                and id in (
+                    select contractPayFundId from contract_pay_conclude_plan where deleted = 0
+                )
+            GROUP BY contractId
+            ) fj ON f.contractId = fj.contractId AND f.amount = fj.max_amount
+        left join contract_pay_conclude_plan p on f.contractId = p.contractId
+            and f.id = p.contractPayFundId and p.pid != '0'
+        where f.deleted = 0
+        and p.deleted = 0
+        and f.contractId in
+        <foreach item="item" collection="contractList" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        group by f.contractId
+    </select>
+    <select id="getFundChargeItemById" resultType="com.wishare.contract.apps.fo.revision.FunChargeItemF">
+        SELECT chargeItemId as id,
+               chargeItemId as code,
+               chargeItem as name
+        FROM contract_pay_fund
+        WHERE contractId = #{contractId}
+          AND deleted = 0
+          and chargeItemId is not null
+        group by chargeItemId
+    </select>
+
+    <select id="getExtField" resultType="java.lang.Integer">
+        select ifnull(max(extField),0)
+        FROM contract_pay_fund
+        where contractId=#{contractId}
+          and typeId = #{typeId}
+          and taxRateId = #{taxRateId}
+          and standardId = #{standardId}
+          and standAmount = #{standAmount}
+          and deleted=0
+    </select>
+
+    <delete id="deleteByMainId">
+        update contract_pay_fund
+        set deleted = 1
+        where mainId = #{mainId}
+    </delete>
+
+    <update id="deletedCostData">
+        update contract_pay_fund
+        set accountItemCode = null,
+            accountItemName = null,
+            accountItemFullCode = null,
+            accountItemFullName = null,
+            summarySurplusAmount = null,
+            cbApportionId = null,
+            gmtModify  = now()
+        where contractId = #{contractId}
+    </update>
+</mapper>

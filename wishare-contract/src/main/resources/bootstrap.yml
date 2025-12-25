@@ -1,0 +1,32 @@
+jasypt:
+  encryptor:
+    password: wishare
+server:
+  servlet:
+    context-path: /contract
+  port: 8102
+spring:
+  application:
+    name: wishare-contract
+  profiles:
+    active: dev
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  cloud:
+    nacos:
+      username: wishare
+      password: ENC(WjAs7n6GdFxxh9CY5AqdNkaRtLKMtCryfHUfwLDZcIRchas49h0tGPnRsHWqi8ed)
+      config:
+        server-addr: 10.100.50.31:31445
+        namespace: wishare
+        prefix: wishare-contract
+        file-extension: yaml
+        shared-configs[0]:
+          data-id: public-default.yaml
+          refresh: true
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+#    #控制台打印sql
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

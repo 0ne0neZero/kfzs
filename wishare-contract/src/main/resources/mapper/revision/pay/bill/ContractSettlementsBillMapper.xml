@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.pay.bill.ContractSettlementsBillMapper">
+    <select id="settlementsBillForContractDetail"
+            resultType="com.wishare.contract.domains.vo.revision.pay.bill.ContractPayBillV">
+        select DISTINCT cc.* from (SELECT
+                              csb.*
+                          from contract_settlements_bill csb
+                              left join contract_pay_conclude_settlement ck
+                                  on csb.contractId = ck.id
+
+                          union all
+
+                          SELECT
+                              csb.*
+                          from contract_settlements_bill csb
+                              left join contract_income_conclude_settlement ck
+                                  on csb.contractId = ck.id) cc
+                                  ${ew.customSqlSegment}
+        ORDER BY
+            cc.gmtModify DESC
+    </select>
+
+
+    <select id="getDetailsByIdSettle"
+            resultType="com.wishare.contract.domains.vo.revision.pay.bill.ContractPayBillV">
+        SELECT
+            cc.*
+        FROM
+            (
+                SELECT
+                    csb.*
+                FROM
+                    contract_settlements_bill csb
+                        LEFT JOIN contract_pay_conclude ck ON csb.contractId = ck.id
+        where ck.oppositeOneId = #{oppositeId}
+        OR ck.oppositeTwoId = #{oppositeId}
+
+
+                UNION ALL
+                SELECT
+                    csb.*
+                FROM
+                    contract_settlements_bill csb
+                        LEFT JOIN contract_income_conclude ck ON csb.contractId = ck.id
+           where  ck.oppositeOneId = #{oppositeId}
+            OR ck.oppositeTwoId = #{oppositeId}
+            ) cc
+    </select>
+</mapper>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractInvoiceDetailMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    com.wishare.contract.domains.consts.contractset.ContractInvoiceDetailFieldConst 会每次重新生成
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,contractId,collectionPlanId,invoiceApplyNumber,invoiceApplyAmount,invoiceApplyTime,remark,userId,
+    userName,invoiceTax,invoiceStatus,invoiceNumber,auditStatus,auditNumber,confirmStatus,
+    tenantId,deleted,creator,creatorName,gmtCreate,operator,operatorName,
+    gmtModify -->
+    <select id="selectByCollectionPlanId"
+            resultType="com.wishare.contract.domains.vo.contractset.InvoiceDetailPlanV">
+        SELECT
+            ccp.summary,
+            ccp.plannedCollectionAmount,
+            ccp.plannedCollectionTime,
+            cid.id,
+            cid.contractId,
+            cid.collectionPlanId,
+            cid.invoiceApplyNumber,
+            cid.invoiceApplyAmount,
+            cid.invoiceApplyTime,
+            cid.remark,
+            cid.userId,
+            cid.userName,
+            cid.invoiceTax,
+            cid.invoiceStatus,
+            cid.invoiceNumber,
+            cid.auditStatus,
+            cid.auditNumber,
+            cid.confirmStatus,
+            cid.tenantId,
+            cid.deleted,
+            cid.creator,
+            cid.creatorName,
+            cid.gmtCreate,
+            cid.operator,
+            cid.operatorName,
+            cid.gmtModify,
+            cid.productName,
+            cid.billType,
+            cid.invocieUrl,
+            cid.failReason
+        FROM
+            contract_invoice_detail cid
+            LEFT JOIN contract_collection_plan ccp ON cid.collectionPlanId = ccp.id
+        WHERE
+            cid.deleted = 0
+            AND ccp.deleted = 0
+            <if test="contractId != null and contractId != 0">
+                AND cid.contractId = #{contractId}
+            </if>
+            <if test="collectionPlanId != null and collectionPlanId !=0">
+                AND cid.collectionPlanId = #{collectionPlanId}
+            </if>
+            <if test="tenantId != null and tenantId !=''">
+                AND cid.tenantId = #{tenantId}
+            </if>
+        ORDER BY
+            cid.gmtModify DESC
+    </select>
+
+    <delete id="deleteByCollectionPlanId">
+        UPDATE contract_invoice_detail
+            SET deleted = 1
+        WHERE
+            collectionPlanId = #{collectionPlanId}
+    </delete>
+
+    <delete id="deleteByContractId">
+        UPDATE contract_invoice_detail
+            SET deleted = 1
+        WHERE
+            contractId = #{contractId}
+    </delete>
+
+    <update id="updateInvoiceInfo">
+        UPDATE contract_invoice_detail
+        <set>
+            <if test="invoiceNo != null and invoiceNo != ''">
+                invoiceNumber = #{invoiceNo},
+            </if>
+            <if test="nuonuoUrl != null and nuonuoUrl != ''">
+                invocieUrl = #{nuonuoUrl},
+            </if>
+            <if test="failReason != null and failReason != ''">
+                failReason = #{failReason},
+            </if>
+            invoiceStatus = #{invoiceStatus}, gmtModify = now()
+        </set>
+        WHERE invoiceId = #{id}
+    </update>
+
+    <select id="selectCountCurrentDate" resultType="java.lang.Long">
+        SELECT
+            COUNT(1)
+        FROM
+            contract_invoice_detail
+        WHERE
+            DATE_FORMAT(gmtCreate,"%Y-%m-%d") = DATE_FORMAT(NOW(),"%Y-%m-%d")
+    </select>
+
+</mapper>

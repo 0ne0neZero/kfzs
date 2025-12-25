@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.pay.ContractPayConcludeSettlementPlanRelationMapper">
+    <insert id="insertBatch">
+        insert into contract_pay_conclude_settlement_plan_relation(settlement_id, plan_id)
+        values
+        <foreach collection="relationList" item="item" separator=",">
+            (#{item.settlementId},#{item.planId})
+        </foreach>
+    </insert>
+
+    <delete id="deleteBySettlementId">
+        delete from contract_pay_conclude_settlement_plan_relation
+        where settlement_id = #{settlementId}
+    </delete>
+
+    <select id="getPlanList"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.ContractPayPlanForSettlementV">
+        select
+        plan.id as planId,
+        plan.termDate as termDate,
+        plan.costStartTime as costStartTime,
+        plan.costEndTime as costEndTime,
+        plan.plannedCollectionTime as plannedCollectionTime,
+        plan.plannedCollectionAmount as plannedCollectionAmount,
+        plan.settlementAmount as settlementAmount,
+        plan.plannedCollectionAmount-plan.settlementAmount as noSettlementAmount,
+        plan.ratioAmount as ratioAmount,
+        plan.costEstimationCode as costEstimationCode,
+        f.typeId as typeId,
+        f.type as type,
+        f.chargeItemId as chargeItemId,
+        f.chargeItem as chargeItem,
+        f.taxRateId as taxRateId,
+        f.taxRate as taxRate,
+        f.taxRateAmount as taxRateAmount,
+        f.amountWithOutRate as amountWithOutRate,
+        f.remark as remark
+        from contract_pay_conclude_settlement_plan_relation relation
+        left join contract_pay_conclude_plan plan on relation.plan_id = plan.id
+            and plan.deleted = 0
+            and plan.pid != '0'
+        left join contract_pay_fund f on f.contractId = plan.contractId
+            and f.chargeItemId =  plan.chargeItemId
+            and f.typeId = plan.serviceType
+            and f.taxRateId = plan.taxRateId
+            and f.deleted = 0
+        where relation.settlement_id = #{settlementId}
+        and plan.id is not null
+        group by plan.id
+        order by f.typeId,f.chargeItemId,plan.costStartTime
+    </select>
+
+    <select id="getSimpleStrList"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.SettlementSimpleStr">
+        SELECT r.settlement_id as settlementId,
+               GROUP_CONCAT(DISTINCT CONCAT(f.type,'-',f.chargeItem,'-',p.termDate)) as str
+        FROM contract_pay_conclude_settlement_plan_relation r
+                 LEFT JOIN contract_pay_conclude_plan p ON p.id = r.plan_id
+            AND p.deleted = 0
+                 LEFT JOIN contract_pay_fund f ON f.contractId = p.contractId
+            AND f.chargeItemId = p.chargeItemId
+            AND f.typeId = p.serviceType
+            AND f.taxRateId = p.taxRateId
+            AND f.deleted = 0
+        where f.id is not null
+        and r.settlement_id in
+        <foreach collection="settlementIdList" separator="," item="item" open="(" close=")">
+            #{item}
+        </foreach>
+        GROUP BY r.settlement_id
+    </select>
+
+    <select id="getSettlementPlanIdSimpleStrList"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.SettlementSimpleStr">
+        SELECT r.settlement_id as settlementId,
+                GROUP_CONCAT(p.id) as str
+        FROM contract_pay_conclude_settlement_plan_relation r
+        LEFT JOIN contract_pay_conclude_plan p ON p.id = r.plan_id
+        AND p.deleted = 0
+        WHERE r.settlement_id in
+        <foreach collection="settlementIdList" separator="," item="item" open="(" close=")">
+            #{item}
+        </foreach>
+        AND p.plannedCollectionTime <![CDATA[ >= ]]> #{start}
+        AND p.plannedCollectionTime <![CDATA[ <= ]]> #{end}
+        group by r.settlement_id
+
+    </select>
+    <select id="selectExistRuningSettlement" resultType="java.lang.String">
+        select s.id
+        from contract_pay_conclude_settlement_plan_relation r
+        left join contract_pay_conclude_settlement s on r.settlement_id = s.id and s.deleted = 0
+        where s.reviewStatus in (0,1,9,4)
+        and r.plan_id in
+        <foreach collection="planIdList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+</mapper>

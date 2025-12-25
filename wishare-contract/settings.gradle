@@ -1,0 +1,11 @@
+pluginManagement {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven {
+            allowInsecureProtocol = true
+            url 'http://10.201.244.121:8081/repository/maven-public/'
+        }
+    }
+}
+rootProject.name = 'wishare-contract'

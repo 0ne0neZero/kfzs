@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.income.ContractIncomeConcludeMapper">
+
+
+    <select id="queryInfo" resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeConcludeV">
+        SELECT
+        s.id,
+        s.NAME,
+        s.contractNo,
+        s.contractAmountOriginalRate,
+        s.contractAmountLocalRate,
+        s.gmtExpireEnd,
+        s.gmtExpireStart,
+        s.oppositeOne,
+        s.oppositeOneId,
+        s.changContractAmount,
+        CONCAT( s.NAME, CONCAT( '-', s.contractNo ) ) nameNo,
+        (if(s.changContractAmount = 0,s.contractAmountOriginalRate, s.changContractAmount) - ifnull( b1.splannedCollectionAmount, 0.00 )) noPlanAmount,
+        changContractAmount,
+        costCenterId,
+        costCenterName,
+        departId,
+        departName,
+        ourPartyId,
+        ourParty,
+        s.communityName,
+        e.conmanagetype,
+        s.contractBusinessLine
+        FROM contract_income_conclude s
+            left join contract_income_conclude_expand e on s.id = e.contractId and e.deleted = 0
+        LEFT JOIN (SELECT
+        sum( plannedCollectionAmount ) splannedCollectionAmount,
+        b.contractid
+        FROM contract_income_conclude_plan b
+        WHERE b.deleted = 0
+        and b.pid !='0'
+        GROUP BY b.contractid ) b1
+        ON b1.contractid = s.id
+        WHERE s.deleted = 0
+        AND s.reviewStatus = 2
+        AND s.STATUS NOT IN ( 6 )
+        AND s.signingMethod = 0
+        and s.tenantId = #{tenantId}
+        <if test="nameNo != null and nameNo !=''">
+            AND (s.contractNo like CONCAT('%',#{nameNo},'%')
+            or s.name like CONCAT('%',#{nameNo},'%'))
+        </if>
+        <if test="contractId != null and contractId !=''">
+            AND s.id=#{contractId}
+        </if>
+        limit 500
+    </select>
+
+    <select id="queryContractCount" resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeConcludeV">
+        select *
+        from contract_income_conclude  s
+        where s.contractNo LIKE concat('%', #{contractNo} ,'%')
+        <if test="type == 1">
+            and s.isBackDate = 0
+        </if>
+        <if test="type == 2">
+            and s.isBackDate != 0
+        </if>
+        <if test="communityName == 1">
+            AND s.communityName LIKE concat('%', '总部' ,'%')
+        </if>
+        <if test="communityName == 2">
+            AND s.communityName NOT LIKE concat('%', '总部' ,'%')
+        </if>
+    </select>
+
+    <select id="queryIsExistContract" resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeConcludeV">
+        select *
+        from contract_income_conclude  s
+        where s.pid = #{id}
+          and deleted = 0
+          and (s.reviewStatus != 2 or ( s.reviewStatus = 2 and (s.contractNature is null or s.contractNature not in (1,2))))
+    </select>
+
+    <select id="collectionIncomeConcludePage"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeConcludeTreeV">
+        SELECT
+            cc.*
+        from contract_income_conclude cc
+            ${ew.customSqlSegment}
+        and cc.pid = '0'
+        ORDER BY
+            cc.gmtModify DESC
+    </select>
+
+    <select id="queryByPath"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeConcludeTreeV">
+        SELECT
+        cc.*
+        from contract_income_conclude cc
+        ${ew.customSqlSegment}
+        and cc.deleted = 0
+        <if test="parentIdList != null and parentIdList.size() > 0">
+            AND cc.pid IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            or cc.id IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY
+        cc.gmtModify DESC
+    </select>
+
+    <select id="selectIncomeExpireContract" resultType="com.wishare.contract.domains.vo.revision.remind.ContractAndPlanInfoV">
+        select
+            0 as messageConfig,
+            2 as contractNature,
+            id as contractId,
+            name as contractName,
+            contractNo,
+            creator as handlerId,
+            creatorName as handlerName,
+            communityId,
+            gmtExpireStart as contractGmtExpireStart,
+            gmtExpireEnd as contractGmtExpireEnd
+        from contract_income_conclude where
+            signingMethod in (0,2)
+            and contractType != 1
+            and status = 1
+            and warnState != 2
+            and reviewStatus =2
+            and DATEDIFF(gmtExpireEnd,now()) in
+            <foreach collection="expireDays" item="days" separator="," open="(" close=")">
+                #{days}
+            </foreach>
+            and deleted = 0
+    </select>
+
+    <select id="queryContractNosByRangeTimeAndCertainPropertyNotSupply" resultType="java.lang.String">
+        select distinct contractNo
+        from contract_income_conclude
+        where gmtModify between #{startTime} and #{endTime}
+        and contractType != 2
+        and deleted = 0
+        and contractNo like concat('%', #{year}, '%')
+        <if test="departId != null and departId != ''">
+            and departId = #{departId}
+        </if>
+        <if test="isBackDate != null">
+            and isBackDate = #{isBackDate} and communityName like '%区域%'
+        </if>
+        <if test="communityId != null and communityId != ''">
+            and communityId = #{communityId}
+        </if>
+    </select>
+
+    <select id="queryContractNosByRangeTimeAndCertainPropertySupply" resultType="java.lang.String">
+        select distinct contractNo
+        from contract_income_conclude
+        where gmtModify between #{startTime} and #{endTime}
+        and contractType = 2
+        and deleted = 0
+        and contractNo like concat('%', #{year}, '%')
+        <if test="departId != null and departId != ''">
+            and departId = #{departId}
+        </if>
+        <if test="isBackDate != null">
+            and isBackDate = #{isBackDate} and communityName like '%区域%'
+        </if>
+        <if test="communityId != null and communityId != ''">
+            and communityId = #{communityId}
+        </if>
+    </select>
+
+    <select id="queryToPullZjContractIds" resultType="java.lang.String">
+        select id
+        from contract_income_conclude
+        where
+        deleted = 0
+        and reviewStatus = 2
+        and (contractNature is null or contractNature in (0,2))
+        and pullZjFailCount <![CDATA[ < ]]> 3
+    </select>
+    <select id="queryContractNosByPid" resultType="java.lang.String">
+        select contractNo
+        from contract_income_conclude
+        where pid = #{pid}
+        and deleted = 0
+        and contractType = 2
+    </select>
+
+    <update id="incrementPullZjFailCountById">
+        update contract_income_conclude
+        set pullZjFailCount = pullZjFailCount+1
+        where id = #{id}
+    </update>
+
+    <update id="updateContractInUse">
+        <!-- 当前时间到了合同开始时间、状态是"尚未履行"、审批状态是"已通过"、未删除的收入合同，状态更新为"正在履行" -->
+        update contract_income_conclude set `status` = 1 where gmtExpireStart &lt;= #{targetDate} and `status` = 0 and reviewStatus = 2 and deleted = 0;
+    </update>
+
+    <select id="queryInfoNew"
+            resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeConcludeV">
+        SELECT
+            s.id,
+            s.name,
+            s.contractNo,
+            s.contractAmountOriginalRate,
+            s.gmtExpireEnd,
+            s.gmtExpireStart,
+            s.oppositeOne,
+            s.oppositeOneId,
+            s.changContractAmount,
+            CONCAT(s.name,CONCAT( '-', s.contractNo )) nameNo,
+            if(s.changContractAmount = 0, s.contractAmountOriginalRate, s.changContractAmount) noPlanAmount,
+            s.costCenterId,
+            s.costCenterName,
+            s.departId,
+            s.departName,
+            s.ourPartyId,
+            s.ourParty,
+            s.communityId,
+            s.communityName
+        FROM contract_income_conclude s
+        left join contract_income_conclude_plan b on s.id = b.contractId and b.deleted = 0
+        WHERE s.deleted = 0
+        AND s.reviewStatus = 2
+        AND s.STATUS IN (0,1)
+        AND s.pid = '0'
+        <!-- fix:只能查询到推送成功的合同 -->
+        AND s.contractNature = 1
+        and s.tenantId = #{tenantId}
+        <if test="orgIds != null and orgIds.size() > 0">
+            and s.departId in
+            <foreach collection="orgIds" item="orgId" separator="," open="(" close=")">
+                #{orgId}
+            </foreach>
+        </if>
+        <if test="nameNo != null and nameNo !=''">
+            AND (s.contractNo like CONCAT('%',#{nameNo},'%')
+            or s.name like CONCAT('%',#{nameNo},'%'))
+        </if>
+        <if test="contractId != null and contractId !=''">
+            AND s.id = #{contractId}
+        </if>
+        <!-- 只查询没有关联收款计划的合同，所以这里得加这个条件 -->
+        and b.contractId is null
+        limit 500
+    </select>
+    <select id="queryByContractId"
+            resultType="com.wishare.contract.domains.entity.revision.income.ContractIncomeConcludeE">
+        select *
+        from contract_income_conclude
+        where deleted = 0
+        and id = #{contractId}
+    </select>
+
+    <select id="queryByPathV2" resultType="com.wishare.contract.domains.vo.revision.income.ContractIncomeConcludeTreeV">
+        select
+            cc.*,
+            /*合同管理类别*/
+            b.conmanagetype
+        from contract_income_conclude cc
+                 left join contract_income_conclude_expand b on cc.id = b.contractId and b.deleted = 0
+            ${ew.customSqlSegment}
+        and cc.deleted = 0
+        order by
+            cc.gmtModify desc
+    </select>
+
+    <select id="getPageShowNumV2" resultType="com.wishare.contract.domains.entity.revision.income.ContractIncomeConcludeE">
+        select
+            cc.contractAmountOriginalRate,
+            cc.collectAmount
+        from contract_income_conclude cc
+                 left join contract_income_conclude_expand b on cc.id = b.contractId and b.deleted = 0
+            ${ew.customSqlSegment}
+        and cc.deleted = 0
+        order by
+            cc.gmtModify desc
+    </select>
+
+    <select id="getContractNoNum" resultType="java.lang.String">
+        SELECT
+            MAX(CAST(REGEXP_REPLACE(SUBSTRING_INDEX(contractNo, '-', -1), '[^0-9]', '') AS UNSIGNED)) as max_number
+        FROM contract_income_conclude
+        WHERE contractNo like CONCAT('%',#{year},'%')
+          AND communityId = #{communityId}
+          AND contractType != 2
+          AND pid = '0';
+    </select>
+
+   <update id="updateIsCorrectionAndPlan">
+        update contract_income_conclude
+        set isCorrectionAndPlan = #{isCorrectionAndPlan}
+        where id = #{id}
+    </update>
+</mapper>

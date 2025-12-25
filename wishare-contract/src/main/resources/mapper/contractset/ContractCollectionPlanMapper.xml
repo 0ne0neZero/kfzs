@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractCollectionPlanMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    com.wishare.contract.domains.consts.contractset.ContractCollectionPlanFieldConst 会每次重新生成
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,chargeItemId,costId,contractId,orgId,budgetAccount,abstract,billType,
+    bidBond,plannedCollectionTime,plannedCollectionAmount,localCurrencyAmount,taxExcludedAmount,profitLossAccounting,serviceStartDate,
+    serviceEndDate,creator,creatorName,gmtCreate,operator,operatorName,gmtModify
+     -->
+    <update id="deleteCollectionPlan">
+        UPDATE contract_collection_plan SET deleted = 1
+        where contractId=#{contractId} and paymentStatus = 0
+    </update>
+    <update id="updateWarnState">
+        UPDATE contract_collection_plan SET warnState = #{warnState}
+        WHERE id=#{id}
+    </update>
+    <select id="collectionPlanDetailPage"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractCollectionPlanDetailV">
+        SELECT
+            ccp.id,
+            ccp.chargeItemId,
+            ccp.costId,
+            ccp.costName,
+            ccp.contractId,
+            ccp.orgId,
+            cc.belongOrgId,
+            cc.belongOrgName,
+            cc.handlerId,
+            ccp.budgetAccount,
+            ccp.taxRate,
+            ccp.summary,
+            ccp.billType,
+            ccp.plannedCollectionTime,
+            ccp.plannedCollectionAmount,
+            ccp.localCurrencyAmount,
+            ccp.taxExcludedAmount,
+            ccp.serviceStartDate,
+            ccp.serviceEndDate,
+            ccp.creatorName,
+            ccp.gmtCreate,
+            ccp.paymentAmount,
+            ccp.invoiceAmount,
+            IF(ccp.localCurrencyAmount IS NOT NULL, ccp.localCurrencyAmount - ccp.paymentAmount, ccp.localCurrencyAmount) AS notPaymentAmount,
+            IF(ccp.localCurrencyAmount IS NOT NULL, ccp.localCurrencyAmount - ccp.invoiceAmount, ccp.localCurrencyAmount) AS notInvoiceAmount,
+            ccp.paymentStatus,
+            ccp.invoiceStatus,
+            cc.name,
+            cc.contractNo,
+            cc.contractNature,
+            cc.tenantId,
+            cc.communityId,
+            cc.partyAId,
+            cc.partyBId,
+            cc.partyCId,
+            cc.amountTaxIncluded,
+            cc.gmtExpireStart,
+            cc.gmtExpireEnd,
+            ccp.creditAmount,
+            cc.originalCurrency,
+            cc.currency,
+            cc.exchangeRate,
+            ccp.warnState,
+            IF(ccp.paymentStatus = 0,
+                ccp.plannedCollectionAmount - ccp.invoiceAmount,
+                ccp.paymentAmount - ccp.invoiceAmount)
+            AS canInvoiceAmount,
+            ccp.taxAmount,
+            cc.contractState
+        FROM
+            contract_collection_plan ccp
+            LEFT JOIN contract_conclude cc ON ccp.contractId = cc.id
+        ${ew.customSqlSegment}
+--             2023/07/10 讯总提出注释收付款计划。是否框架合同的查询限制
+--             AND (cc.frameworkContract = 0 OR (cc.frameworkContract = 1 AND cc.signingMethod = 5))
+        ORDER BY
+            cc.gmtModify DESC,
+            ccp.plannedCollectionTime ASC
+    </select>
+
+    <select id="collectionPlanAmountSum"
+            resultType="com.wishare.contract.domains.vo.contractset.CollectionPlanSumV">
+        SELECT
+            SUM( ccp.localCurrencyAmount ) AS localCurrencyAmountSum,
+            SUM( ccp.paymentAmount ) AS paymentAmountSum,
+            SUM( ccp.localCurrencyAmount )-SUM( ccp.paymentAmount ) AS beOverdue
+        FROM
+            contract_collection_plan ccp
+            LEFT JOIN contract_conclude cc ON ccp.contractId = cc.id
+        ${ew.customSqlSegment}
+            AND (cc.frameworkContract = 0 OR (cc.frameworkContract = 1 AND cc.signingMethod = 5))
+    </select>
+    <select id="checkContractByPlan" resultType="java.lang.Integer">
+        select count(*)
+        FROM contract_collection_plan
+        where contractId=#{contractId} and deleted=0 and paymentStatus != 0
+    </select>
+    <select id="collectionExpire"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractCollectionPlanV">
+        SELECT ccp.id,date_format( ccp.plannedCollectionTime, '%Y-%m-%d' ) as plannedCollectionTime,cc.tenantId as tenantId,cc.name as contractName,cc.creator as creator
+        FROM contract_collection_plan ccp left join contract_conclude cc on ccp.contractId = cc.id
+        WHERE cc.virtualContract = 0 and cc.signingMethod in (0,2) and cc.frameworkContract = 0 and ccp.paymentStatus != 2
+        and ccp.deleted = 0 and ccp.paymentStatus != 2 and cc.reviewStatus = 1
+        <if test="contractId != null">
+            AND ccp.contractId=#{contractId}
+        </if>
+        <if test="id != null">
+            AND ccp.id=#{id}
+        </if>
+        <if test="contractNature != null">
+            AND ccp.contractNature=#{contractNature}
+        </if>
+        <if test="tenantId != null">
+            AND cc.tenantId =#{tenantId}
+        </if>
+        <if test="flag != null and flag == true">
+            and
+            date_format( now(), '%Y-%m-%d' ) &gt; date_format( ccp.plannedCollectionTime, '%Y-%m-%d' )
+        </if>
+        <if test="flag != null and flag == false">
+            and
+            date_format( now(), '%Y-%m-%d' ) = date_format( ccp.plannedCollectionTime, '%Y-%m-%d' )
+        </if>
+        <if test="flag == null">
+            and
+            DATE_FORMAT(DATE_SUB(NOW(),INTERVAL 1 DAY),'%Y-%m-%d') = date_format( ccp.plannedCollectionTime, '%Y-%m-%d' )
+        </if>
+    </select>
+
+    <select id="collectionAdvent"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractCollectionPlanV">
+        SELECT ccp.id,date_format( ccp.plannedCollectionTime, '%Y-%m-%d' ) as plannedCollectionTime,cc.tenantId as tenantId,cc.name as contractName,cc.creator as creator
+        FROM contract_collection_plan ccp left join contract_conclude cc on ccp.contractId = cc.id
+        WHERE cc.virtualContract = 0 and cc.signingMethod in (0,2) and cc.frameworkContract = 0
+        and ccp.deleted = 0 and ccp.paymentStatus != 2 and cc.reviewStatus = 1
+        <if test="contractId != null">
+            AND ccp.contractId=#{contractId}
+        </if>
+        <if test="contractNature != null">
+            AND ccp.contractNature=#{contractNature}
+        </if>
+        <if test="id != null">
+            AND ccp.id=#{id}
+        </if>
+        <if test="tenantId != null">
+            AND cc.tenantId =#{tenantId}
+        </if>
+        <if test="flag != null and flag == true">
+            and
+            date_format( DATE_SUB( ccp.plannedCollectionTime, INTERVAL #{dayNum} DAY ), '%Y-%m-%d' ) &lt;= date_format(now(), '%Y-%m-%d'  )
+            and date_format( ccp.plannedCollectionTime, '%Y-%m-%d' ) &gt;= date_format(now(), '%Y-%m-%d'  )
+        </if>
+        <if test="flag != null and flag == false">
+            and
+            date_format( DATE_SUB( ccp.plannedCollectionTime, INTERVAL #{dayNum} DAY ), '%Y-%m-%d' ) = date_format(now(), '%Y-%m-%d'  )
+        </if>
+    </select>
+    <select id="selectByContract" resultType="com.wishare.contract.domains.vo.contractset.ContractInfoV">
+        select sum(localCurrencyAmount) as localCurrencyAmount,sum(paymentAmount) as paymentAmount,sum(invoiceAmount) as invoiceAmount
+        from contract_collection_plan
+        where deleted = 0 and contractId=#{contractId}
+    </select>
+    <select id="selectByContractIds"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractBillListV">
+        SELECT id billId,
+        summary remark,
+        chargeItemId,
+        costId,
+        contractId,
+        orgId,
+        taxRate,
+        plannedCollectionAmount firstAmount,
+        date_format( plannedCollectionTime, '%Y-%m-%d' ) as firstStartDate,
+        localCurrencyAmount amount,
+        taxExcludedAmount excludingTaxAmount,
+        paymentAmount realAmount,
+        paymentStatus billStatus,
+        localCurrencyAmount - paymentAmount as receivedAmount,
+        deleted billingStatus,
+        deleted deleteFlag
+        FROM contract_collection_plan
+        WHERE contractId=#{contractId}
+    </select>
+    <select id="selectCollectionPlanStatistics"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractCollectionPlanStatisticsV">
+    SELECT
+        (SUM(ccp.localCurrencyAmount) / 10000) localCurrencyAmountSum,
+        (SUM(ccp.paymentAmount) / 10000) paymentAmountSum,
+        DATE_FORMAT(ccp.plannedCollectionTime,"%Y-%m") dateMonth
+    FROM
+        contract_collection_plan ccp
+        LEFT JOIN contract_conclude cc ON ccp.contractId = cc.id
+    WHERE
+        DATE_FORMAT(ccp.plannedCollectionTime,"%Y") = #{year}
+        AND cc.contractNature = #{contractNature}
+        AND cc.tenantId = #{tenantId}
+        AND cc.deleted = 0
+        AND ccp.deleted = 0
+        AND contractState IN (1, 3)
+    GROUP BY
+        DATE_FORMAT(ccp.plannedCollectionTime,"%Y-%m")
+    ORDER BY
+        DATE_FORMAT(ccp.plannedCollectionTime,"%Y-%m") ASC
+    </select>
+
+</mapper>

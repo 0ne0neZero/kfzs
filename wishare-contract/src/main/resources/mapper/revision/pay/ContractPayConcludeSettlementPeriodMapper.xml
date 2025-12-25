@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.pay.ContractPayConcludeSettlementPeriodMapper">
+
+    <insert id="insertBatch">
+        insert into contract_pay_conclude_settlement_period(settlement_id, start_date, end_date)
+        values
+        <foreach collection="periodList" item="item" separator=",">
+            (#{item.settlementId},#{item.startDate},#{item.endDate})
+        </foreach>
+    </insert>
+
+    <delete id="deleteBySettlementId">
+        delete from contract_pay_conclude_settlement_period
+        where settlement_id = #{settlementId}
+    </delete>
+
+    <select id="getPeriodList"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.PayPlanPeriodV">
+        select start_date as startDate, end_date as endDate
+        from contract_pay_conclude_settlement_period
+        where settlement_id = #{settlementId}
+        order by start_date asc
+    </select>
+
+    <select id="getSimpleStrList"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.SettlementSimpleStr">
+        select settlement_id as settlementId,
+               group_concat(concat(start_date,'-',end_date)) as str
+        from contract_pay_conclude_settlement_period
+        where settlement_id in
+        <foreach collection="settlementIdList" separator="," item="item" open="(" close=")">
+            #{item}
+        </foreach>
+        GROUP BY settlement_id
+    </select>
+
+    <select id="getPeriodDate"
+            resultType="com.wishare.contract.domains.vo.revision.pay.settlement.PayPlanPeriodV">
+        select min(start_date) as startDate, max(end_date) as endDate
+        from contract_pay_conclude_settlement_period
+        where settlement_id = #{settlementId}
+    </select>
+</mapper>

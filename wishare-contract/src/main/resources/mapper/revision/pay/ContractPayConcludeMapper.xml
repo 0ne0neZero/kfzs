@@ -1,0 +1,1043 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.pay.ContractPayConcludeMapper">
+    <select id="queryInfo" resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayConcludeV">
+        SELECT
+        s.id,
+        s.NAME,
+        s.contractNo,
+        s.contractAmountOriginalRate,
+        s.contractAmountLocalRate,
+        s.gmtExpireEnd,
+        s.gmtExpireStart,
+        s.oppositeOne,
+        s.oppositeOneId,
+        s.changContractAmount,
+        CONCAT( s.NAME, CONCAT( '-', s.contractNo ) ) nameNo,
+        (if(s.changContractAmount = 0,s.contractAmountOriginalRate, s.changContractAmount) - ifnull( b1.splannedCollectionAmount, 0.00 )) noPlanAmount,
+        (if(s.changContractAmount = 0,s.contractAmountOriginalRate, s.changContractAmount) - ifnull( b2.proplannedCollectionAmount, 0.00 )) noPlanAmountLoss,
+        changContractAmount,
+        costCenterId,
+        costCenterName,
+        departId,
+        departName,
+        ourPartyId,
+        ourParty
+        FROM contract_pay_conclude s
+        LEFT JOIN (SELECT
+        sum( plannedCollectionAmount ) splannedCollectionAmount,
+        b.contractid
+        FROM contract_pay_conclude_plan b
+        WHERE b.deleted = 0
+        AND b.reviewStatus = 2 and b.pid !='0'
+        GROUP BY b.contractid ) b1
+        ON b1.contractid = s.id
+        LEFT JOIN (SELECT
+        sum( plannedCollectionAmount ) proplannedCollectionAmount,
+        b.contractid
+        FROM contract_pay_conclude_profit_loss b
+        WHERE b.deleted = 0
+        AND b.reviewStatus = 2
+        GROUP BY b.contractid ) b2
+        ON b2.contractid = s.id
+        WHERE s.reviewStatus = 2
+        AND s.STATUS NOT IN ( 6 )
+        AND s.signingMethod = 0
+        and s.tenantId = #{tenantId}
+        <if test="nameNo != null and nameNo !=''">
+            AND (s.contractNo like CONCAT('%',#{nameNo},'%')
+            or s.name like CONCAT('%',#{nameNo},'%'))
+        </if>
+        <if test="contractId == null or contractId ==''">
+            <if test=" isNK == 0 ">
+                AND s.deleted = 0
+            </if>
+            <if test=" isNK == 1 ">
+                AND s.deleted = 1
+                AND s.pid != '0'
+                AND s.nkStatus != 0
+                AND s.contractType = 0
+            </if>
+        </if>
+        <if test="contractId != null and contractId !=''">
+            AND s.id=#{contractId}
+        </if>
+    </select>
+
+    <select id="queryContractInfo" resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayConcludeV">
+        SELECT
+            s.id,
+            s.STATUS,
+            s.gmtExpireEnd,
+            s.communityId,
+            s.name,
+            2 contractNature,
+            s.tenantId
+        FROM
+            contract_pay_conclude s
+        WHERE
+        s.deleted = 0
+        and s.STATUS not in ('0','1','6')
+        <if test="id != null and id !=''">
+          AND s.id = #{id}
+        </if>
+        UNION ALL
+        SELECT
+            s.id,
+            s.STATUS,
+            s.gmtExpireEnd,
+            s.communityId,
+            s.name,
+            1 contractNature,
+            s.tenantId
+        FROM
+            contract_income_conclude s
+        WHERE
+        s.deleted = 0
+        and s.STATUS not in ('0','1','6')
+        <if test="id != null and id !=''">
+          AND s.id = #{id}
+        </if>
+    </select>
+
+    <select id="queryIsExistContract" resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayConcludeV">
+        select *
+        from contract_pay_conclude  s
+        where s.pid = #{id}
+          and deleted = 0
+          and (s.reviewStatus != 2 or ( s.reviewStatus = 2 and (s.contractNature is null or s.contractNature not in (1,2))))
+    </select>
+
+    <select id="collectionPayConcludePage"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayConcludeTreeV">
+        SELECT
+            cc.*
+        from contract_pay_conclude cc
+            ${ew.customSqlSegment}
+        and cc.pid = '0'
+        ORDER BY
+            cc.gmtModify DESC
+    </select>
+
+    <select id="queryByPath"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayConcludeTreeV">
+        SELECT
+        cc.*
+        from contract_pay_conclude cc
+        ${ew.customSqlSegment}
+        and cc.deleted = 0
+        <if test="parentIdList != null and parentIdList.size() > 0">
+            AND cc.pid IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+            or cc.id IN
+            <foreach collection="parentIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY
+        cc.gmtModify DESC
+    </select>
+
+    <select id="queryContractCount" resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayConcludeV">
+        select *
+        from contract_pay_conclude  s
+        where s.contractNo LIKE concat('%', #{contractNo} ,'%')
+        <if test="type == 1">
+            and s.isBackDate = 0
+        </if>
+        <if test="type == 2">
+            and s.isBackDate != 0
+        </if>
+        <if test="communityName == 1">
+            AND s.communityName LIKE concat('%', '总部' ,'%')
+        </if>
+        <if test="communityName == 2">
+            AND s.communityName NOT LIKE concat('%', '总部' ,'%')
+        </if>
+    </select>
+
+    <select id="selectPayExpireContract" resultType="com.wishare.contract.domains.vo.revision.remind.ContractAndPlanInfoV">
+        select
+            0 as messageConfig,
+            1 as contractNature,
+            id as contractId,
+            name as contractName,
+            contractNo,
+            creator as handlerId,
+            creatorName as handlerName,
+            communityId,
+            gmtExpireStart as contractGmtExpireStart,
+            gmtExpireEnd as contractGmtExpireEnd
+        from contract_pay_conclude where
+            signingMethod in (0,2)
+            and contractType != 1
+            and status = 1
+            and warnState != 2
+            and reviewStatus =2
+            and DATEDIFF(gmtExpireEnd,now()) in
+            <foreach collection="expireDays" item="days" separator="," open="(" close=")">
+                #{days}
+            </foreach>
+            and deleted = 0
+    </select>
+
+    <select id="queryContractNosByRangeTimeAndCertainPropertyNotSupply" resultType="java.lang.String">
+        select distinct contractNo
+        from contract_pay_conclude
+        where gmtModify between #{startTime} and #{endTime}
+        and contractType != 2
+        and deleted = 0
+        and contractNo like concat('%', #{year}, '%')
+        <if test="departId != null and departId != ''">
+            and departId = #{departId}
+        </if>
+        <if test="isBackDate != null">
+            and isBackDate = #{isBackDate} and communityName like '%区域%'
+        </if>
+        <if test="communityId != null and communityId != ''">
+            and communityId = #{communityId}
+        </if>
+    </select>
+
+    <select id="queryContractNosByRangeTimeAndCertainPropertySupply" resultType="java.lang.String">
+        select distinct contractNo
+        from contract_pay_conclude
+        where gmtModify between #{startTime} and #{endTime}
+        and contractType = 2
+        and deleted = 0
+        and contractNo like concat('%', #{year}, '%')
+        <if test="departId != null and departId != ''">
+            and departId = #{departId}
+        </if>
+        <if test="isBackDate != null">
+            and isBackDate = #{isBackDate} and communityName like '%区域%'
+        </if>
+        <if test="communityId != null and communityId != ''">
+            and communityId = #{communityId}
+        </if>
+    </select>
+
+    <select id="queryToPullZjContractIds" resultType="java.lang.String">
+        select id
+        from contract_pay_conclude
+        where
+            deleted = 0
+          and reviewStatus = 2
+          and (contractNature is null or contractNature in (0,2))
+          and pullZjFailCount <![CDATA[ < ]]> 3
+    </select>
+
+    <select id="queryByContractId"
+            resultType="com.wishare.contract.domains.entity.revision.pay.ContractPayConcludeE">
+        select *
+        from contract_pay_conclude
+        where id = #{contractId}
+    </select>
+
+    <select id="queryInfoNew" resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayConcludeV">
+        SELECT
+        s.id,
+        s.name,
+        s.contractNo,
+        s.contractAmountOriginalRate,
+        s.gmtExpireEnd,
+        s.gmtExpireStart,
+        s.oppositeOne,
+        s.oppositeOneId,
+        s.changContractAmount,
+        CONCAT(s.name,CONCAT( '-', s.contractNo )) nameNo,
+        if(s.changContractAmount = 0, s.contractAmountOriginalRate, s.changContractAmount) noPlanAmount,
+        s.costCenterId,
+        s.costCenterName,
+        s.departId,
+        s.departName,
+        s.ourPartyId,
+        s.ourParty
+        FROM contract_pay_conclude s
+        left join contract_pay_conclude_plan b on s.id = b.contractId and b.deleted = 0
+        WHERE s.reviewStatus = 2
+        <if test=" isNK == 0 ">
+            AND s.pid = '0'
+            AND s.deleted = 0
+        </if>
+        <if test=" isNK == 1 ">
+            AND s.deleted = 1
+            AND s.pid != '0'
+            AND s.nkStatus != 0
+            AND s.contractType = 0
+        </if>
+        AND s.STATUS IN (0,1)
+        <!-- fix:只能查询到推送成功的合同 -->
+        AND s.contractNature = 1
+        and s.tenantId = #{tenantId}
+        and s.departId in
+        <foreach collection="orgIds" item="orgId" separator="," open="(" close=")">
+            #{orgId}
+        </foreach>
+        <if test="nameNo != null and nameNo !=''">
+            AND (s.contractNo like CONCAT('%',#{nameNo},'%')
+            or s.name like CONCAT('%',#{nameNo},'%'))
+        </if>
+        <if test="contractId != null and contractId !=''">
+            AND s.id = #{contractId}
+        </if>
+        <!-- 只查询没有关联结算计划的合同，所以这里得加这个条件 -->
+        and b.contractId is null
+    </select>
+    <select id="queryInfoBak" resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayConcludeV">
+        SELECT
+        s.id,
+        s.name,
+        s.contractNo,
+        s.contractAmountOriginalRate,
+        s.gmtExpireEnd,
+        s.gmtExpireStart,
+        s.oppositeOne,
+        s.oppositeOneId,
+        s.changContractAmount,
+        CONCAT(s.name,CONCAT( '-', s.contractNo)) nameNo,
+        if(s.changContractAmount = 0, s.contractAmountOriginalRate, s.changContractAmount) noPlanAmount,
+        s.costCenterId,
+        s.costCenterName,
+        s.departId,
+        s.departName,
+        s.ourPartyId,
+        s.ourParty
+        FROM contract_pay_conclude s
+        left join contract_pay_conclude_plan b on s.id = b.contractId and b.deleted = 0
+        WHERE s.reviewStatus = 2
+        <if test=" isNK == 0 ">
+            AND s.pid = '0'
+            AND s.deleted = 0
+        </if>
+        <if test=" isNK == 1 ">
+            AND s.deleted = 1
+            AND s.pid != '0'
+            AND s.nkStatus != 0
+            AND s.contractType = 0
+        </if>
+        AND s.STATUS IN (0,1)
+        <!-- fix:只能查询到推送成功的合同 -->
+        AND s.contractNature = 1
+        and s.tenantId = #{tenantId}
+        <if test="nameNo != null and nameNo !=''">
+            AND (s.contractNo like CONCAT('%',#{nameNo},'%')
+            or s.name like CONCAT('%',#{nameNo},'%'))
+        </if>
+        <if test="contractId != null and contractId !=''">
+            AND s.id = #{contractId}
+        </if>
+        <!-- 只查询没有关联结算计划的合同，所以这里得加这个条件 -->
+        and b.contractId is null
+    </select>
+
+    <select id="queryContractNosByPid" resultType="java.lang.String">
+        select contractNo
+        from contract_pay_conclude
+        where pid = #{pid}
+        and deleted = 0
+        and contractType = 2
+    </select>
+
+    <update id="incrementPullZjFailCountById">
+        update contract_pay_conclude
+        set pullZjFailCount = pullZjFailCount+1
+        where id = #{id}
+    </update>
+
+    <update id="updateContractInUse">
+        <!-- 当前时间到了合同开始时间、状态是"尚未履行"、审批状态是"已通过"、未删除的收入合同，状态更新为"正在履行" -->
+        update contract_pay_conclude set `status` = 1 where gmtExpireStart &lt;= #{targetDate} and `status` = 0 and reviewStatus = 2 and deleted = 0;
+    </update>
+
+    <select id="mockJson"
+            resultType="com.wishare.contract.domains.vo.revision.MockJson">
+        SELECT
+            ROW_NUMBER() OVER (
+            ORDER BY
+              con.region DESC,
+              con.communityName,
+              con.contractNo,
+              con.pid
+          ) AS rowNumber,
+          LEFT(md5(con.costCenterName), 10) AS costCenterName,
+          LEFT(md5(con.departName), 10) AS departName,
+          LEFT(md5(con.region), 10) AS region,
+          LEFT(md5(con.communityName), 10) AS qwe1,
+          LEFT(md5(con.contractNo), 10) AS contractNo,
+          LEFT(md5(con.conmaincode), 10) AS conmaincode,
+          LEFT(md5(CASE
+            WHEN ced.conmanagetype = '0' THEN '工程类'
+            WHEN ced.conmanagetype = '1' THEN '服务类/维保类/其他类'
+            WHEN ced.conmanagetype = '2' THEN '劳务派遣类'
+            WHEN ced.conmanagetype = '3' THEN '增值类'
+            WHEN ced.conmanagetype = '4' THEN '智能化、信息化'
+            WHEN ced.conmanagetype = '5' THEN '猎头委托、培训类'
+            WHEN ced.conmanagetype = '6' THEN '其他'
+          END), 10) AS conmanagetype,
+          LEFT(md5(con.name), 10) AS name,
+          LEFT(md5(con.ourParty), 10) AS qwe2,
+          LEFT(md5(con.oppositeOne), 10) AS oppositeOne,
+          LEFT(md5(con.remark), 10) AS remark,
+          LEFT(md5(con.contractAmountOriginalRate), 10) AS qwe4,
+          LEFT(md5(con.contractAmountOriginal), 10) AS qwe5,
+          LEFT(md5(if(
+            con.changContractAmount = 0,
+            con.changContractAmount,
+            con.changContractAmount - con.contractAmountOriginalRate
+          )), 10) AS supplyOrginAmount,
+          LEFT(md5(if(
+            con.changContractAmount = 0,
+            con.changContractAmount,
+            con.changContractAmount - con.contractAmountOriginal
+          )), 10) AS supplyAmount,
+          LEFT(md5(con.changContractAmount), 10) AS changContractAmount,
+          LEFT(md5(DATE_FORMAT(con.signDate, '%Y-%m-%d')), 10) AS signDate,
+          LEFT(md5(con.gmtExpireStart), 10) AS gmtExpireStart,
+          LEFT(md5(con.gmtExpireEnd), 10) AS gmtExpireEnd,
+          LEFT(md5(CONCAT(
+            ROUND(
+              TIMESTAMPDIFF(DAY, con.gmtExpireStart, con.gmtExpireEnd) / 30
+            ),
+            '个月'
+          )), 10) AS limitDay,
+          LEFT(md5(con.status), 10) AS `status`,
+          LEFT(md5(cpf.type), 10) AS `type`,
+          LEFT(md5(cpf.chargeItem), 10) AS chargeItem,
+          LEFT(md5(cpf.standAmount), 10) AS standAmount,
+          LEFT(md5(cpf.amountNum), 10) AS qwe3,
+          LEFT(md5(ced.taxrate), 10) AS taxrate,
+          LEFT(md5(cpf.amount), 10) AS amount,
+          LEFT(md5(cpf.amountWithOutRate), 10) AS amountWithOutRate,
+          LEFT(md5(cpf.remark), 10) AS cpfremark
+        FROM
+            contract_pay_conclude con
+            LEFT JOIN contract_pay_conclude_expand ced ON con.id = ced.contractId
+            LEFT JOIN contract_pay_fund cpf ON cpf.contractId = con.id
+            AND cpf.tenantId = '13554968497211'
+        WHERE
+            con.tenantId = '13554968497211'
+          AND con.reviewStatus = '2'
+          AND con.deleted = '0'
+        ORDER BY
+            ROW_NUMBER() OVER (
+            ORDER BY
+            con.region DESC,
+            con.communityName,
+            con.contractNo,
+            con.pid
+            )
+    </select>
+
+    <select id="queryByPathV2" resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayConcludeTreeV">
+        select
+            cc.*,
+        /*合同管理类别*/
+        b.conmanagetype
+        from contract_pay_conclude cc
+        left join contract_pay_conclude_expand b on cc.id = b.contractId and b.deleted = 0
+        ${ew.customSqlSegment}
+         and cc.deleted = 0
+        order by
+        cc.gmtModify desc
+    </select>
+
+    <select id="getPageShowNumV2" resultType="com.wishare.contract.domains.entity.revision.pay.ContractPayConcludeE">
+        select
+            cc.contractAmountOriginalRate,
+            cc.payAmount
+        from contract_pay_conclude cc
+        left join contract_pay_conclude_expand b on cc.id = b.contractId and b.deleted = 0
+        ${ew.customSqlSegment}
+        and cc.deleted = 0
+        order by
+        cc.gmtModify desc
+    </select>
+
+    <!--根据条件获取支出报表底数-->
+    <select id="getTotalPayReportList" resultType="com.wishare.contract.apps.fo.revision.pay.report.ContractPayDataListD">
+        select a.contractId,
+        a.contractName,
+        a.region,
+        a.contractServeType,
+        a.communityId,
+        a.communityName,
+        a.qydws,
+        ifNull(sum(a.plannedCollectionAmount),0) plannedCollectionAmount,
+        GROUP_CONCAT(DISTINCT a.id SEPARATOR ',') planIdList,
+        a.yjPidContractId,
+        a.nkStatus
+        from (
+        SELECT
+            -- 合同ID
+            c.id contractId,
+            -- 合同名称
+            c.NAME contractName,
+            -- 区域
+            c.region,
+            -- 合同服务类型 1.四保一服
+            c.contractServeType,
+            -- 项目ID
+            c.communityId,
+            -- 项目名称
+            c.communityName,
+            -- 签约单位
+            c.oppositeOne as qydws,
+            -- 计划结算金额
+            p.plannedCollectionAmount,
+            -- 计划ID集合
+            p.id,
+            -- YJ合同对应的原合同
+            c.pid as yjPidContractId,
+            -- NK状态
+            c.nkStatus
+        FROM
+            contract_pay_conclude c
+                left join contract_pay_conclude_plan p on c.id = p.contractId and p.pid != '0'
+                left join contract_pay_conclude_settlement_plan_relation r on p.id = r.plan_id
+                left join contract_pay_conclude_settlement s on r.settlement_id = s.id
+                and s.deleted = 0
+                and s.pid != '0'
+                -- 结算审批通过时间
+                and (s.approveCompletedTime BETWEEN #{paymentDateSatrt} and #{paymentDateEnd})
+                and s.reviewStatus = 2
+            WHERE
+                <if test=" isNK == 0 ">
+                    c.pid = '0'
+                    AND c.deleted = 0
+                </if>
+                <if test=" isNK == 1 ">
+                    (
+                    (c.pid = '0'
+                    AND c.deleted = 0) or
+                    (c.deleted = 1
+                    AND c.pid != '0'
+                    AND c.nkStatus != 0
+                    AND c.contractType = 0)
+                    )
+                </if>
+
+        AND p.deleted = 0
+              and c.region is not null
+              -- 应结日期
+              and (p.plannedCollectionTime BETWEEN #{plannedCollectionTimeStart} and #{plannedCollectionTimeEnd})
+              -- 合同履约状态
+              <if test="statusList != null and statusList.size() > 0">
+                  and c.status in <foreach collection="statusList" item="status" separator="," open="(" close=")">
+                      #{status}
+                  </foreach>
+              </if>
+              -- 项目ID
+              <if test="communityIdList != null and communityIdList.size() > 0">
+                  and c.communityId in <foreach collection="communityIdList" item="communityId" separator="," open="(" close=")">
+                      #{communityId}
+                  </foreach>
+              </if>
+              -- 租户IA
+              and c.tenantId = #{tenantId}
+              --  所属部门
+             <if test="superAccount == null or superAccount == false">
+                 and (c.departId is not null
+                 <if test="orgList != null and orgList.size() > 0">
+                     and c.departId in <foreach collection="orgList" item="orgId" separator="," open="(" close=")">
+                     #{orgId}
+                 </foreach>
+                 </if>
+                 )
+             </if>
+            <if test=" isNK == 1 ">
+                and c.id not in (
+                    select pid from contract_pay_conclude where deleted = 1
+                AND pid != '0'
+                AND nkStatus != 0
+                AND contractType = 0
+                )
+            </if>
+            group by c.id,p.id
+        )a group by a.contractId
+    </select>
+    <!--根据条件获取支出报表底数-应结算金额汇总-->
+    <select id="getTotalPayReportSettlementList" resultType="com.wishare.contract.apps.fo.revision.pay.report.ContractPayDataListD">
+        select contractId,sum(plannedCollectionAmount) shouldPlannedCollectionAmount
+            from contract_pay_conclude_settlement
+            where id in (
+                select settlement_id from contract_pay_conclude_settlement_plan_relation r
+                  left join contract_pay_conclude_plan p on p.id = r.plan_id
+                    where p.id in <foreach collection="planIdList" item="planId" separator="," open="(" close=")">
+                        #{planId}
+                    </foreach>
+                )
+            and deleted = 0
+            and pid != '0'
+            -- 结算审批通过时间
+            and (approveCompletedTime BETWEEN #{paymentDateSatrt} and #{paymentDateEnd})
+            and reviewStatus = 2
+            group by contractId
+    </select>
+
+    <select id="getDetailPayReportList" resultType="com.wishare.contract.apps.fo.revision.pay.report.ContractPayReportDetailListV">
+        SELECT
+            a.id as contractId,
+            -- 区域
+            a.region,
+            -- 项目ID
+            a.communityId,
+            -- 项目名称
+            a.communityName,
+            -- 合同CT码
+            a.conmaincode,
+            -- 合同编码
+            a.contractNo,
+            -- 合同名称
+            a.name,
+            -- 合同管理类别
+            a.conmanagetype,
+            -- 合同服务类型 1.四保一服
+            a.isSbyf,
+            -- 签约单位
+            a.qydws,
+            -- 合同金额优先变更后合同金额若为空取合同金额
+            a.contractAmount as contractAmountNum,
+            -- 合同开始时间
+            a.gmtExpireStart,
+            -- 合同结束时间
+            a.gmtExpireEnd,
+            -- 合同履约状态编码
+            a.status,
+            -- 计划结算金额
+            ifNull(sum(a.plannedCollectionAmount),0) plannedCollectionAmountNum,
+            a.yjPidContractId,
+            a.nkStatus,
+            case when a.nkStatus != 0 then 'NK' else '非NK' end isNK
+            -- 补充协议是否已拆分
+--             case when IFNULL(a.bcwcfNum,0) > 0 and IFNULL(a.yyfBcwcfNum,0) != IFNULL(a.bcwcfNum,0) then '否'
+--             when IFNULL(a.bcwcfNum,0) > 0 and IFNULL(a.yyfBcwcfNum,0) = IFNULL(a.bcwcfNum,0) then '是'
+--             else null end contractSplit
+            /*case when IFNULL(a.bchtNum,0) = 0 then ''
+            when IFNULL(a.bchtNum,0) != 0 and IFNULL(a.bcycfNum,0) = IFNULL(a.bcwcfNum,0) then '是'
+            when IFNULL(a.bchtNum,0) != 0 and IFNULL(a.bcycfNum,0) != IFNULL(a.bcwcfNum,0) then '否'
+            else null end contractSplit*/
+      from (
+        SELECT
+            c.id,
+            -- 区域
+            c.region,
+            -- 项目ID
+            c.communityId,
+            -- 项目名称
+            c.communityName,
+            -- 合同CT码
+            c.conmaincode,
+            -- 合同编码
+            c.contractNo,
+            -- 合同名称
+            c.name,
+            -- 合同管理类别
+            e.conmanagetype,
+            -- 合同服务类型 1.四保一服
+            c.contractServeType isSbyf,
+            -- 签约单位
+            c.oppositeOne as qydws,
+            -- 合同金额优先变更后合同金额若为空取合同金额
+            COALESCE(NULLIF(c.changContractAmount, 0), c.contractAmountOriginalRate) as contractAmount,
+            -- 合同开始时间
+            c.gmtExpireStart,
+            -- 合同结束时间
+            c.gmtExpireEnd,
+            -- 合同履约状态编码
+            c.status,
+            -- 计划结算金额
+            p.plannedCollectionAmount,
+            -- 补充协议是否已拆分
+            /*bcht.bchtNum,
+            bcycf.bcycfNum,
+            bcwcf.bcwcfNum,*/
+            c.gmtModify,c.gmtCreate,
+            -- YJ合同对应的原合同
+            c.pid as yjPidContractId,
+            -- 是否YJ
+            c.nkStatus
+        FROM
+            contract_pay_conclude c
+                left join contract_pay_conclude_expand e on c.id = e.contractId and e.deleted = 0
+                left join contract_pay_conclude_plan p on c.id = p.contractId and p.pid != '0'
+                <!--left join (
+                    select cc.pid,count(distinct cc.id) bchtNum from contract_pay_conclude cc
+                        where cc.contractType = 2 and cc.deleted = 0 and cc.reviewStatus = 2
+                        and cc.pid in <foreach collection="contractList" item="conreactId" separator="," open="(" close=")">
+                        #{conreactId}
+                    </foreach>
+                group by cc.pid
+                )bcht on c.id = bcht.pid
+                left join (
+                    select cc.pid,count(distinct cc.id) bcycfNum from contract_pay_conclude cc
+                    left join contract_pay_conclude_plan cp on cc.id = cp.contractId and cp.pid != '0' and cp.deleted = 0
+                    where cc.contractType = 2 and cc.deleted = 0 and cc.reviewStatus = 2
+                    and cp.id is not null
+                    and cc.pid in <foreach collection="contractList" item="conreactId" separator="," open="(" close=")">
+                        #{conreactId}
+                    </foreach>
+                    group by cc.pid
+                )bcycf on c.id = bcycf.pid
+                left join (
+                select cc.pid,count(distinct cc.id ) bcwcfNum from contract_pay_conclude cc
+                left join contract_pay_conclude_plan cp on cc.id = cp.contractId and cp.pid != '0' and cp.deleted = 0
+                where cc.contractType = 2 and cc.deleted = 0
+                and cp.id is null
+                and cc.reviewStatus = 2
+                and cc.pid in <foreach collection="contractList" item="conreactId" separator="," open="(" close=")">
+                    #{conreactId}
+                </foreach>
+                group by cc.pid
+                )bcwcf on c.id = bcwcf.pid-->
+        WHERE
+        <if test=" isNK == 0 ">
+             c.pid = '0'
+            AND c.deleted = 0
+        </if>
+        <if test=" isNK == 1 ">
+            (
+            (c.pid = '0'
+            AND c.deleted = 0) or
+            (c.deleted = 1
+            AND c.pid != '0'
+            AND c.nkStatus != 0
+            AND c.contractType = 0)
+            )
+        </if>
+
+        AND p.deleted = 0
+          and c.region is not null
+        -- 应结日期
+        and (p.plannedCollectionTime BETWEEN #{plannedCollectionTimeStart} and #{plannedCollectionTimeEnd})
+          and c.id in <foreach collection="contractList" item="conreactId" separator="," open="(" close=")">
+                #{conreactId}
+            </foreach>
+        group by c.id,p.id
+        order by ifNUll(c.gmtModify,c.gmtCreate),c.id
+        )a
+        group by a.id
+        order by ifNUll(a.gmtModify,a.gmtCreate),a.id desc
+    </select>
+
+    <!--根据条件获取支出报表底数-已发生已结算金额汇总-->
+    <select id="getDetailPayReportSettlementList" resultType="com.wishare.contract.apps.fo.revision.pay.report.ContractPayReportDetailListV">
+        select contractId,
+               -- 应结算金额
+               ifNull(sum(plannedCollectionAmount),0) yfsyjsPlannedCollectionAmountNum,
+               -- 实际结算金额
+               ifNull(sum(actualSettlementAmount),0) yfsyjsActualSettlementAmountNum,
+               -- 扣款金额
+               ifNull(sum(deductionAmount),0) yfsyjsDeductionAmountNum
+        from contract_pay_conclude_settlement
+        where id in (
+            select settlement_id from contract_pay_conclude_settlement_plan_relation r
+            left join contract_pay_conclude_plan p on p.id = r.plan_id
+            where p.deleted = 0
+            -- 应结日期
+            and (p.plannedCollectionTime BETWEEN #{plannedCollectionTimeStart} and #{plannedCollectionTimeEnd})
+            and p.contractId in <foreach collection="contractList" item="conreactId" separator="," open="(" close=")">
+                    #{conreactId}
+                </foreach>
+            and p.pid != '0'
+        )
+        and deleted = 0
+        and pid != '0'
+        -- 结算审批通过时间
+        and (approveCompletedTime BETWEEN #{paymentDateSatrt} and #{paymentDateEnd})
+        and reviewStatus = 2
+        group by contractId
+    </select>
+
+    <select id="queryNKContractById"
+            resultType="com.wishare.contract.domains.entity.revision.pay.ContractPayConcludeE">
+        select *
+        from contract_pay_conclude
+        where deleted = 1
+          AND (pid = #{contractId} or id = #{contractId})
+          AND nkStatus != 0
+          AND contractType = 0
+    </select>
+
+    <select id="getYjDataAnalysisReport" resultType="com.wishare.contract.apps.fo.revision.pay.report.ContractPayYjListV">
+        SELECT
+            -- 区域
+            c.region,
+            -- 部门ID
+            c.departId,
+            -- 部门名称
+            c.departName,
+            -- 项目ID
+            c.communityId,
+            -- 项目名称
+            c.communityName,
+            -- 合同ID"
+            c.id as contractId,
+            nk.id as nkContractId,
+            -- 合同名称"
+            c.name,
+            -- 合同编码
+            c.contractNo,
+            -- 补充合同合同编码
+            -- GROUP_CONCAT(bc.contractNo SEPARATOR ',') AS bcContractNo,
+            -- HY补充协议名称
+            GROUP_CONCAT(bc.name SEPARATOR ',') AS hyContractName,
+            -- HY金额
+            sum(bc.contractAmountOriginalRate) as hyContractAmount,
+            -- 合同类别
+            e.conmanagetype,
+            -- 四保一服
+            c.contractServeType isSbyf,
+            -- 供应商ID
+            c.oppositeOneId as merchant,
+            -- 供应商名称
+            c.oppositeOne as merchantName,
+            -- 我方单位ID
+            c.ourPartyId,
+            -- 我方单位名称
+            c.ourParty,
+            -- 合同主要内容
+            c.remark content,
+            -- 合同起始日期
+            c.gmtExpireStart,
+            -- 合同终止日期
+            c.gmtExpireEnd,
+            -- 原合同金额
+            nk.contractAmountOriginalRate as contractAmount,
+            -- 变更后合同金额
+            nk.changContractAmount changContractAmount,
+            -- "YJ后合同金额
+            -- c.changContractAmount as yjContractAmount,
+            -- 履约状态
+            c.status
+        FROM
+            contract_pay_conclude c
+                left join contract_pay_conclude_expand e on c.id = e.contractId and e.deleted = 0
+                left join contract_pay_conclude bc on c.id = bc.hyContractId and bc.contractType = 2 and bc.deleted = 0 and bc.isHy = 1 and bc.contractAmountOriginalRate > 0 and bc.conmaincode is not null
+                left join contract_pay_conclude nk on c.id = nk.pid and nk.contractType = 0 and nk.deleted = 1 and nk.nkStatus != 0
+        where c.pid = '0'
+          and c.deleted = 0
+          and nk.id is not null
+            /*区域*/
+        <if test="ew.isBackDate != null and ew.isBackDate.size() > 0">
+            and c.isBackDate IN
+            <foreach collection="ew.isBackDate" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+            /*所属项目*/
+        <if test="ew.communityIdList != null and ew.communityIdList.size() > 0">
+            and c.communityId IN
+            <foreach collection="ew.communityIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+          /*部门名称*/
+        <if test="ew.departName != null and ew.departName !=''">
+            and c.departName like CONCAT('%',#{ew.departName},'%')
+        </if>
+            /*合同类别*/
+        <if test="ew.conmanagetype != null and ew.conmanagetype.size() > 0">
+            and e.conmanagetype IN
+            <foreach collection="ew.conmanagetype" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        /*合同名称*/
+        <if test="ew.name != null and ew.name !=''">
+            and c.name like CONCAT('%',#{ew.name},'%')
+        </if>
+        /*供应商名称*/
+        <if test="ew.merchantName != null and ew.merchantName !=''">
+            and c.oppositeOne like CONCAT('%',#{ew.merchantName},'%')
+        </if>
+        /*履约状态*/
+        <if test="ew.statusList != null and ew.statusList.size() > 0">
+            and c.status IN
+            <foreach collection="ew.statusList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        /*合同起始日期*/
+        <if test="ew.gmtExpireStart != null and ew.gmtExpireStart !='' and ew.gmtExpireStartEnd != null and ew.gmtExpireStartEnd !=''">
+            and (c.gmtExpireStart BETWEEN #{ew.gmtExpireStart} and #{ew.gmtExpireStartEnd})
+        </if>
+          /*合同终止日期*/
+        <if test="ew.gmtExpireEndStart != null and ew.gmtExpireEndStart !='' and ew.gmtExpireEnd != null and ew.gmtExpireEnd !=''">
+            and (c.gmtExpireEnd BETWEEN #{ew.gmtExpireEndStart} and #{ew.gmtExpireEnd})
+        </if>
+        group by c.id
+        order by ifNUll(c.gmtModify,c.gmtCreate) desc
+    </select>
+
+    <update id="updateGmtExpireEndById">
+        update contract_pay_conclude
+        set
+            gmtExpireEnd  = #{gmtExpireEnd},
+            gmtModify  = now()
+        where id = #{id}
+    </update>
+    <update id="updateChangContractAmountById">
+        update contract_pay_conclude
+        set
+            changContractAmount  = #{changContractAmount},
+            gmtModify  = now()
+        where id = #{id}
+    </update>
+
+
+    <select id="queryNKContractList"
+            resultType="com.wishare.contract.domains.entity.revision.pay.ContractPayConcludeE">
+        select *
+        from contract_pay_conclude
+        where deleted = 1
+          AND nkStatus != 0
+          AND contractType = 0
+          AND pid in <foreach collection="contractList" item="conreactId" separator="," open="(" close=")">
+                #{conreactId}
+            </foreach>
+    </select>
+
+    <select id="getContractNoNum" resultType="java.lang.String">
+        SELECT
+            MAX(CAST(REGEXP_REPLACE(SUBSTRING_INDEX(contractNo, '-', -1), '[^0-9]', '') AS UNSIGNED)) as max_number
+        FROM contract_pay_conclude
+        WHERE contractNo like CONCAT('%',#{year},'%')
+          AND communityId = #{communityId}
+          AND contractType != 2
+          AND pid = '0';
+    </select>
+
+    <update id="updateNKContractById">
+        update contract_pay_conclude
+        set <if test="nkStatus != null">
+                nkStatus = #{nkStatus},
+            </if>
+            <if test="bpmStatus != null">
+                bpmStatus = #{bpmStatus},
+            </if>
+            <if test="bpmProcInstId != null and bpmProcInstId !=''">
+                bpmProcInstId = #{bpmProcInstId},
+            </if>
+            <if test="bpmApprovalDate != null">
+                bpmApprovalDate = #{bpmApprovalDate},
+            </if>
+            gmtModify  = now()
+        where id = #{id}
+    </update>
+
+    <select id="getNKDataAnalysisTotalReport" resultType="com.wishare.contract.apps.fo.revision.pay.report.ContractPayNkTotalListV">
+    SELECT
+        -- 区域
+        c.region,
+        -- 合同ID
+        c.id as contractId,
+        -- 合同名称
+        c.name,
+        -- 合同编码
+        c.contractNo,
+        if(nk.changContractAmount = 0, nk.contractAmountOriginalRate, nk.changContractAmount) as contractAmount,
+        -- 项目ID
+        c.communityId,
+        -- 项目名称
+        c.communityName,
+        -- 补充合同名称
+        bc.bcContractName,
+        -- 补充合同金额
+        bc.bcContractAmount,
+        -- HY补充合同名称
+        bcHy.hyBcContractName,
+        bcHy.hyBcContractId,
+        -- HY补充合同金额
+        bcHy.hyBcContractAmount,
+        nk.id as nkContractId,
+        -- 合同起始日期
+        c.gmtExpireStart,
+        -- 合同终止日期
+        c.gmtExpireEnd
+        FROM
+        contract_pay_conclude c
+        left join contract_pay_conclude_expand e on c.id = e.contractId and e.deleted = 0
+        left join (
+            select b.pid,
+                -- 补充合同名称
+                GROUP_CONCAT(b.name SEPARATOR ',') AS bcContractName,
+                -- 补充合同金额
+                sum(b.contractAmountOriginalRate) as bcContractAmount
+            from contract_pay_conclude b
+            where b.contractType = 2 and b.deleted = 0 and b.isHy = 0
+            group by b.pid
+        )bc on c.id = bc.pid
+        left join (
+            select bb.hyContractId,
+                -- 补充合同名称
+                GROUP_CONCAT(bb.name SEPARATOR ',') AS hyBcContractName,
+                -- 补充合同金额
+                sum(bb.contractAmountOriginalRate) as hyBcContractAmount,
+                GROUP_CONCAT(bb.id SEPARATOR ',') AS hyBcContractId
+            from contract_pay_conclude bb
+            where bb.contractType = 2 and bb.deleted = 0 and bb.isHy = 1 and bb.conmaincode is not null
+            group by bb.hyContractId
+        )bcHy on c.id = bcHy.hyContractId
+        left join contract_pay_conclude nk on c.id = nk.pid and nk.contractType = 0 and nk.deleted = 1 and nk.nkStatus != 0
+        where c.pid = '0'
+        and c.deleted = 0
+        and nk.id is not null
+        /*区域*/
+        <if test="ew.isBackDate != null and ew.isBackDate.size() > 0">
+            and c.isBackDate IN
+            <foreach collection="ew.isBackDate" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        /*所属项目*/
+        <if test="ew.communityIdList != null and ew.communityIdList.size() > 0">
+            and c.communityId IN
+            <foreach collection="ew.communityIdList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        /*部门名称*/
+        <if test="ew.departName != null and ew.departName !=''">
+            and c.departName like CONCAT('%',#{ew.departName},'%')
+        </if>
+        /*合同类别*/
+        <if test="ew.conmanagetype != null and ew.conmanagetype.size() > 0">
+            and e.conmanagetype IN
+            <foreach collection="ew.conmanagetype" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        /*合同名称*/
+        <if test="ew.name != null and ew.name !=''">
+            and c.name like CONCAT('%',#{ew.name},'%')
+        </if>
+        /*合同编码*/
+        <if test="ew.contractNo != null and ew.contractNo !=''">
+            and c.contractNo like CONCAT('%',#{ew.contractNo},'%')
+        </if>
+        /*供应商名称*/
+        <if test="ew.merchantName != null and ew.merchantName !=''">
+            and c.oppositeOne like CONCAT('%',#{ew.merchantName},'%')
+        </if>
+        /*履约状态*/
+        <if test="ew.statusList != null and ew.statusList.size() > 0">
+            and c.status IN
+            <foreach collection="ew.statusList" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        /*合同起始日期*/
+        <if test="ew.gmtExpireStart != null and ew.gmtExpireStart !='' and ew.gmtExpireStartEnd != null and ew.gmtExpireStartEnd !=''">
+            and (c.gmtExpireStart BETWEEN #{ew.gmtExpireStart} and #{ew.gmtExpireStartEnd})
+        </if>
+        /*合同终止日期*/
+        <if test="ew.gmtExpireEndStart != null and ew.gmtExpireEndStart !='' and ew.gmtExpireEnd != null and ew.gmtExpireEnd !=''">
+            and (c.gmtExpireEnd BETWEEN #{ew.gmtExpireEndStart} and #{ew.gmtExpireEnd})
+        </if>
+        group by c.id
+        order by ifNUll(c.gmtModify,c.gmtCreate) desc
+    </select>
+</mapper>

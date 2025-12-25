@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.pay.ContractPayConcludeProfitLossMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,contractId,contractNo,contractName,merchant,merchantName,payNotecode,termDate,
+    plannedCollectionTime,plannedCollectionAmount,settlementAmount,deductionAmount,invoiceApplyAmount,paymentAmount,planStatus,
+    paymentStatus,invoiceStatus,reviewStatus,splitMode,chargeItem,chargeItemId,taxRate,
+    taxRateId,noTaxAmount,taxAmount,remark,noPayAmount,ratioAmount,howOrder,
+    serviceType,tenantId,creator,creatorName,gmtCreate,operator,operatorName,
+    gmtModify,deleted,acceptStatus,acceptAmount -->
+    <select id="getByContractId"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayPlanConcludeV">
+        SELECT s.*,
+               b.contractAmountOriginalRate contractAmount
+        FROM contract_pay_conclude_profit_loss s
+                 left join contract_pay_conclude b
+                           on s.contractId = b.id
+        WHERE s.contractid = #{contractId}
+          AND s.deleted = 0
+    </select>
+    <select id="collectionPlanDetailPage"
+            resultType="com.wishare.contract.domains.vo.revision.pay.ContractPayPlanConcludeV">
+        SELECT
+            ccp.*,
+            (ccp.plannedCollectionAmount - ccp.paymentAmount) noPaymentAmount,
+            cc.contractAmountOriginalRate contractAmount,
+            if(ccp.paymentStatus = 0,'未结算',elt(ccp.paymentStatus, '未完成', '已完成' )) paymentStatusName,
+            cc.communityId
+        from contract_pay_conclude_profit_loss ccp
+                 left join contract_pay_conclude cc
+                           on ccp.contractId = cc.id
+            ${ew.customSqlSegment}
+        ORDER BY
+            ccp.gmtModify DESC
+
+    </select>
+</mapper>

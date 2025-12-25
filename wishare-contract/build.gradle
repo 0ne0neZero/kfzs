@@ -1,0 +1,125 @@
+plugins {
+    id 'org.springframework.boot' version '2.6.7'
+    id 'java-library'
+}
+
+
+group = 'com.wishare'
+version = '1.0.0'
+sourceCompatibility = '11'
+
+bootJar {
+    archiveBaseName.set('wishare-contract')
+    archiveVersion.set('')
+    archiveClassifier.set('')
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        allowInsecureProtocol = true
+        url 'http://10.201.244.121:8081/repository/maven-public/'
+    }
+    maven {
+        url 'https://maven.aliyun.com/repository/public/'
+    }
+}
+
+ext {
+    set('springCloudVersion', "2021.0.2")
+}
+
+dependencies {
+    api platform("com.wishare:wishare-bom:1.0-SNAPSHOT")
+    annotationProcessor platform("com.wishare:wishare-bom:1.0-SNAPSHOT")
+
+    //内部封装基础包
+    api('com.wishare:wishare-spring-boot-starter:2.1.3')
+    api 'com.wishare:wishare-tools-spring-boot-starter'
+    //Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    //MySQL
+    implementation('mysql:mysql-connector-java')
+    // https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-boot-starter
+    implementation 'com.baomidou:mybatis-plus-boot-starter:3.5.1'
+    // https://mvnrepository.com/artifact/redis.clients/jedis
+    implementation 'redis.clients:jedis:4.2.3'
+    // 工具类
+    implementation 'org.apache.commons:commons-collections4:4.1'
+    implementation 'cn.hutool:hutool-crypto:5.8.18'
+    api 'com.wishare:wishare-tools-spring-boot-starter:1.2.8'
+    //代码生成
+    testImplementation 'com.light:mybatis-plus-generator:3.5.33'
+    testImplementation 'org.freemarker:freemarker:2.3.31'
+    //Seata
+    implementation 'io.seata:seata-spring-boot-starter:1.5.2'
+    implementation ('com.alibaba.cloud:spring-cloud-starter-alibaba-seata:2021.0.1.0') {
+        exclude group:'io.seata', module:'seata-spring-boot-starter'
+    }
+    // wishare 底层能力下沉 starter
+    implementation 'com.wishare:owl-spring-boot-starter:1.2.9'
+    // 导入标准化业务组件
+    implementation 'com.wishare.component:wishare-component-import-spring-boot-starter:0.0.20'
+    implementation 'com.wishare.component:wishare-component-import:1.1.23'
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'com.wishare.component:wishare-component-tree-api:0.0.1'
+    implementation 'com.xuxueli:xxl-job-core:2.3.0'
+    //邮箱
+    implementation 'javax.mail:mail:1.5.0-b01'
+    //操作日志
+    implementation 'cn.monitor4all:log-record-starter:1.4.0'
+//    implementation 'com.wishare.component:bizlog-spring-starter:1.0.2'
+    implementation ('com.wishare.component:bizlog-spring-starter:1.0.2') {
+        exclude group: 'com.alibaba', module: 'fastjson'
+    }
+//
+//    implementation("com.alibaba:fastjson:1.2.83")
+    // https://mvnrepository.com/artifact/com.xuxueli/xxl-job-core
+    implementation 'com.xuxueli:xxl-job-core:2.3.1'
+
+    // 多数据源配置
+    implementation 'com.baomidou:dynamic-datasource-spring-boot-starter:3.3.6'
+    // https://mvnrepository.com/artifact/com.microsoft.sqlserver/mssql-jdbc
+    implementation group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '7.2.2.jre11'
+
+    implementation 'cn.hutool:hutool-all:5.8.16'
+
+    implementation 'com.itextpdf:itextpdf:5.5.11'
+
+    implementation 'com.itextpdf.tool:xmlworker:5.5.11'
+    implementation 'org.freemarker:freemarker:2.3.31'
+    implementation 'org.xhtmlrenderer:flying-saucer-pdf:9.1.22'
+    implementation 'com.documents4j:documents4j-transformer-msoffice-word:1.0.3'
+    implementation 'com.documents4j:documents4j-local:1.0.3'
+    //拼音工具
+    implementation 'com.belerweb:pinyin4j:2.5.1'
+    // redis依赖
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // tomcat 版本 修复安全漏洞
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:9.0.102'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-el:9.0.102'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-websocket:9.0.102'
+
+    implementation 'com.github.rholder:guava-retrying:2.0.0'
+}
+
+sourceSets {
+    main{
+        resources {
+            srcDirs 'src/main/java' //可以将java目录下的所有非.java资源打包到classes下
+        }
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// 因为用了快照，每次获取都去获取最新的
+configurations {
+    all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+}

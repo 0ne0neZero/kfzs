@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.projectInitiation.ContractProjectInitiationMapper">
+    <select id="selectFrontPage"
+            resultType="com.wishare.contract.domains.entity.revision.projectInitiation.ContractProjectInitiationE">
+        SELECT
+            *
+        FROM contract_project_initiation
+            ${ew.customSqlSegment}
+        ORDER BY
+            gmtModify DESC
+    </select>
+</mapper>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractEngineeringPlanMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    com.wishare.contract.domains.consts.contractset.ContractEngineeringPlanFieldConst 会每次重新生成
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,contractId,accrualCode,lastPercent,lastAmount,thisTimePercent,thisTimeAmount,accrualAmount,
+    accrualData,remarks,creator,creatorName,gmtCreate,operator,operatorName,
+    gmtModify,deleted -->
+    <select id="selectContractCount" resultType="java.lang.Integer">
+       select count(0)
+        from contract_engineering_plan
+        where tenantId=#{tenantId}
+    </select>
+</mapper>

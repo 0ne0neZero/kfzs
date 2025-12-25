@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractPayIncomePlanMapper">
+
+
+    <select id="listPlan" resultType="com.wishare.contract.domains.vo.revision.income.PayIncomeListV">
+        SELECT
+        ccp.*,
+        cc.communityName,
+        cc.communityId ,
+        cc.name ,
+        cc.region,
+        cc.departId,
+        cc.departName as departName
+        from pay_income_plan ccp
+        left join contract_income_conclude cc
+        on ccp.contractId = cc.id
+        ${ew.customSqlSegment}
+        and ccp.deleted = 0
+        order by
+            ccp.gmtCreate DESC,
+            ccp.planId ASC,
+            ccp.incomePlanCode ASC
+    </select>
+    <update id="updateIncomePlan" parameterType="java.util.List">
+        <foreach collection="amountList" item="item" index="index" open="" close="" separator=";">
+            update pay_income_plan
+            set reductionAmount =#{item.reductionAmount}
+            where id = #{item.id}
+        </foreach>
+    </update>
+
+    <update id="deletePayIncomePlan">
+        UPDATE pay_income_plan
+        SET deleted = 1
+        WHERE id IN
+        <foreach collection="idList" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+
+    <!--根据结算计划ID及结算周期查询范围内的成本计划-->
+    <select id="getCostListByPlanAndCostTime" resultType="com.wishare.contract.domains.entity.contractset.PayIncomePlanE">
+        select * from pay_income_plan
+        where deleted = 0
+          and contractId = #{contractId}
+          and payFundId = #{funId}
+          and costStartTime &gt;= #{startDate} and costEndTime &lt;= #{endDate}
+    </select>
+</mapper>

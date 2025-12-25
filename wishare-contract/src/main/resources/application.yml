@@ -1,0 +1,11 @@
+logging:
+  config: classpath:logback-spring.xml
+server:
+  servlet:
+    context-path: /contract
+  port: 8102
+spring:
+  application:
+    name: wishare-contract
+  profiles:
+    include: "local,mq"

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.attachment.AttachmentMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,businessType,businessId,fileKey,name,suffix,size,fileSizeStr,
+    type,deleted,tenantId,creator,operator,gmtCreate,gmtModify,
+    creatorName,operatorName -->
+
+    <!--删除无效附件-->
+    <update id="deleteInvalidFileById">
+        UPDATE attachment SET deleted = 1 , gmtModify =  now()
+        where businessId = #{businessId}
+            and businessType = #{businessType}
+            <if test="ids != null and ids.size() > 0">
+                and id not in
+                <foreach collection="ids" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+    </update>
+
+</mapper>

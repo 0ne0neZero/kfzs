@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractBondPlanMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    com.wishare.contract.domains.consts.contractset.ContractBondPlanFieldConst 会每次重新生成
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,chargeItemId,costId,contractId,orgId,budgetAccount,summary,billType,
+    bidBond,plannedCollectionTime,plannedCollectionAmount,localCurrencyAmount,creator,creatorName,gmtCreate,
+    operator,operatorName,gmtModify -->
+    <update id="deleteBondPlan">
+        UPDATE contract_bond_plan SET deleted = 1
+        <where>
+            <if test="contractId != null">
+                AND contractId=#{contractId}
+            </if>
+        </where>
+    </update>
+    <select id="pageContractBondPlan"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractBondPlanPageV">
+        SELECT
+            cc.name AS contractName,
+            cc.bondHomeCurrency,
+            cc.belongOrgId,
+            cc.belongOrgName,
+            cbp.id AS bondPlanId,
+            cbp.contractId,
+            cbp.plannedCollectionTime,
+            cbp.plannedCollectionAmount,
+            cbp.localCurrencyAmount,
+            cbp.paymentStatus,
+            cbp.paymentAmount,
+            cbp.refundStatus,
+            cbp.refundAmount,
+            cbp.summary,
+            cbp.chargeItemId,
+            cbp.costId,
+            cbp.bidBond,
+            cbp.billNo,
+            cbp.settleTransferAmount,
+            cbp.settleTransferStatus,
+            cbp.billId,
+            cc.bondType,
+            cc.bidBondBillNo,
+            cc.bidBondAmount,
+            cc.contractState,
+            cbp.receiptAmount,
+            cbp.deductionAmount
+        FROM
+            contract_bond_plan cbp
+            LEFT JOIN contract_conclude cc ON cbp.contractId = cc.id
+        ${ew.customSqlSegment}
+--             2023/07/10 讯总提出注释收付款计划。是否框架合同的查询限制
+--             AND (cc.frameworkContract = 0 OR (cc.frameworkContract = 1 AND cc.signingMethod = 5))
+        ORDER BY
+            cc.gmtModify DESC,
+            cbp.plannedCollectionTime ASC
+    </select>
+    <select id="pageContractBondPlanSum"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractBondPlanSumV">
+        SELECT
+            SUM(cbp.localCurrencyAmount) AS localCurrencyAmountSum,
+            SUM(cbp.paymentAmount) AS paymentAmountSum,
+            SUM(cbp.refundAmount) AS refundAmountSum
+        FROM
+            contract_bond_plan cbp
+            LEFT JOIN contract_conclude cc ON cbp.contractId = cc.id
+        ${ew.customSqlSegment}
+            AND (cc.frameworkContract = 0 OR (cc.frameworkContract = 1 AND cc.signingMethod = 5))
+    </select>
+    <update id="updateBillId">
+        UPDATE contract_bond_plan
+            SET billId = #{billId}
+        WHERE
+            id = #{id}
+    </update>
+    <select id="contractBondPlanBillIds" resultType="java.lang.Long">
+        SELECT
+            cbp.billId
+        FROM
+            contract_bond_plan cbp
+            LEFT JOIN contract_conclude cc ON cbp.contractId = cc.id
+        WHERE 1 = 1
+            <if test="contractId != null" >
+                AND cbp.contractId = #{contractId}
+            </if>
+            <if test="bondType != null" >
+                AND cc.bondType = #{bondType}
+            </if>
+            <if test="paymentStatus != null" >
+                AND cbp.paymentStatus = #{paymentStatus}
+            </if>
+            <if test="refundStatus != null" >
+                AND cbp.refundStatus = #{refundStatus}
+            </if>
+            <if test="bidBond != null" >
+                AND cbp.bidBond = #{bidBond}
+            </if>
+
+    </select>
+    <select id="selectAmountByContract" resultType="com.wishare.contract.domains.vo.contractset.ContractInfoV">
+        SELECT
+        sum(paymentAmount) - sum(refundAmount) as bondBalance
+        FROM
+            contract_bond_plan
+        where deleted = 0 and contractId=#{contractId}
+    </select>
+    <select id="selectByContractIds"
+            resultType="com.wishare.contract.domains.vo.contractset.ContractBondListV">
+        SELECT
+            id AS billId,
+            summary AS remark,
+            contractId,
+            orgId,
+            date_format( plannedCollectionTime, '%Y-%m-%d' ) firstStartDate,
+            plannedCollectionAmount firstAmount,
+            localCurrencyAmount amount,
+            chargeItemId as chargeItemId,
+            costId,
+            deleted as deleteFlag,
+            paymentAmount as realAmount,
+            refundAmount,
+            paymentStatus as billStatus
+        FROM
+            contract_bond_plan
+        WHERE contractId=#{contractId}
+    </select>
+
+</mapper>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.revision.bond.RevisionBondCollectMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,code,typeCode,type,supplierId,supplier,contractId,contractCode,
+    contractName,costCenterId,costCenterName,communityId,communityName,bondAmount,plannedCollectionDate,
+    plannedCollectionAmount,orgId,orgName,chargeManId,chargeMan,remark,status,
+    collectAmount,refundAmount,receiptAmount,settleTransferAmount,deductionAmount,deleted,tenantId,
+    creator,creatorName,gmtCreate,operator,operatorName,gmtModify,billId,
+    billNo,bankName,bankAccount -->
+</mapper>

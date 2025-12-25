@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wishare.contract.domains.mapper.contractset.ContractBondCollectionDetailMapper">
+    <!-- 表字段展示 ,xml不会在表字段更新后更新，
+    com.wishare.contract.domains.consts.contractset.ContractBondCollectionDetailFieldConst 会每次重新生成
+    可以从javadoc中获取到最新的表字段列表-->
+    <!-- id,contractId,bondPlanId,collectionAmount,collectionMethod,collectionNumber,receiptVoucher,receiptVoucherName,
+    collectionTime,remark,deleted,creator,creatorName,gmtCreate,operator,
+    operatorName,gmtModify -->
+</mapper>
